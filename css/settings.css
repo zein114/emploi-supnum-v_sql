@@ -1,0 +1,188 @@
+/* Spacing Utilities */
+.p-lg {
+  padding: var(--spacing-lg);
+}
+
+.p-xl {
+  padding: var(--spacing-xl);
+}
+
+.mb-1 {
+  margin-bottom: var(--spacing-sm);
+}
+
+.mb-2 {
+  margin-bottom: var(--spacing-lg);
+}
+
+.mb-3 {
+  margin-bottom: var(--spacing-xl);
+}
+
+.mt-3 {
+  margin-top: var(--spacing-xl);
+}
+
+.m-0 {
+  margin: 0;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--border-color);
+  padding: 0;
+}
+
+.tab-btn {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: 0;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--color-primary-blue-light);
+  background: transparent;
+  border-bottom-color: var(--color-primary-blue);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.settings-item:hover {
+  border-color: var(--color-primary-blue-light);
+}
+
+.settings-item-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  margin-right: 8px;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Form Styles */
+/* .settings-form {
+    max-width: 600px; 
+} */
+
+.form-actions {
+  display: flex;
+  gap: 1.5rem;
+}
+
+/* Modal and Table Refinements */
+.modal-body .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.modal-content {
+  max-width: 500px;
+  padding: var(--spacing-xl);
+}
+
+.bg-section {
+  background-color: var(--color-bg-section) !important;
+}
+
+/* Table specific styles for settings */
+.settings-container .table-container {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.settings-container .table th {
+  background: var(--color-bg-section);
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-container .table td {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-container .table tr:last-child td {
+  border-bottom: none;
+}
+
+.smart-time-input {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-section);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  width: fit-content;
+}
+
+.smart-time-input input {
+  width: 2.5ch;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 1rem;
+  outline: none;
+}
+
+.smart-time-input span {
+  color: var(--text-muted);
+  font-weight: bold;
+}

@@ -1,0 +1,269 @@
+/* Weekly Workload Page Styling */
+
+/* Hide number input spin buttons forcefully */
+input[type="number"].workload-input::-webkit-inner-spin-button,
+input[type="number"].workload-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"].workload-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Premium look for workload inputs */
+.workload-input {
+  display: block;
+  margin: 0;
+  width: 100%;
+  max-width: 5rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border-color);
+  background: var(--color-bg-card);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+  text-align: left;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+.workload-input:focus {
+  outline: none;
+  border-color: var(--color-primary-blue-light, #60a5fa);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  background: var(--color-bg-main);
+}
+
+.table th {
+  text-align: left;
+  padding-left: 1rem !important;
+}
+
+.table td {
+  padding-left: 1rem !important;
+}
+
+/* Distribute columns proportionally across the table width */
+.code-col {
+  width: 45%;
+  min-width: 250px;
+  padding-left: 2rem !important;
+  text-align: left;
+}
+
+.group-col {
+  display: none;
+  /* Removed from table */
+}
+
+/* Adjust standard columns to align left */
+.workload-col {
+  width: 10%;
+  min-width: 80px;
+  text-align: left;
+}
+
+.status-col {
+  width: 15%;
+  min-width: 120px;
+  text-align: center;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 48px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-outline {
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary-blue);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.action-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.module-header-row {
+  background: var(--color-bg-alt);
+}
+
+.module-header-row td {
+  border-top: 2px solid var(--border-color);
+  font-weight: 600;
+}
+
+.group-row td:first-child {
+  padding-left: 3rem !important;
+}
+
+.add-group-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  height: auto;
+  margin-left: 0.5rem;
+}
+
+input[type="number"].workload-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  /* Fix for lint warning */
+}
+
+.exclusion-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--color-bg-alt);
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border-color);
+}
+
+.exclusion-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 1.25rem;
+  align-items: end;
+}
+
+.exclusion-bottom-row {
+  width: 100%;
+}
+
+.remove-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-exclusion {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1.5rem;
+  transition: color 0.2s;
+  padding: 0;
+  line-height: 1;
+  position: absolute;
+  top: 13rem;
+}
+
+.remove-exclusion:hover {
+  color: white;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.modal.active {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  width: 90% !important;
+  max-height: 90vh;
+  margin: auto;
+  padding: 2rem;
+  position: relative;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Modal Specifics */
+.modal-subject-info {
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-alt);
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  pointer-events: none; /* Ensure it's not clickable as per user request */
+}
+
+.modal-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.add-another-btn-wrapper {
+  margin-top: 1.5rem;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 1rem;
+}
+
+/* Ensure no close buttons are shown if they existed in modal.js */
+.close-modal-icon,
+.close-modal {
+  display: none !important;
+}
+
+/* Fix for number inputs globally inside exclusions */
+.exclusion-item input[type="number"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+.exclusion-item input[type="number"]::-webkit-inner-spin-button,
+.exclusion-item input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

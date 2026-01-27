@@ -1,0 +1,103 @@
+/* Users Management Specific Styles */
+
+/* Modals */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  display: none; /* Default hidden */
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(11, 16, 32, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.modal-content {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  position: relative;
+  z-index: 1001;
+}
+
+.admin-main {
+  padding: 3rem 0;
+}
+
+/* Table Column Widths & Alignment */
+.col-id {
+  width: 5%;
+  min-width: 60px;
+  padding-left: 1.5rem !important;
+}
+
+.col-username {
+  width: 20%;
+  min-width: 150px;
+}
+
+.col-email {
+  width: 25%;
+  min-width: 200px;
+}
+
+.col-role {
+  width: 15%;
+  min-width: 120px;
+}
+
+.col-created {
+  width: 20%;
+  min-width: 150px;
+}
+
+.col-actions {
+  width: 15%;
+  min-width: 120px;
+  text-align: left;
+}
+
+/* General Table Fixes matching Weekly Workload */
+.table th {
+  text-align: left;
+  padding-left: 1rem;
+  vertical-align: middle;
+}
+
+.table td {
+  padding-left: 1rem;
+  vertical-align: middle;
+}
+
+/* Force center alignment for loading/empty states */
+.table td.text-center {
+  text-align: center !important;
+}
+
+/* Specific alignments for actions column (Header and Body) */
+.table th.col-actions,
+.table td.col-actions {
+  text-align: left;
+  /* Ensure action buttons are laid out horizontally with spacing */
+  white-space: nowrap;
+}
+
+/* Layout for action buttons inside the actions column */
+.table td.col-actions > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}

@@ -1,0 +1,120 @@
+@keyframes blinkDark {
+  0% {
+    background-color: var(--color-primary-blue);
+    opacity: 0.5;
+  }
+
+  50% {
+    background-color: var(--color-primary-dark);
+    opacity: 0.8;
+  }
+
+  100% {
+    background-color: var(--color-primary-blue);
+    opacity: 0.5;
+  }
+}
+
+.timetable-cell.processing {
+  animation: blinkDark 1.5s infinite;
+  cursor: wait;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  flex-shrink: 0;
+  /* header keeps its natural height */
+}
+
+.professor-main {
+  flex: 1;
+  /* takes remaining space */
+  display: flex;
+  align-items: center;
+  /* vertical centering */
+}
+
+.availability-legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.legend-items {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.legend-box.available {
+  background: var(--color-primary-blue);
+  border: 1px solid var(--border-color);
+}
+
+.legend-box.unavailable {
+  background: var(--color-bg-card);
+  border: 1px solid var(--border-color);
+}
+
+/* Collapsible Section Transitions */
+#availabilitySection,
+#timetableSection {
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Availability Grid Specific Styles */
+.timetable-cell.available {
+  background: var(--color-primary-blue) !important;
+  color: white;
+}
+
+.timetable-cell.unavailable {
+  background: var(--color-bg-section);
+}
+
+/* Legacy Class Type Colors - Removed to use modern event-cards */
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  /* Settings card - stack on mobile */
+  .glass-card > div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .glass-card > div[style*="grid-template-columns: 1fr 1fr"] > div {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-right: 0 !important;
+    padding-bottom: 2rem !important;
+    padding-left: 0 !important;
+    padding-top: 2rem !important;
+  }
+
+  .glass-card > div[style*="grid-template-columns: 1fr 1fr"] > div:first-child {
+    padding-top: 0 !important;
+  }
+
+  .glass-card > div[style*="grid-template-columns: 1fr 1fr"] > div:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* Use global mobile timetable styles from style.css */
+}
