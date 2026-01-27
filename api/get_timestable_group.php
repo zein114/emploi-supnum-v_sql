@@ -1,5 +1,5 @@
 <?php
-require 'vendor/autoload.php';
+require '../vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 $file = "../modele/Tous_les_Emplois_du_Temps.xlsx";

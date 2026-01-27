@@ -1,5 +1,5 @@
 <?php
-require './vendor/autoload.php';
+require '../vendor/autoload.php';
 require_once '../includes/session.php';
 require_once '../config/db_connect.php';
 
