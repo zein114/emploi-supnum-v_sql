@@ -46,7 +46,27 @@ $user = getCurrentUser();
                     <!-- Selection Form -->
                     <div class="form-card" style="margin-bottom: 2rem; background: var(--bg-secondary); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);">
                         <form id="adminTimetableForm">
-                            <div class="grid grid-2 gap-2" style="margin-bottom: 1.5rem;">
+                            <div class="grid grid-3 gap-2" style="margin-bottom: 1.5rem;">
+                                <!-- Source Selection (Live or Archive) -->
+                                <div class="form-group">
+                                    <label class="form-label">Source de l'emploi du temps</label>
+                                    <div class="dropdown-container">
+                                        <button type="button" class="dropdown-button" data-dropdown-id="adminSourceSelect" data-value="live">
+                                            <span class="dropdown-text">Emploi du temps actuel</span>
+                                            <div class="dropdown-arrow"></div>
+                                        </button>
+                                        <div class="dropdown-menu" id="adminSourceOptionsMenu" style="padding-top: 0;">
+                                            <div class="dropdown-search-container" style="position: sticky; top: 0; background: var(--color-bg-card); z-index: 10; padding: 10px 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 4px;">
+                                                <input type="text" class="dropdown-search-input" id="archiveSearchInput" placeholder="Rechercher par date..." style="width: 100%; padding: 10px 10px; font-size: 0.85rem; background: var(--color-bg-section); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                                            </div>
+                                            <div id="archiveDropdownItems" style="padding: 0 8px 8px 8px;">
+                                                <div class="dropdown-item" data-value="live">Emploi du temps actuel</div>
+                                                <!-- Archives will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <!-- Semester Selection -->
                                 <div class="form-group">
                                     <label class="form-label">Semestre</label>
@@ -76,9 +96,15 @@ $user = getCurrentUser();
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                                <span>Afficher l'emploi du temps</span>
-                            </button>
+                            <div class="flex gap-2">
+                                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                    <span>Afficher l'emploi du temps</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="exportExcelBtn" style="padding-left: 1.5rem; padding-right: 1.5rem;" title="Exporter en Excel">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    <span style="font-size: 14px; margin-left: 5px;">Exporter l'Excel</span>
+                                </button>
+                            </div>
                         </form>
                     </div>
 
@@ -92,8 +118,8 @@ $user = getCurrentUser();
                         
                         <!-- Unscheduled Classes Section -->
                         <div id="unscheduledClassesSection" style="margin-top: 2rem; display: none;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                                <h3 style="color: var(--color-warning); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="color: var(--color-warning); margin: 0; display: flex; align-items: center; gap: 0.5rem; position: relative; top: 5px;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
                                         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                                         <line x1="12" y1="9" x2="12" y2="13"></line>
@@ -109,7 +135,7 @@ $user = getCurrentUser();
 
                             <div id="unscheduledContentSection" style="display: none;">
                                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-                                    Les classes suivantes n'ont pas pu être placées dans l'emploi du temps en raison de contraintes (disponibilité des professeurs, salles, etc.)
+                                    Les classes suivantes n'ont pas pu être placées dans l'emploi du temps en raison de disponibilité des professeurs, salles, etc...
                                 </p>
                                 <div id="unscheduledClassesList">
                                     <!-- Will be populated by JS -->

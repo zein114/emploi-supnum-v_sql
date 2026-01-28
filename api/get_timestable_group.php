@@ -2,7 +2,21 @@
 require '../vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-$file = "../modele/Tous_les_Emplois_du_Temps.xlsx";
+$baseFile = "../modele/Tous_les_Emplois_du_Temps.xlsx";
+$archive = isset($_GET['archive']) ? $_GET['archive'] : null;
+
+if ($archive) {
+    $file = "../modele/archives_timetables/" . basename($archive);
+} else {
+    $file = $baseFile;
+}
+
+if (!file_exists($file)) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => 'File not found']);
+    exit;
+}
+
 $sheetName = $_GET['sheet_name'];
 
 $reader = IOFactory::createReaderForFile($file);

@@ -106,6 +106,97 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error loading semesters", e);
   }
 
+  // Load Archives
+  let allArchives = [];
+  try {
+    const response = await fetch("../api/get_archives.php");
+    allArchives = await response.json();
+
+    const archiveItemsContainer = document.getElementById(
+      "archiveDropdownItems",
+    );
+    if (archiveItemsContainer) {
+      let html =
+        '<div class="dropdown-item" data-value="live">Emploi du temps actuel</div>';
+      allArchives.forEach((archive) => {
+        html += `<div class="dropdown-item" data-value="${archive.filename}" data-search-date="${archive.searchDate}" data-display-date="${archive.date}">${archive.displayName}</div>`;
+      });
+      archiveItemsContainer.innerHTML = html;
+
+      // Re-attach event listeners for new items
+      const sourceBtn = document.querySelector(
+        '[data-dropdown-id="adminSourceSelect"]',
+      );
+      const sourceMenu = document.getElementById("adminSourceOptionsMenu");
+      if (sourceBtn && sourceMenu) {
+        archiveItemsContainer
+          .querySelectorAll(".dropdown-item")
+          .forEach((item) => {
+            item.addEventListener("click", (e) => {
+              e.stopPropagation();
+              window.customDropdown.selectItem(sourceBtn, sourceMenu, item);
+            });
+          });
+      }
+    }
+  } catch (e) {
+    console.error("Error loading archives", e);
+  }
+
+  // Setup archive search functionality
+  const archiveSearchInput = document.getElementById("archiveSearchInput");
+  if (archiveSearchInput) {
+    archiveSearchInput.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent dropdown from closing
+    });
+
+    archiveSearchInput.addEventListener("input", (e) => {
+      const searchTerm = e.target.value.toLowerCase().trim();
+      const archiveItemsContainer = document.getElementById(
+        "archiveDropdownItems",
+      );
+      const items = archiveItemsContainer.querySelectorAll(".dropdown-item");
+
+      items.forEach((item) => {
+        const value = item.getAttribute("data-value");
+        if (value === "live") {
+          item.style.display = ""; // Always show "current" option
+          return;
+        }
+
+        const searchDate = item.getAttribute("data-search-date") || "";
+        const displayDate = item.getAttribute("data-display-date") || "";
+        const filename = item.textContent.toLowerCase();
+
+        // Helper to strip leading zeros from date parts for flexible matching
+        const stripLeadingZeros = (str) => {
+          return str.replace(/\/0+(?=\d)/g, "/").replace(/^0+(?=\d)/, "");
+        };
+
+        // Normalize search term: remove extra slashes/spaces and leading zeros
+        const normalizedSearch = stripLeadingZeros(
+          searchTerm.replace(/\s+/g, "").replace(/\/+/g, "/"),
+        );
+
+        // Normalize dates for comparison: remove leading zeros
+        const normalizedSearchDate = stripLeadingZeros(
+          searchDate.toLowerCase().replace(/\s+/g, "").replace(/\/+/g, "/"),
+        );
+        const normalizedDisplayDate = stripLeadingZeros(
+          displayDate.toLowerCase().replace(/\s+/g, "").replace(/\/+/g, "/"),
+        );
+
+        // Check if search matches any part of the dates or filename
+        const matches =
+          normalizedSearchDate.includes(normalizedSearch) ||
+          normalizedDisplayDate.includes(normalizedSearch) ||
+          filename.includes(searchTerm);
+
+        item.style.display = matches ? "" : "none";
+      });
+    });
+  }
+
   const adminTimetableForm = document.getElementById("adminTimetableForm");
   const submitBtn = adminTimetableForm
     ? adminTimetableForm.querySelector('button[type="submit"]')
@@ -163,6 +254,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     adminTimetableForm.addEventListener("submit", async function (e) {
       e.preventDefault();
 
+      const sourceBtn = document.querySelector(
+        '[data-dropdown-id="adminSourceSelect"]',
+      );
       const semBtn = document.querySelector(
         '[data-dropdown-id="adminSemesterSelect"]',
       );
@@ -170,6 +264,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         '[data-dropdown-id="adminGroupSelect"]',
       );
 
+      const sourceValue = sourceBtn
+        ? sourceBtn.getAttribute("data-value")
+        : "live";
       const semValue = semBtn ? semBtn.getAttribute("data-value") : null;
       const groupValue = groupBtn ? groupBtn.getAttribute("data-value") : null;
 
@@ -198,7 +295,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const container = document.getElementById("timetableContainer");
 
       try {
-        await renderTimetable(sheetName);
+        const archiveParam = sourceValue !== "live" ? sourceValue : null;
+        await renderTimetable(sheetName, archiveParam);
         if (container) container.style.display = "block";
       } catch (error) {
         console.error("Error loading Time Tables:", error);
@@ -207,9 +305,38 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
   }
+
+  // Handle export button
+  const exportBtn = document.getElementById("exportExcelBtn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const sourceBtn = document.querySelector(
+        '[data-dropdown-id="adminSourceSelect"]',
+      );
+      const sourceValue = sourceBtn
+        ? sourceBtn.getAttribute("data-value")
+        : "live";
+
+      let downloadUrl = "";
+      if (sourceValue === "live") {
+        downloadUrl = "../modele/Tous_les_Emplois_du_Temps.xlsx";
+      } else {
+        downloadUrl = "../modele/archives_timetables/" + sourceValue;
+      }
+
+      // Create a temporary link to trigger download
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download =
+        sourceValue === "live" ? "Tous_les_Emplois_du_Temps.xlsx" : sourceValue;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
 });
 
-async function renderTimetable(sheetName) {
+async function renderTimetable(sheetName, archive = null) {
   const timetableGrid = document.getElementById("timetableGrid");
   if (!timetableGrid) return;
 
@@ -246,11 +373,14 @@ async function renderTimetable(sheetName) {
       };
     }
 
-    const response = await fetch(
-      `../api/get_timestable_group.php?sheet_name=${encodeURIComponent(
-        sheetName,
-      )}&t=${Date.now()}`,
-    );
+    let url = `../api/get_timestable_group.php?sheet_name=${encodeURIComponent(
+      sheetName,
+    )}&t=${Date.now()}`;
+    if (archive) {
+      url += `&archive=${encodeURIComponent(archive)}`;
+    }
+
+    const response = await fetch(url);
     const timesTables = await response.json();
 
     // Calculate displayed days count for grid
@@ -457,6 +587,19 @@ async function GenerateTimetables(btn) {
         : null;
 
       if (groupValue && groupText && groupText !== "Sélectionner un groupe") {
+        // Reset source to live after generation
+        const sourceBtn = document.querySelector(
+          '[data-dropdown-id="adminSourceSelect"]',
+        );
+        if (sourceBtn) {
+          const liveItem = document.querySelector(
+            '#adminSourceOptionsMenu .dropdown-item[data-value="live"]',
+          );
+          const sourceMenu = document.getElementById("adminSourceOptionsMenu");
+          if (liveItem && window.customDropdown) {
+            window.customDropdown.selectItem(sourceBtn, sourceMenu, liveItem);
+          }
+        }
         await renderTimetable(groupText);
       }
     } else {

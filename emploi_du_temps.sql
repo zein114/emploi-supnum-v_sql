@@ -3,12 +3,13 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 27, 2026 at 07:58 AM
+-- Generation Time: Jan 28, 2026 at 01:33 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
+SET FOREIGN_KEY_CHECKS = 0;
 SET time_zone = "+00:00";
 
 
@@ -32,7 +33,7 @@ CREATE TABLE `classrooms` (
   `name` varchar(100) DEFAULT NULL,
   `capacity` int DEFAULT '0',
   `type` enum('CM','TP','TD','Unknown') DEFAULT 'Unknown'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `classrooms`
@@ -80,7 +81,7 @@ CREATE TABLE `course_workloads` (
   `tp_hours` int DEFAULT '0',
   `td_hours` int DEFAULT '0',
   `group_id_uni` int GENERATED ALWAYS AS (ifnull(`group_id`,0)) VIRTUAL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `course_workloads`
@@ -123,7 +124,7 @@ CREATE TABLE `days` (
   `name` varchar(50) NOT NULL,
   `order_index` int NOT NULL DEFAULT '0',
   `is_active` tinyint(1) NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `days`
@@ -135,8 +136,8 @@ INSERT INTO `days` (`id`, `name`, `order_index`, `is_active`) VALUES
 (3, 'Mercredi', 3, 1),
 (4, 'Jeudi', 4, 1),
 (5, 'Vendredi', 5, 0),
-(6, 'Samedi', 6, 1),
-(7, 'Dimanche', 7, 1);
+(6, 'Samedi', 6, 0),
+(7, 'Dimanche', 7, 0);
 
 -- --------------------------------------------------------
 
@@ -151,7 +152,7 @@ CREATE TABLE `groups` (
   `type` varchar(100) DEFAULT 'principale',
   `semester_id` int DEFAULT NULL,
   `parent_group_id` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `groups`
@@ -201,7 +202,7 @@ CREATE TABLE `professors` (
   `id` int NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `professors`
@@ -297,7 +298,7 @@ CREATE TABLE `professor_availability` (
   `day_id` int DEFAULT NULL,
   `time_slot_id` int DEFAULT NULL,
   `is_available` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `professor_availability`
@@ -3011,7 +3012,7 @@ CREATE TABLE `semesters` (
   `name` varchar(50) NOT NULL,
   `display_name` varchar(100) NOT NULL,
   `order_index` int NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `semesters`
@@ -3034,7 +3035,7 @@ INSERT INTO `semesters` (`id`, `name`, `display_name`, `order_index`) VALUES
 CREATE TABLE `settings` (
   `setting_key` varchar(100) NOT NULL,
   `setting_value` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `settings`
@@ -3054,7 +3055,7 @@ CREATE TABLE `subjects` (
   `code` varchar(50) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `semester_id` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `subjects`
@@ -3162,7 +3163,7 @@ CREATE TABLE `teacher_assignments` (
   `subject_id` int DEFAULT NULL,
   `group_id` int DEFAULT NULL,
   `type` enum('CM','TP','TD') DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `teacher_assignments`
@@ -3224,7 +3225,7 @@ CREATE TABLE `time_slots` (
   `id` int NOT NULL,
   `time_range` varchar(50) NOT NULL,
   `is_active` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `time_slots`
@@ -3252,7 +3253,7 @@ CREATE TABLE `users` (
   `email` varchar(255) DEFAULT NULL,
   `id_prof` int DEFAULT NULL,
   `remember_token` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
@@ -3394,7 +3395,7 @@ ALTER TABLE `groups`
 -- AUTO_INCREMENT for table `professor_availability`
 --
 ALTER TABLE `professor_availability`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2702;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2756;
 
 --
 -- AUTO_INCREMENT for table `semesters`
@@ -3465,6 +3466,7 @@ ALTER TABLE `teacher_assignments`
   ADD CONSTRAINT `teacher_assignments_ibfk_1` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `teacher_assignments_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `teacher_assignments_ibfk_3` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`) ON DELETE CASCADE;
+SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

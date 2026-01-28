@@ -389,6 +389,15 @@ textarea {
   color: white;
 }
 
+.dropdown-search-input {
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.dropdown-search-input:focus {
+  border-color: var(--color-primary-blue) !important;
+}
+
 /* ===== Forms ===== */
 .form-group {
   margin-bottom: var(--spacing-lg);
