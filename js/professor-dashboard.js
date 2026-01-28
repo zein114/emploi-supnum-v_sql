@@ -14,30 +14,32 @@ let daysData = [];
 // Shared data loading promise to avoid race conditions
 let globalDataPromise = null;
 
+let genConfig = null;
+
 async function loadGlobalData() {
   if (globalDataPromise) return globalDataPromise;
 
   globalDataPromise = (async () => {
     try {
-      // Load days
+      // Load live days
       const daysResponse = await fetch("api/get_days.php");
       daysData = await daysResponse.json();
 
-      // Fallback if no days
-      if (!daysData || daysData.length === 0) {
-        daysData = [
-          { name: "Lundi", is_active: 1 },
-          { name: "Mardi", is_active: 1 },
-          { name: "Mercredi", is_active: 1 },
-          { name: "Jeudi", is_active: 1 },
-          { name: "Vendredi", is_active: 1 },
-          { name: "Samedi", is_active: 0 },
-        ];
-      }
-
-      // Load time slots
+      // Load live time slots
       const slotsResponse = await fetch("api/get_time_slots.php");
       timeSlots = await slotsResponse.json();
+
+      // Load generation config
+      const configResponse = await fetch("api/get_generation_config.php");
+      genConfig = await configResponse.json();
+
+      // Fallback if no config
+      if (!genConfig || genConfig.error) {
+        genConfig = {
+          days: daysData,
+          time_slots: timeSlots,
+        };
+      }
 
       return true;
     } catch (error) {
@@ -125,15 +127,22 @@ async function loadProfessorTimetable() {
 }
 
 function renderProfessorTimetable() {
-  const days = daysData.map((d) => d.name);
+  const sundayLive = daysData.find((d) => d.name === "Dimanche");
+  const isSundayActiveLive = sundayLive ? sundayLive.is_active == 1 : false;
+
+  const displayDays = genConfig.days.filter((day) => {
+    if (day.name === "Dimanche" && !isSundayActiveLive) return false;
+    return true;
+  });
+
   // Time slot rows
   const timetable = {};
 
-  // initialize empty grid
-  timeSlots.forEach((slot) => {
+  // initialize empty grid using genConfig slots
+  genConfig.time_slots.forEach((slot) => {
     timetable[slot.time_range] = {};
-    days.forEach((day) => {
-      timetable[slot.time_range][day] = "";
+    genConfig.days.forEach((dayData) => {
+      timetable[slot.time_range][dayData.name] = "";
     });
   });
 
@@ -145,22 +154,24 @@ function renderProfessorTimetable() {
     }
   });
 
-  let html = `<div class="timetable-grid" style="grid-template-columns: 100px repeat(${days.length}, 1fr);">`;
+  let html = `<div class="timetable-grid" style="grid-template-columns: 100px repeat(${displayDays.length}, 1fr);">`;
 
   // Header row
   html += '<div class="timetable-header">Heure</div>';
-  days.forEach((day) => {
-    html += `<div class="timetable-header">${day}</div>`;
+  displayDays.forEach((day) => {
+    html += `<div class="timetable-header">${day.name}</div>`;
   });
 
-  // Time slot rows
-  timeSlots.forEach((slot) => {
+  // Time slot rows from genConfig
+  genConfig.time_slots.forEach((slot) => {
     html += `<div class="timetable-header">${slot.time_range}</div>`;
 
-    daysData.forEach((dayData) => {
+    genConfig.days.forEach((dayData, dayIndex) => {
+      if (dayData.name === "Dimanche" && !isSundayActiveLive) return;
+
       let cellContent = timetable[slot.time_range][dayData.name] || "";
 
-      // Handle inactive days OR inactive time slots
+      // Handle inactive days OR inactive time slots from generation config
       if (dayData.is_active == 0 || slot.is_active == 0) {
         cellContent = "x";
       }
@@ -232,16 +243,22 @@ function renderProfessorTimetable() {
               } else {
                 if (typeStr === "TD" || typeStr === "TP") {
                   // Ensure prefix matches type (e.g. show "TP1 - RSS-L2" even if original was "TD1")
-                  const numMatch = groupStr.match(/\d+/);
-                  const number = numMatch ? numMatch[0] : "";
-
+                  const numbers = groupStr.match(/\d+/g);
                   // Extract major info (everything else after TD/TP prefix/number)
-                  let majorInfo = groupStr
-                    .replace(/^(TD|TP)\s*\d*/i, "")
-                    .trim()
-                    .replace(/^-\s*/, "");
-                  groupStr =
-                    typeStr + number + (majorInfo ? " - " + majorInfo : "");
+                  const majorInfo = groupStr
+                    .replace(/(TD|TP)\s*\d*/gi, "")
+                    .replace(/^[\s\-,]*/, "")
+                    .trim();
+
+                  if (numbers) {
+                    const groupNames = numbers
+                      .map((n) => typeStr + n)
+                      .join(", ");
+                    groupStr =
+                      groupNames + (majorInfo ? " - " + majorInfo : "");
+                  } else {
+                    groupStr = typeStr + (majorInfo ? " - " + majorInfo : "");
+                  }
                 } else {
                   // For CM, just combine them: "CM - RSS-L2"
                   groupStr = typeStr + " - " + groupStr;
@@ -323,22 +340,30 @@ function renderProfessorTimetable() {
 }
 
 function renderTimetable() {
-  const days = daysData.map((d) => d.name);
+  const sundayLive = daysData.find((d) => d.name === "Dimanche");
+  const isSundayActiveLive = sundayLive ? sundayLive.is_active == 1 : false;
 
-  let html = `<div class="timetable-grid" style="grid-template-columns: 100px repeat(${days.length}, 1fr);">`;
+  const displayDays = daysData.filter((day) => {
+    if (day.name === "Dimanche" && !isSundayActiveLive) return false;
+    return true;
+  });
+
+  let html = `<div class="timetable-grid" style="grid-template-columns: 100px repeat(${displayDays.length}, 1fr);">`;
 
   // Header row
   html += '<div class="timetable-header">Heure</div>';
-  days.forEach((day) => {
-    html += `<div class="timetable-header">${day}</div>`;
+  displayDays.forEach((day) => {
+    html += `<div class="timetable-header">${day.name}</div>`;
   });
 
-  // Time slot rows
+  // Time slot rows (LIVE)
   const slotsCount = timeSlots.length;
   timeSlots.forEach((slot, slotIndex) => {
     html += `<div class="timetable-header">${slot.time_range}</div>`;
 
     daysData.forEach((dayData, dayIndex) => {
+      if (dayData.name === "Dimanche" && !isSundayActiveLive) return;
+
       const index = dayIndex * slotsCount + slotIndex;
       let cellClass = availability?.[index] ? "available" : "";
       let cellContent = "";

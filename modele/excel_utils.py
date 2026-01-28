@@ -180,7 +180,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             if len(active_indices) == len(subgroup_indices) and len(subgroup_indices) > 1:
                                 sg_detail = "G-S Complet"
                             else:
-                                sg_names = [Sous_Groupes[si] for si in active_indices]
+                                sg_names = sorted([Sous_Groupes[si] for si in active_indices])
                                 sg_detail = ", ".join(sg_names)
                             
                             # Pour chaque sous-groupe actif, trouver sa salle (potentiellement différent)
@@ -195,6 +195,21 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             sessions_list.append(session_str)
 
                     if sessions_list:
+                        # Trier les sessions pour s'assurer que TD1/TP1 apparaissent avant TD2/TP2
+                        def session_sort_key(s):
+                            if "(CM)" in s: return (0, "")
+                            if "G-S Complet" in s: return (1, "0")
+                            # Extraire les noms des sous-groupes de la chaîne de session pour les utiliser comme clé de tri
+                            # Le format est : ...\n(TP/TD) - TD1, TD2\n...
+                            try:
+                                if " - " in s:
+                                    sub_part = s.split(" - ")[1].split("\n")[0]
+                                    return (1, sub_part)
+                            except:
+                                pass
+                            return (1, "z")
+                        
+                        sessions_list.sort(key=session_sort_key)
                         session_info = " /// ".join(sessions_list)
                     else:
                         session_info = ""

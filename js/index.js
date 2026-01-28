@@ -190,23 +190,37 @@ async function renderTimetable(sheetName) {
   const timetableGrid = document.getElementById("timetableGrid");
 
   try {
-    // Fetch days dynamically
+    // 1. Fetch live days to check Sunday status
     const daysResponse = await fetch("api/get_days.php");
-    let daysData = await daysResponse.json();
+    const liveDays = await daysResponse.json();
+    const sundayLive = liveDays.find((d) => d.name === "Dimanche");
+    const isSundayActiveLive = sundayLive ? sundayLive.is_active == 1 : false;
 
-    // Fallback if no days
-    if (!daysData || daysData.length === 0) {
-      daysData = [
-        { name: "Lundi" },
-        { name: "Mardi" },
-        { name: "Mercredi" },
-        { name: "Jeudi" },
-        { name: "Vendredi" },
-        { name: "Samedi" },
-      ];
+    // 2. Fetch generation config for grid structure
+    const configResponse = await fetch("api/get_generation_config.php");
+    let config = await configResponse.json();
+
+    // Fallback if no config
+    if (!config || config.error) {
+      config = {
+        days: [
+          { name: "Lundi", is_active: 1 },
+          { name: "Mardi", is_active: 1 },
+          { name: "Mercredi", is_active: 1 },
+          { name: "Jeudi", is_active: 1 },
+          { name: "Vendredi", is_active: 1 },
+          { name: "Samedi", is_active: 1 },
+          { name: "Dimanche", is_active: 0 },
+        ],
+        time_slots: [
+          { time_range: "08:00-09:30", is_active: 1 },
+          { time_range: "09:45-11:15", is_active: 1 },
+          { time_range: "11:30-13:00", is_active: 1 },
+          { time_range: "15:00-16:30", is_active: 1 },
+          { time_range: "17:00-18:30", is_active: 1 },
+        ],
+      };
     }
-
-    const days = daysData.map((d) => d.name);
 
     const response = await fetch(
       `api/get_timestable_group.php?sheet_name=${encodeURIComponent(
@@ -215,27 +229,33 @@ async function renderTimetable(sheetName) {
     );
     const timesTables = await response.json();
 
-    let html = '<div class="timetable-grid">';
+    // Calculate displayed days count for grid
+    const displayDaysCount = config.days.filter((day) => {
+      if (day.name === "Dimanche" && !isSundayActiveLive) return false;
+      return true;
+    }).length;
+
+    let html = `<div class="timetable-grid" style="grid-template-columns: 100px repeat(${displayDaysCount}, 1fr);">`;
 
     // Header row
     html += '<div class="timetable-header">Heure</div>';
-    daysData.forEach((dayData) => {
+    config.days.forEach((dayData) => {
+      if (dayData.name === "Dimanche" && !isSundayActiveLive) return;
       html += `<div class="timetable-header">${dayData.name}</div>`;
     });
 
-    // Time slots
-    const slotsResponse = await fetch("api/get_time_slots.php");
-    const timeSlots = await slotsResponse.json();
-
-    timeSlots.forEach((slot) => {
+    // Time slots from config
+    config.time_slots.forEach((slot, slotIndex) => {
       html += `<div class="timetable-header">${slot.time_range}</div>`;
 
-      const row = timesTables[slot.id - 1] || [];
+      const row = timesTables[slotIndex] || [];
 
-      daysData.forEach((dayData, index) => {
-        let cellContent = row[index] ?? "";
+      config.days.forEach((dayData, dayIndex) => {
+        if (dayData.name === "Dimanche" && !isSundayActiveLive) return;
 
-        // Handle inactive days OR inactive time slots
+        let cellContent = row[dayIndex] ?? "";
+
+        // Handle inactive days OR inactive time slots from CONFIG (historical)
         if (dayData.is_active == 0 || slot.is_active == 0) {
           cellContent = "x";
         }
@@ -307,8 +327,12 @@ async function renderTimetable(sheetName) {
                   groupStr = typeStr;
                 } else if (typeStr === "TD" || typeStr === "TP") {
                   // Ensure prefix matches type (e.g. show TP1 for TP session even if group is TD1)
-                  const numMatch = groupStr.match(/\d+/);
-                  groupStr = typeStr + (numMatch ? numMatch[0] : "");
+                  const numbers = groupStr.match(/\d+/g);
+                  if (numbers) {
+                    groupStr = numbers.map((n) => typeStr + n).join(", ");
+                  } else {
+                    groupStr = typeStr;
+                  }
                 }
 
                 // Final cleanup: remove trailing " TD" or " TP" if present
