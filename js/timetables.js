@@ -345,7 +345,14 @@ async function renderTimetable(sheetName, archive = null) {
     const daysResponse = await fetch("../api/get_days.php");
     const liveDays = await daysResponse.json();
     const sundayLive = liveDays.find((d) => d.name === "Dimanche");
-    const isSundayActiveLive = sundayLive ? sundayLive.is_active == 1 : false;
+
+    // If archive, assume Sunday might be active/present. If live, check DB.
+    // For archives, we generally want to show the full grid structure standardly used.
+    let isSundayActiveLive = archive
+      ? true
+      : sundayLive
+        ? sundayLive.is_active == 1
+        : false;
 
     // 2. Fetch generation config for grid structure
     const configResponse = await fetch("../api/get_generation_config.php");
@@ -383,6 +390,30 @@ async function renderTimetable(sheetName, archive = null) {
     const response = await fetch(url);
     const timesTables = await response.json();
 
+    // If archive, hide Sunday if it's completely empty
+    if (archive && isSundayActiveLive) {
+      const sundayIndex = config.days.findIndex((d) => d.name === "Dimanche");
+      if (sundayIndex !== -1) {
+        let hasContent = false;
+        // Check all rows for actual content
+        if (Array.isArray(timesTables)) {
+          for (const row of timesTables) {
+            if (row && row[sundayIndex]) {
+              const val = String(row[sundayIndex]).trim();
+              // Check for non-empty and not just a placeholder 'x'
+              if (val !== "" && val !== "x") {
+                hasContent = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!hasContent) {
+          isSundayActiveLive = false;
+        }
+      }
+    }
+
     // Calculate displayed days count for grid
     const displayDaysCount = config.days.filter((day) => {
       if (day.name === "Dimanche" && !isSundayActiveLive) return false;
@@ -410,7 +441,9 @@ async function renderTimetable(sheetName, archive = null) {
         let cellContent = row[dayIndex] ?? "";
 
         // Handle inactive days OR inactive time slots from CONFIG (historical)
-        if (dayData.is_active == 0 || slot.is_active == 0) {
+        // CRITICAL FIX: If viewing an archive, we ignore the 'is_active' flag from the CURRENT config.
+        // We trust the Excel file content. Only force 'x' if using live view AND it's inactive.
+        if (!archive && (dayData.is_active == 0 || slot.is_active == 0)) {
           cellContent = "x";
         }
 
@@ -558,8 +591,15 @@ async function renderTimetable(sheetName, archive = null) {
     html += "</div>";
     timetableGrid.innerHTML = html;
 
-    // Fetch and display unscheduled classes
-    await renderUnscheduledClasses(sheetName);
+    // Fetch and display unscheduled classes (Only for live view)
+    const unscheduledSection = document.getElementById(
+      "unscheduledClassesSection",
+    );
+    if (!archive) {
+      await renderUnscheduledClasses(sheetName);
+    } else if (unscheduledSection) {
+      unscheduledSection.style.display = "none";
+    }
   } catch (error) {
     console.error("Error rendering timetable:", error);
     timetableGrid.innerHTML =
