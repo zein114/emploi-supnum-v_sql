@@ -213,6 +213,83 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             # Inverser la correspondance pour l'exportation (Index -> Code)
             Sous_Group_Index_To_Code = {v: k for k, v in Sous_Group_Code_Map.items()}
             
+            # Track unscheduled classes
+            unscheduled_classes = []
+            
+            # Check CM classes
+            for g in range(GP):
+                for j in range(J):
+                    scheduled = sum(X[g][j][k].solution_value() for k in range(K))
+                    required = Pcm[j][g]
+                    if required > 0 and scheduled < required:
+                        # Find group code
+                        group_code = None
+                        for code, idx in Group_Code_Map.items():
+                            if idx == g:
+                                group_code = code
+                                break
+                        
+                        prof = ProCM[j][0] if ProCM[j] else "Non assigné"
+                        unscheduled_classes.append({
+                            'group': Groupes_Principale[g],
+                            'group_code': group_code,
+                            'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j],
+                            'type': 'CM',
+                            'professor': prof,
+                            'required_sessions': int(required),
+                            'scheduled_sessions': int(scheduled),
+                            'missing_sessions': int(required - scheduled)
+                        })
+            
+            # Check TP classes
+            for g in range(GT):
+                for j in range(J):
+                    scheduled = sum(Y[g][j][k].solution_value() for k in range(K))
+                    required = Ptp[j][g]
+                    if required > 0 and scheduled < required:
+                        prof = ProTP[j][0] if ProTP[j] else "Non assigné"
+                        unscheduled_classes.append({
+                            'group': Sous_Groupes[g],
+                            'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                            'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j],
+                            'type': 'TP',
+                            'professor': prof,
+                            'required_sessions': int(required),
+                            'scheduled_sessions': int(scheduled),
+                            'missing_sessions': int(required - scheduled)
+                        })
+            
+            # Check TD classes
+            for g in range(GT):
+                for j in range(J):
+                    scheduled = sum(Z[g][j][k].solution_value() for k in range(K))
+                    required = Ptd[j][g]
+                    if required > 0 and scheduled < required:
+                        prof = ProTD[j][0] if ProTD[j] else "Non assigné"
+                        unscheduled_classes.append({
+                            'group': Sous_Groupes[g],
+                            'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                            'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j],
+                            'type': 'TD',
+                            'professor': prof,
+                            'required_sessions': int(required),
+                            'scheduled_sessions': int(scheduled),
+                            'missing_sessions': int(required - scheduled)
+                        })
+            
+            # Save unscheduled classes to JSON file
+            import json
+            unscheduled_file = os.path.join(output_dir, 'unscheduled_classes.json')
+            with open(unscheduled_file, 'w', encoding='utf-8') as f:
+                json.dump(unscheduled_classes, f, ensure_ascii=False, indent=2)
+            
+            print(f"Unscheduled classes: {len(unscheduled_classes)}")
+            if unscheduled_classes:
+                print("Warning: Some classes could not be scheduled!")
+            
             export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Group_Code_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days, time_slots)
             # Affichage des vars de décision (pour débogage)
             Xv = []  

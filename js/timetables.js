@@ -427,6 +427,9 @@ async function renderTimetable(sheetName) {
 
     html += "</div>";
     timetableGrid.innerHTML = html;
+
+    // Fetch and display unscheduled classes
+    await renderUnscheduledClasses(sheetName);
   } catch (error) {
     console.error("Error rendering timetable:", error);
     timetableGrid.innerHTML =
@@ -466,5 +469,97 @@ async function GenerateTimetables(btn) {
     Toast.error("Échec de la génération des emplois du temps.");
   } finally {
     if (typeof Spinner !== "undefined" && btn) Spinner.hide(btn);
+  }
+}
+
+async function renderUnscheduledClasses(sheetName) {
+  const unscheduledSection = document.getElementById(
+    "unscheduledClassesSection",
+  );
+  const unscheduledList = document.getElementById("unscheduledClassesList");
+
+  if (!unscheduledSection || !unscheduledList) return;
+
+  try {
+    const response = await fetch("../api/get_unscheduled_classes.php");
+    const allUnscheduled = await response.json();
+
+    // Filter for the current group
+    const groupUnscheduled = allUnscheduled.filter(
+      (item) => item.group === sheetName,
+    );
+
+    if (groupUnscheduled.length === 0) {
+      unscheduledSection.style.display = "none";
+      return;
+    }
+
+    // Display the unscheduled classes
+    let html = '<div class="grid grid-1 gap-2">';
+
+    groupUnscheduled.forEach((item) => {
+      const typeColor =
+        item.type === "CM"
+          ? "#FFE699"
+          : item.type === "TP"
+            ? "#C6E0B4"
+            : "#B4C7E7";
+
+      html += `
+        <div class="glass-card" style="padding: 1.5rem; border-left: 4px solid ${typeColor};">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+            <div style="flex: 1;">
+              <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">
+                [${item.subject_code}] ${item.subject}
+              </h4>
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap; color: var(--text-secondary); font-size: 0.9rem;">
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  ${item.professor}
+                </span>
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  ${item.group}
+                </span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span class="event-badge type-badge" style="background: ${typeColor}; color: #000; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: bold;">
+                ${item.type}
+              </span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Séances requises</div>
+              <div style="font-size: 1.25rem; font-weight: bold; color: var(--text-primary);">${item.required_sessions}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Séances programmées</div>
+              <div style="font-size: 1.25rem; font-weight: bold; color: var(--color-success);">${item.scheduled_sessions}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Séances manquantes</div>
+              <div style="font-size: 1.25rem; font-weight: bold; color: var(--color-danger);">${item.missing_sessions}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += "</div>";
+    unscheduledList.innerHTML = html;
+    unscheduledSection.style.display = "block";
+  } catch (error) {
+    console.error("Error loading unscheduled classes:", error);
+    unscheduledSection.style.display = "none";
   }
 }
