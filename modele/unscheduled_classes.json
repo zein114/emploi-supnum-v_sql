@@ -1,1 +1,57 @@
-[]
+[
+  {
+    "group": "RSS-L2",
+    "group_code": "17",
+    "subject": "Gestion d'enterprise",
+    "subject_code": "DPR313",
+    "type": "CM",
+    "professor": "El Bennany",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "RSS-L2",
+    "group_code": "17",
+    "subject": "Communication",
+    "subject_code": "DPR310",
+    "type": "CM",
+    "professor": "Dieynaba",
+    "required_sessions": 2,
+    "scheduled_sessions": 1,
+    "missing_sessions": 1
+  },
+  {
+    "group": "RSS-L2",
+    "group_code": "17",
+    "subject": "Anglais",
+    "subject_code": "DPR311",
+    "type": "CM",
+    "professor": "Blake",
+    "required_sessions": 2,
+    "scheduled_sessions": 1,
+    "missing_sessions": 1
+  },
+  {
+    "group": "RSS-L2",
+    "group_code": "17",
+    "subject": "Administration reseaux",
+    "subject_code": "RSS311",
+    "type": "CM",
+    "professor": "Aloun",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "TD1",
+    "group_code": "23",
+    "subject": "RO",
+    "subject_code": "DAS311",
+    "type": "TD",
+    "professor": "abderrahmane",
+    "required_sessions": 3,
+    "scheduled_sessions": 2,
+    "missing_sessions": 1
+  }
+]
