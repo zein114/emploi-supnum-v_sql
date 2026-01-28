@@ -180,6 +180,26 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     objectif.SetCoefficient(Y[g][j][k],1)
                     objectif.SetCoefficient(Z[g][j][k],1)
 
+        # PARTIE 2.5: PRÉFÉRENCES (SOFT CONSTRAINTS)
+        # Favoriser la cohérence des types de sessions pour les sous-groupes d'un même parent
+        # On préfère avoir TD1 + TD2 ou TP1 + TP2 au même créneau plutôt qu'un mélange (ex: TD1 + TP2)
+        for g_idx, sgs in GP_to_SG.items():
+            if len(sgs) > 1:
+                for k in range(K):
+                    # Bonus si TOUS les sous-groupes du parent g_idx font du TD au créneau k
+                    all_td_aligned = solver.BoolVar(f'all_td_aligned_g{g_idx}_k{k}')
+                    for sg_idx in sgs:
+                        # all_td_aligned <= sum(Z[sg_idx][j][k] for j in range(J))
+                        # Cela force all_td_aligned à 0 si l'un des sous-groupes n'a pas de TD
+                        solver.Add(all_td_aligned <= sum(Z[sg_idx][j][k] for j in range(J)))
+                    objectif.SetCoefficient(all_td_aligned, 0.1) # Petit bonus pour encourager l'alignement
+                    
+                    # Bonus si TOUS les sous-groupes du parent g_idx font du TP au créneau k
+                    all_tp_aligned = solver.BoolVar(f'all_tp_aligned_g{g_idx}_k{k}')
+                    for sg_idx in sgs:
+                         solver.Add(all_tp_aligned <= sum(Y[sg_idx][j][k] for j in range(J)))
+                    objectif.SetCoefficient(all_tp_aligned, 0.1)
+
         objectif.SetMaximization()
         # Résolution du problème
         status = solver.Solve()
