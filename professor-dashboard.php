@@ -165,7 +165,6 @@ $user = getCurrentUser();
                         Mettre à jour le mot de passe
                     </button>
                 </div>
-            </div>
         </div>
     </main>
 

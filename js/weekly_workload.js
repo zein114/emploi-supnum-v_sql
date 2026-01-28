@@ -96,7 +96,7 @@ function renderTable(data) {
         </td>
         <td class="status-col" style="text-align: center; width: 120px;">
             <button class="btn btn-secondary btn-sm" onclick="openExcludeModal(this, '${row.code}', '${row.nom}', '${row.semester}')" style="width: 100%;">
-                Exclure
+                spécifier
             </button>
         </td>
          <td class="status-col">
