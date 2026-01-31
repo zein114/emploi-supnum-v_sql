@@ -83,6 +83,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/login.css">
     <link rel="icon" type="image/png" href="assets/logo-supnum.png">
     <script src="js/spinner.js"></script>
+    <script>
+        try {
+            if (window.sessionStorage) {
+                sessionStorage.removeItem('dashboard_last_anim');
+            }
+        } catch (e) {
+        }
+    </script>
 </head>
 <body class="login-body">
     

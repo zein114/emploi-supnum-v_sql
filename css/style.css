@@ -1,5 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 /* ===== CSS Variables ===== */
 :root {
@@ -81,11 +80,29 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  /* Ensure main scrollbar is visible */
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
+}
+
+/* Hide scrollbars for everything else */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: block;
 }
 
 body {
   font-family:
-    "Montserrat",
+    "Plus Jakarta Sans",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
@@ -541,10 +558,9 @@ textarea {
   display: grid;
   grid-template-columns: 100px repeat(7, 1fr);
   gap: 1px; /* Sharper grid lines */
-  background: var(--border-color);
+  background: var(--border-color); /* Internal borders via gap */
   border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--border-color);
+  /* overflow: hidden; removed to allow sticky headers to work */
   min-width: 1000px; /* Ensure columns don't shrink too much */
 }
 
@@ -567,6 +583,25 @@ textarea {
   letter-spacing: 0.5px;
   padding: 12px 8px;
   min-height: 60px;
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.sticky-column {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: var(
+    --color-bg-card
+  ); /* Ensure it has background to cover cells behind */
+}
+
+.sticky-header.sticky-column {
+  z-index: 15; /* Top-left corner cell should be above everything */
 }
 
 .timetable-cell {
@@ -622,9 +657,12 @@ textarea {
   border-bottom-left-radius: 0;
 }
 
-.event-card:hover {
-  background: rgba(255, 255, 255, 0.02);
+.timetable-cell:hover .event-card {
+  background: rgba(255, 255, 255, 0.04);
 }
+
+/* Specific hover on card to make it slightly brighter if needed, or just let cell handle it */
+/* For now, removing the individual card hover to unify them as requested */
 
 .event-header {
   display: flex;

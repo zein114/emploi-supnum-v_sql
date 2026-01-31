@@ -1,28 +1,322 @@
-/* Index / Student Portal Specific Styles */
+/* Modern Index / Student Portal Styles - Aligned with Login Page */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: var(--color-bg-main);
+  color: var(--text-primary);
+}
 
 .student-main {
-  padding: 3rem 0;
+  display: flex;
   min-height: 100vh;
+  width: 100%;
+}
+
+/* Left Side: Content */
+.content-side {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  z-index: 2;
+  width: 100%;
+  background-color: var(--color-bg-main);
 }
 
-.welcome-header {
-  padding: 3rem;
-  margin-bottom: 2rem;
+.content-wrapper {
+  width: 100%;
+  max-width: 320px;
+  text-align: left;
+  margin: 0 auto;
 }
 
-.welcome-icon {
-  font-size: 3rem;
-  color: var(--color-primary-blue);
+/* Branding */
+.logo-container {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.logo-img {
+  width: 100px;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .welcome-title {
-  margin-top: 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.welcome-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Form Styles - Matching Login.php inputs */
+.form-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+/* Remove bottom margin from form groups to match login page */
+.form-group {
   margin-bottom: 0;
 }
 
-.form-card {
-  padding: 2.5rem;
+/* Dropdown overrides to match login input style */
+.dropdown-button {
+  background: var(--color-bg-section) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 10px !important;
+  padding: 0.75rem 1rem !important;
+  color: var(--text-primary) !important;
+  font-size: 0.9rem !important;
+}
+
+.dropdown-button:hover:not(:disabled) {
+  border-color: var(--color-primary-blue) !important;
+}
+
+.dropdown-button:disabled {
+  opacity: 0.5;
+  background: var(--color-bg-main) !important;
+}
+
+/* Primary Button - Matching btn-login */
+.btn-submit {
+  background: var(--color-primary-blue);
+  color: white;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+  text-align: center;
+  margin-top: 0.25rem;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: var(--color-primary-blue-dark);
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Right Side: Image with cutout */
+.image-side {
+  flex: 2; /* Balanced proportions */
+  position: relative;
+  padding: 1rem;
+  display: flex;
+  align-items: stretch;
+}
+
+.image-container-cutout {
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Image Overlay text - minimal like login */
+.image-overlay-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 3rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: white;
+  pointer-events: none;
+}
+
+.image-overlay-content h2 {
+  font-size: 1.5rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Timetable Container - Full screen dark overlay */
+#timetableContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(
+    17,
+    17,
+    17,
+    0.6
+  ); /* Slightly more transparent for glass feel */
+  backdrop-filter: blur(15px);
+  z-index: 1000;
+  /* Flexbox for centering */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Animation Start State */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(100%);
+  transition:
+    transform 0.6s cubic-bezier(0.19, 1, 0.22, 1),
+    opacity 0.6s cubic-bezier(0.19, 1, 0.22, 1),
+    visibility 0.6s step-end; /* Delay visibility hidden until animation ends */
+}
+
+/* Active State for Animation */
+#timetableContainer.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition:
+    transform 0.6s cubic-bezier(0.19, 1, 0.22, 1),
+    opacity 0.6s cubic-bezier(0.19, 1, 0.22, 1),
+    visibility 0s; /* Immediate visibility on show */
+}
+
+/* Content wrapper logic for centering and full height support */
+#timetableContainer .container {
+  width: 100%;
+  max-width: 95%; /* Use more width */
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 0; /* Reduced padding */
+  box-sizing: border-box;
+  transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1) 0.1s; /* Slight delay for content */
+  transform: translateY(20px);
+}
+
+#timetableContainer.show .container {
+  transform: translateY(0);
+}
+
+#timetableContainer .glass-card {
+  max-height: 90vh; /* Leave space for close button and padding */
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem; /* Compact padding */
+  /* Ensure the card itself doesn't overflow without scrolling */
+  overflow: hidden;
+}
+
+/* Scrollbar Hiding Logic */
+.table-container-scroll {
+  overflow-y: auto;
+  overflow-x: auto;
+  flex: 1; /* Take remaining space */
+  overscroll-behavior: contain;
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.table-container-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure any other scrollable areas in the modal also follow this */
+#timetableContainer * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#timetableContainer *::-webkit-scrollbar {
+  display: none;
+}
+
+.timetable-close-btn {
+  position: absolute; /* Changed from fixed to absolute relative to container or just place it smartly */
+  right: 2rem; /* Keep it fixed in top right of screen or card? User said "Fermer button" */
+  top: 1rem;
+  position: fixed; /* Keep it fixed so it is always accessible */
+  z-index: 1001;
+  background: var(--color-bg-section);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .image-side {
+    flex: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .student-main {
+    flex-direction: column;
+  }
+
+  .content-side {
+    max-width: 100%;
+    padding: 4rem 2rem;
+    order: 2;
+  }
+
+  .image-side {
+    display: none; /* Hide the image on mobile */
+  }
+
+  .content-side {
+    min-height: 100vh; /* Ensure content fills the viewport */
+  }
 }

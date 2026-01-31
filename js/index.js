@@ -178,7 +178,8 @@ timetableForm.addEventListener("submit", async function (e) {
 
   try {
     await renderTimetable(sheetName);
-    timetableContainer.style.display = "block";
+    // Use class for animation
+    timetableContainer.classList.add("show");
   } catch (error) {
     console.error("Error loading Time Tables:", error);
   } finally {
@@ -238,15 +239,16 @@ async function renderTimetable(sheetName) {
     let html = `<div class="timetable-grid" style="grid-template-columns: 100px repeat(${displayDaysCount}, 1fr);">`;
 
     // Header row
-    html += '<div class="timetable-header">Heure</div>';
+    html +=
+      '<div class="timetable-header sticky-header sticky-column">Heure</div>';
     config.days.forEach((dayData) => {
       if (dayData.name === "Dimanche" && !isSundayActiveLive) return;
-      html += `<div class="timetable-header">${dayData.name}</div>`;
+      html += `<div class="timetable-header sticky-header">${dayData.name}</div>`;
     });
 
     // Time slots from config
     config.time_slots.forEach((slot, slotIndex) => {
-      html += `<div class="timetable-header">${slot.time_range}</div>`;
+      html += `<div class="timetable-header sticky-column">${slot.time_range}</div>`;
 
       const row = timesTables[slotIndex] || [];
 
@@ -409,4 +411,26 @@ async function renderTimetable(sheetName) {
     timetableGrid.innerHTML =
       '<div style="padding: 2rem; text-align: center; color: var(--color-danger);">Erreur lors du chargement des données de l\'emploi du temps.</div>';
   }
+}
+
+// Close Timetable Logic
+// Note: timetableContainer is already declared at the top of the file
+const closeBtn = document.getElementById("closeTimetable");
+if (closeBtn) {
+  closeBtn.addEventListener("click", () => {
+    timetableContainer.classList.remove("show");
+  });
+}
+
+if (timetableContainer) {
+  timetableContainer.addEventListener("click", (e) => {
+    // Check if clicking the backdrop (container or the wrapper div with padding)
+    // The glass-card is the content we want to keep open
+    if (
+      e.target === timetableContainer ||
+      e.target.classList.contains("container")
+    ) {
+      timetableContainer.classList.remove("show");
+    }
+  });
 }
