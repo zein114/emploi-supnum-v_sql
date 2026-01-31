@@ -18,6 +18,7 @@ $user = getCurrentUser();
     <link rel="stylesheet" href="css/style.css?v=<?= time() ?>">
     <link rel="stylesheet" href="css/professor-dashboard.css?v=<?= time() ?>">
     <link rel="icon" type="image/png" href="assets/logo-supnum.png">
+    <script src="js/theme-switcher.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -31,7 +32,7 @@ $user = getCurrentUser();
                 <div class="flex items-center gap-2">
                     <span class="text-muted">Bienvenue, <strong><?= htmlspecialchars($user['username']) ?></strong></span>
                     <span class="badge badge-primary">Professeur</span>
-                    <a href="logout.php" class="btn btn-secondary btn-sm">
+                    <a href="logout" class="btn btn-secondary btn-sm">
                         <svg style="width: 1em; height: 1em; vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         Déconnexion
                     </a>

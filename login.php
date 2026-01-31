@@ -11,9 +11,9 @@ $password_error = '';
 // Redirect if already logged in
 if (isLoggedIn()) {
     if (hasRole('professor')) {
-        header('Location: professor-dashboard.php');
+        header('Location: professor-dashboard');
     } elseif (hasRole('admin')) {
-        header('Location: admin/dashboard.php');
+        header('Location: admin/dashboard');
     }
     exit();
 }
@@ -57,9 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Redirect based on role
                 if ($user['role'] === 'professor') {
-                    header('Location: professor-dashboard.php');
+                    header('Location: professor-dashboard');
                 } else {
-                    header('Location: admin/dashboard.php');
+                    header('Location: admin/dashboard');
                 }
                 exit();
             } else {
@@ -82,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/login.css">
     <link rel="icon" type="image/png" href="assets/logo-supnum.png">
+    <script src="js/theme-switcher.js"></script>
     <script src="js/spinner.js"></script>
     <script>
         try {

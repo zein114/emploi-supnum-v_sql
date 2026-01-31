@@ -11,6 +11,7 @@ require_once 'config/db_connect.php';
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/index.css">
     <link rel="icon" type="image/png" href="assets/logo-supnum.png">
+    <script src="js/theme-switcher.js"></script>
 </head>
 <body>
 

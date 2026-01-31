@@ -17,6 +17,7 @@ $user = getCurrentUser();
     <link rel="stylesheet" href="../css/admin-sidebar.css">
     <link rel="stylesheet" href="../css/users.css">
     <link rel="icon" type="image/png" href="../assets/logo-supnum.png">
+    <script src="../js/theme-switcher.js"></script>
 </head>
 <body>
     <div class="admin-layout">
