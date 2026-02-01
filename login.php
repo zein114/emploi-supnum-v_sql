@@ -2,6 +2,10 @@
 require_once 'config/db_connect.php';
 require_once 'includes/session.php';
 
+if (isset($_GET['switch'])) {
+    setcookie('user_role', 'admin', time() + (30 * 24 * 60 * 60), '/');
+}
+
 // Initialize error variable to prevent undefined variable warning
 $error = '';
 
@@ -94,6 +98,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/login.css">
     <link rel="icon" type="image/png" href="assets/logo-supnum.png">
     <script src="js/theme-switcher.js"></script>
+    <style>
+        .role-switch-btn {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 9999;
+            background: var(--color-bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .role-switch-btn:hover .arrow-right {
+            transform: translateX(3px);
+        }
+        .role-switch-btn:hover .arrow-left {
+            transform: translateX(-3px);
+        }
+        .role-switch-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        .role-switch-btn svg path {
+            transition: transform 0.3s ease;
+        }
+    </style>
     <script src="js/spinner.js"></script>
     <script>
         try {
@@ -105,6 +143,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body class="login-body">
+    <a href="timetable?switch=1" class="role-switch-btn" title="Changer de rôle (Étudiant)">
+        <svg class="swap-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path class="arrow-right" stroke-linecap="round" stroke-linejoin="round" d="M17 11l4-4-4-4m4 4H7" />
+            <path class="arrow-left" stroke-linecap="round" stroke-linejoin="round" d="M7 13l-4 4 4 4m-4-4h14" />
+        </svg>
+        <span>Changer de rôle</span>
+    </a>
     
     <div class="login-container">
         <!-- Left Side: Form -->
