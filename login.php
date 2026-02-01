@@ -15,9 +15,9 @@ $password_error = '';
 // Redirect if already logged in
 if (isLoggedIn()) {
     if (hasRole('professor')) {
-        header('Location: professor-dashboard');
+        header('Location: professor-dashboard.php');
     } elseif (hasRole('admin')) {
-        header('Location: admin/dashboard');
+        header('Location: admin/dashboard.php');
     }
     exit();
 }
@@ -72,9 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Redirect based on role
                 if ($user['role'] === 'professor') {
-                    header('Location: professor-dashboard');
+                    header('Location: professor-dashboard.php');
                 } else {
-                    header('Location: admin/dashboard');
+                    header('Location: admin/dashboard.php');
                 }
                 exit();
             } else {
@@ -143,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body class="login-body">
-    <a href="timetable?switch=1" class="role-switch-btn" title="Changer de rôle (Étudiant)">
+    <a href="timetable.php?switch=1" class="role-switch-btn" title="Changer de rôle (Étudiant)">
         <svg class="swap-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path class="arrow-right" stroke-linecap="round" stroke-linejoin="round" d="M17 11l4-4-4-4m4 4H7" />
             <path class="arrow-left" stroke-linecap="round" stroke-linejoin="round" d="M7 13l-4 4 4 4m-4-4h14" />

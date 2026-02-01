@@ -52,7 +52,7 @@ if (isset($_GET['switch'])) {
     </style>
 </head>
 <body>
-    <a href="login?switch=1" class="role-switch-btn" title="Changer de rôle (Administration)">
+    <a href="login.php?switch=1" class="role-switch-btn" title="Changer de rôle (Administration)">
         <svg class="swap-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path class="arrow-right" stroke-linecap="round" stroke-linejoin="round" d="M17 11l4-4-4-4m4 4H7" />
             <path class="arrow-left" stroke-linecap="round" stroke-linejoin="round" d="M7 13l-4 4 4 4m-4-4h14" />
