@@ -665,7 +665,6 @@ textarea {
 
 .timetable-header,
 .timetable-cell {
-  background: var(--color-bg-section);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -707,9 +706,9 @@ textarea {
   cursor: pointer;
   position: relative;
   min-height: 120px;
-  padding: 0;
+  padding: 1rem;
   gap: 0;
-  align-items: stretch; /* Critical: ensures cards fill width */
+  align-items: stretch;
 }
 
 .timetable-cell:hover {
@@ -717,7 +716,7 @@ textarea {
 }
 
 .timetable-cell.active-cell {
-  background: var(--color-bg-section);
+  background: var(--color-bg-card);
 }
 
 .timetable-cell.inactive {
@@ -729,16 +728,20 @@ textarea {
 /* Event Card Style */
 .event-card {
   width: 100%;
-  /* Default radius */
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  padding: 8px 4px; /* More vertical padding for spacing inside */
+  padding: 8px 4px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border-left: 4px solid transparent; /* Slightly thicker sidebar */
+  border-left: 4px solid transparent;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+  background-color: var(--color-bg-section) !important;
   background: transparent;
   flex-grow: 1;
-  justify-content: center; /* Center internal content */
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 /* Merging logic for stacked cards */
@@ -751,13 +754,17 @@ textarea {
 /* If it's a middle card or connecting side, remove radius to make bar continuous */
 .timetable-cell .event-card:not(:first-child) {
   border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: 0;
 }
 .timetable-cell .event-card:not(:last-child) {
   border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: 0;
 }
 
 .timetable-cell:hover .event-card {
-  background: var(--color-event-hover);
+  background: var(--color-event-hover) !important;
 }
 
 /* Specific hover on card to make it slightly brighter if needed, or just let cell handle it */

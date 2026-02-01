@@ -170,8 +170,8 @@ body {
   left: 0;
   width: 100%;
   padding: 3rem;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-  color: white;
+  background: linear-gradient(to top, var(--color-bg-main) 0%, transparent 100%);
+  color: var(--text-primary);
   pointer-events: none;
 }
 

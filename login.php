@@ -53,6 +53,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Set cookie for 30 days
                     setcookie('remember_token', $user['id'] . ':' . $token, time() + (86400 * 30), "/");
+                } else {
+                    // Clear remember token in database for this user
+                    $update_stmt = $conn->prepare("UPDATE users SET remember_token = NULL WHERE id = ?");
+                    $update_stmt->bind_param('i', $user['id']);
+                    $update_stmt->execute();
+                    $update_stmt->close();
+
+                    // Clear cookie if it exists
+                    if (isset($_COOKIE['remember_token'])) {
+                        setcookie('remember_token', '', time() - 3600, "/");
+                    }
                 }
 
                 // Redirect based on role
@@ -160,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="login-options">
                     <label class="remember-me">
-                        <input type="checkbox" name="remember" style="display: none;">
+                        <input type="checkbox" name="remember" id="remember" style="position: absolute; opacity: 0; width: 0; height: 0;">
                         <span class="checkbox-custom">
                             <svg style="width: 1em; height: 1em; vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
                         </span>

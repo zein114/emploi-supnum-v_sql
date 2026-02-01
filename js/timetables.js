@@ -116,17 +116,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       "archiveDropdownItems",
     );
     if (archiveItemsContainer) {
-      let html =
-        '<div class="dropdown-item" data-value="live">Emploi du temps actuel</div>';
+      const sourceBtn = document.querySelector(
+        '[data-dropdown-id="adminSourceSelect"]',
+      );
+      const currentValue = sourceBtn
+        ? sourceBtn.getAttribute("data-value")
+        : "live";
+
+      let html = `<div class="dropdown-item ${currentValue === "live" ? "selected" : ""}" data-value="live">Emploi du temps actuel</div>`;
+
       allArchives.forEach((archive) => {
-        html += `<div class="dropdown-item" data-value="${archive.filename}" data-search-date="${archive.searchDate}" data-display-date="${archive.date}">${archive.displayName}</div>`;
+        const isSelected = currentValue === archive.filename ? "selected" : "";
+        html += `<div class="dropdown-item ${isSelected}" data-value="${archive.filename}" data-search-date="${archive.searchDate}" data-display-date="${archive.date}">${archive.displayName}</div>`;
       });
       archiveItemsContainer.innerHTML = html;
 
       // Re-attach event listeners for new items
-      const sourceBtn = document.querySelector(
-        '[data-dropdown-id="adminSourceSelect"]',
-      );
       const sourceMenu = document.getElementById("adminSourceOptionsMenu");
       if (sourceBtn && sourceMenu) {
         archiveItemsContainer

@@ -11,6 +11,16 @@ class CustomDropdown {
       const menu = container.querySelector(".dropdown-menu");
       const items = menu.querySelectorAll(".dropdown-item");
 
+      // Initial selection state
+      const initialValue = button.getAttribute("data-value");
+      if (initialValue) {
+        items.forEach((item) => {
+          if (item.getAttribute("data-value") === initialValue) {
+            item.classList.add("selected");
+          }
+        });
+      }
+
       // Toggle dropdown
       button.addEventListener("click", (e) => {
         if (
@@ -105,18 +115,22 @@ class CustomDropdown {
 
     // Re-attach listeners
     const newItems = menu.querySelectorAll(".dropdown-item");
+    const currentValue = button.getAttribute("data-value");
+
     newItems.forEach((item) => {
+      // Mark as selected if it matches current value
+      if (currentValue && item.getAttribute("data-value") === currentValue) {
+        item.classList.add("selected");
+      }
+
       item.addEventListener("click", (e) => {
         e.stopPropagation();
         this.selectItem(button, menu, item);
       });
     });
 
-    // Reset selection
-    const textElement = button.querySelector(".dropdown-text");
-    // textElement.textContent = "Select Option..."; // Keep existing text or reset? Logic varies.
-    // user usually changes text manually if needed.
-    button.removeAttribute("data-value");
+    // If current value is no longer in the menu, you might want to reset it,
+    // but often it's better to keep it until the user changes it or we explicitly reset.
   }
 
   // Bind dropdowns in a specific container (e.g., Modal)
