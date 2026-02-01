@@ -38,8 +38,8 @@ if (isset($_COOKIE['user_role'])) {
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background-color: #111111;
-            color: #7a7a7aff;
+            background-color: var(--color-bg-main);
+            color: var(--text-muted);
             font-family: 'Plus Jakarta Sans', sans-serif;
             overflow: hidden;
         }
@@ -75,8 +75,8 @@ if (isset($_COOKIE['user_role'])) {
             justify-content: center;
             gap: 2rem;
             padding: 4.5rem 2rem;
-            background: #181818;
-            border: 1px solid #30333a;
+            background: var(--color-bg-card);
+            border: 1px solid var(--border-color);
             border-radius: 1.5rem;
             cursor: pointer;
             text-decoration: none;
@@ -90,7 +90,7 @@ if (isset($_COOKIE['user_role'])) {
             content: '';
             position: absolute;
             inset: 0;
-            border: 2px solid #3b5ccc;
+            border: 2px solid var(--color-primary-blue);
             border-radius: inherit;
             clip-path: inset(0 100% 0 0);
             transition: clip-path 0.5s ease-in-out;
@@ -112,11 +112,11 @@ if (isset($_COOKIE['user_role'])) {
         .btn-icon-wrapper svg {
             width: 100%;
             height: 100%;
-            fill: #7a7a7aff;
+            fill: var(--text-muted);
         }
 
         .btn-icon-wrapper svg#_x32_ path {
-            fill: #7a7a7aff !important;
+            fill: var(--text-muted) !important;
         }
 
         .btn-label {
