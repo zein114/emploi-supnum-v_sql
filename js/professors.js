@@ -178,7 +178,7 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
       // Init Dropdowns
       if (window.customDropdown) {
         window.customDropdown.initContainer(
-          document.getElementById("modalBody")
+          document.getElementById("modalBody"),
         );
       }
 
@@ -190,12 +190,12 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
       // Fetch Groups
       try {
         const response = await fetch(
-          "../api/get_all_groups_with_excel_file.php"
+          "../api/get_all_groups_with_excel_file.php",
         );
         const groups = await response.json();
 
         const groupBtn = document.querySelector(
-          '[data-dropdown-id="groupSelect"]'
+          '[data-dropdown-id="groupSelect"]',
         );
         const groupText = groupBtn.querySelector(".dropdown-text");
 
@@ -206,7 +206,7 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
           let html = "";
           groups.forEach((group) => {
             html += `<div class="dropdown-item" data-value="${group[0]}">${
-              group[1] + " - S" + group[2]
+              group[1] + " - " + group[2]
             }</div>`;
           });
           window.customDropdown.updateMenu("groupSelect", html);
@@ -224,7 +224,7 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
         const modules = await response.json();
 
         const moduleBtn = document.querySelector(
-          '[data-dropdown-id="moduleSelect"]'
+          '[data-dropdown-id="moduleSelect"]',
         );
         const moduleText = moduleBtn.querySelector(".dropdown-text");
 
@@ -235,13 +235,7 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
           let html = "";
           modules.forEach((module) => {
             html += `<div class="dropdown-item" data-value="${module[0]}">${
-              module[0] +
-              " - " +
-              module[1] +
-              " - " +
-              module[2] +
-              " - S" +
-              module[3]
+              module[0] + " - " + module[1]
             }</div>`;
           });
           window.customDropdown.updateMenu("moduleSelect", html);
@@ -252,7 +246,7 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
         console.error("Error loading modules:", error);
         Toast.error("Échec du chargement des modules.");
       }
-    }
+    },
   );
 }
 
@@ -265,7 +259,7 @@ async function openProfessorAssignmentsModal(prof_id, btn) {
   if (typeof Spinner !== "undefined" && btn) Spinner.show(btn);
   try {
     const response = await fetch(
-      `../api/get_professor_assignments.php?prof_id=${prof_id}`
+      `../api/get_professor_assignments.php?prof_id=${prof_id}`,
     );
     const assignments = await response.json();
 
@@ -336,7 +330,7 @@ async function openProfessorAssignmentsModal(prof_id, btn) {
                       group_id: groupId,
                       assignment_type: assignmentType,
                     }),
-                  }
+                  },
                 );
 
                 const result = await response.json();
@@ -355,7 +349,9 @@ async function openProfessorAssignmentsModal(prof_id, btn) {
                     Modal.close();
                   }
                 } else {
-                  Toast.error(result.error || "Échec de la suppression de l'attribution.");
+                  Toast.error(
+                    result.error || "Échec de la suppression de l'attribution.",
+                  );
                   removeBtn.disabled = false;
                 }
               } catch (error) {
@@ -388,7 +384,7 @@ async function submitAddAssignments() {
   const groupBtn = document.querySelector('[data-dropdown-id="groupSelect"]');
   const moduleBtn = document.querySelector('[data-dropdown-id="moduleSelect"]');
   const assignmentTypeBtn = document.querySelector(
-    '[data-dropdown-id="assignmentType"]'
+    '[data-dropdown-id="assignmentType"]',
   );
 
   const groupId = groupBtn ? groupBtn.getAttribute("data-value") : null;
@@ -428,10 +424,13 @@ async function submitAddAssignments() {
     if (result.success) {
       closeProfessorAddAssignmentsModal();
       loadProfessors();
-      Toast.success("Succès", "Attributions du professeur ajoutées avec succès.");
+      Toast.success(
+        "Succès",
+        "Attributions du professeur ajoutées avec succès.",
+      );
     } else {
       Toast.error(
-        result.error || "Échec de l'ajout des attributions du professeur."
+        result.error || "Échec de l'ajout des attributions du professeur.",
       );
     }
   } catch (error) {
