@@ -46,6 +46,21 @@ $user = getCurrentUser();
                     <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
                         <h3 class="text-lg font-semibold" style="margin: 0; flex-grow: 1;">Charges par module</h3>
                         <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="dropdown-container" style="min-width: 220px; margin-bottom: 0;">
+                                <button type="button" class="dropdown-button" id="semesterFilterBtn" data-dropdown-id="semesterFilter" data-value="all">
+                                    <span class="dropdown-text">Tous les semestres</span>
+                                    <div class="dropdown-arrow"></div>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-item selected" data-value="all">Tous les semestres</div>
+                                    <div class="dropdown-item" data-value="1">Semestre 1</div>
+                                    <div class="dropdown-item" data-value="2">Semestre 2</div>
+                                    <div class="dropdown-item" data-value="3">Semestre 3</div>
+                                    <div class="dropdown-item" data-value="4">Semestre 4</div>
+                                    <div class="dropdown-item" data-value="5">Semestre 5</div>
+                                    <div class="dropdown-item" data-value="6">Semestre 6</div>
+                                </div>
+                            </div>
                             <input type="text" id="searchInput" placeholder="Rechercher par code ou nom..." class="search-input" style="min-width: 250px;">
                         </div>
                     </div>

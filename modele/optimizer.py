@@ -29,7 +29,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # PARTIE 1: IMPORTATION DES DONNÉES 
         # Def table des matiers 
         
-        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Code_Map, Matiere_Codes, All_Rooms, Semester_Of_Group = load_data(input_file, K, days, time_slots)
+        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Code_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp = load_data(input_file, K, days, time_slots)
         
         # PARTIE 2: MODELE: IMPLEMENTATION ET RESOLUTION 
         solver = pywraplp.Solver.CreateSolver('CBC')
@@ -39,27 +39,36 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         Y = [[[solver.IntVar(0, 1, 'Y'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TP
         Z = [[[solver.IntVar(0, 1, 'Z'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TD
         
+        # Nouvelles variables pour Online
+        W = [[[solver.IntVar(0, 1, 'W'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GP)]  # CM Online
+        U_TD = [[[solver.IntVar(0, 1, 'U_TD'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TD Online
+        U_TP = [[[solver.IntVar(0, 1, 'U_TP'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TP Online
+        
 
         # Contraintes1: Pour assurer que la charge de chaque matière pour chaque groupe sera dispensé complètement 
         # CM
+        # CM & Online Main
         for g in range(GP):
             for j in range(J):
                 solver.Add(sum(X[g][j][k] for k in range(K)) <= Pcm[j][g]) 
-        # TP et TD
+                solver.Add(sum(W[g][j][k] for k in range(K)) <= Pon[j][g])
+        # TP et TD & Online Sub
         for g in range(GT):
             for j in range(J):  
                 solver.Add(sum(Y[g][j][k] for k in range(K)) <= Ptp[j][g])
                 solver.Add(sum(Z[g][j][k] for k in range(K)) <= Ptd[j][g])
+                solver.Add(sum(U_TD[g][j][k] for k in range(K)) <= Son_td[j][g])
+                solver.Add(sum(U_TP[g][j][k] for k in range(K)) <= Son_tp[j][g])
         
         # Contraintes 2: Un groupe ne peut avoir qu'une seule séance dans un créneau précis
         for g in range(GP):
             for k in range(K):
-                solver.Add(sum(X[g][j][k] for j in range(J)) <= 1)
+                solver.Add(sum(X[g][j][k] + W[g][j][k] for j in range(J)) <= 1)
 
         # Contraintes 2b: Un sous-groupe ne peut avoir qu'une seule séance dans un créneau précis
         for g in range(GT):
              for k in range(K):
-                 solver.Add(sum(Y[g][j][k] + Z[g][j][k] for j in range(J)) <= 1)
+                 solver.Add(sum(Y[g][j][k] + Z[g][j][k] + U_TD[g][j][k] + U_TP[g][j][k] for j in range(J)) <= 1)
 
         # Contraintes 3: Disponibilité du local : le nombre de séances en parallèles ne doit pas dépasser le nombre de salles
         for k in range(K):
@@ -89,12 +98,12 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         for g in range(GP):
             for k in range(K):
                 # Variable binaire: Est-ce que le groupe principal 'g' a cours au créneau 'k' ?
-                main_active = sum(X[g][j][k] for j in range(J))
+                main_active = sum(X[g][j][k] + W[g][j][k] for j in range(J))
                 
                 # Pour chaque sous-groupe associé
                 for sg in GP_to_SG[g]:
                     # Variable binaire: Est-ce que le sous-groupe 'sg' a cours au créneau 'k' ?
-                    sub_active = sum(Y[sg][j][k] + Z[sg][j][k] for j in range(J))
+                    sub_active = sum(Y[sg][j][k] + Z[sg][j][k] + U_TD[sg][j][k] + U_TP[sg][j][k] for j in range(J))
                     
                     # Exclusion mutuelle : Soit le parent, soit le sous-groupe, soit aucun. Pas les deux.
                     solver.Add(main_active + sub_active <= 1)
@@ -108,7 +117,10 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     except:
                         # Si s n'est pas un nombre, supposer que l'enseignant n'est pas disponible
                         s = 0
-                    solver.Add(sum(X[h[1]][h[0]][k] for h in Ccm[i]) + sum(Y[h[1]][h[0]][k] for h in Ctp[i]) + sum(Z[h[1]][h[0]][k] for h in Ctd[i]) <= s)
+                    solver.Add(
+                        sum(X[h[1]][h[0]][k] + W[h[1]][h[0]][k] for h in Ccm[i]) + 
+                        sum(Y[h[1]][h[0]][k] + U_TP[h[1]][h[0]][k] for h in Ctp[i]) + 
+                        sum(Z[h[1]][h[0]][k] + U_TD[h[1]][h[0]][k] for h in Ctd[i]) <= s)
 
         
         # Contraintes 7 : La charge d'une matière doit être dispensée par le prof associé  
@@ -116,19 +128,19 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             for h in Ccm[i]:
                 g = h[1]
                 j = h[0]
-                solver.Add(sum(X[g][j][k] for k in range(K)) <= Pcm[j][g]) 
+                solver.Add(sum(X[g][j][k] + W[g][j][k] for k in range(K)) <= Pcm[j][g] + Pon[j][g]) 
                 
         for i in range(I):
             for h in Ctp[i]:
                 g = h[1]
                 j = h[0]
-                solver.Add(sum(Y[g][j][k] for k in range(K)) <= Ptp[j][g])
+                solver.Add(sum(Y[g][j][k] + U_TP[g][j][k] for k in range(K)) <= Ptp[j][g] + Son_tp[j][g])
         
         for i in range(I):
             for h in Ctd[i]:
                 g = h[1]
                 j = h[0]
-                solver.Add(sum(Z[g][j][k] for k in range(K)) <= Ptd[j][g]) 
+                solver.Add(sum(Z[g][j][k] + U_TD[g][j][k] for k in range(K)) <= Ptd[j][g] + Son_td[j][g]) 
 
 
 
@@ -150,15 +162,18 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                      k_idx = d_idx * num_slots_per_day + s_idx
                      if k_idx < K:
                          # Forcer toutes les variables à 0 pour ce créneau k
-                         # CM
+                         # CM & CM Online
                          for g in range(GP):
                              for j in range(J):
                                  solver.Add(X[g][j][k_idx] == 0)
-                         # TP/TD
+                                 solver.Add(W[g][j][k_idx] == 0)
+                         # TP/TD & TD/TP Online
                          for g in range(GT):
                              for j in range(J):
                                  solver.Add(Y[g][j][k_idx] == 0)
                                  solver.Add(Z[g][j][k_idx] == 0)
+                                 solver.Add(U_TD[g][j][k_idx] == 0)
+                                 solver.Add(U_TP[g][j][k_idx] == 0)
 
 
 
@@ -167,18 +182,21 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # Maximisation de la charge totale effectuée
         objectif = solver.Objective()
 
-        # CM
+        # CM & Online Main
         for g in range(GP):
             for j in range(J):
                 for k in range(K):
                     objectif.SetCoefficient(X[g][j][k],1)
+                    objectif.SetCoefficient(W[g][j][k],1)
 
-        # TP et TD
+        # TP, TD & Online Sub
         for g in range(GT):
             for j in range(J):
                 for k in range(K):
                     objectif.SetCoefficient(Y[g][j][k],1)
                     objectif.SetCoefficient(Z[g][j][k],1)
+                    objectif.SetCoefficient(U_TD[g][j][k],1)
+                    objectif.SetCoefficient(U_TP[g][j][k],1)
 
         # PARTIE 2.5: PRÉFÉRENCES (SOFT CONSTRAINTS)
         # Favoriser la cohérence des types de sessions pour les sous-groupes d'un même parent
@@ -208,7 +226,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             print('Solution optimale trouvée !')
             
             # PARTIE 3 : EXPORTATION DES RÉSULTATS 
-            solver_results = (X, Y, Z)
+            solver_results = (X, Y, Z, W, U_TD, U_TP)
             
             # Inverser la correspondance pour l'exportation (Index -> Code)
             Sous_Group_Index_To_Code = {v: k for k, v in Sous_Group_Code_Map.items()}
@@ -241,6 +259,27 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                             'scheduled_sessions': int(scheduled),
                             'missing_sessions': int(required - scheduled)
                         })
+
+                    # Check Online Main
+                    scheduled_onl = sum(W[g][j][k].solution_value() for k in range(K))
+                    required_onl = Pon[j][g]
+                    if required_onl > 0 and scheduled_onl < required_onl:
+                         group_code = None
+                         for code, idx in Group_Code_Map.items():
+                            if idx == g:
+                                group_code = code
+                                break
+                         unscheduled_classes.append({
+                            'group': Groupes_Principale[g],
+                            'group_code': group_code,
+                            'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j],
+                            'type': 'CM Online',
+                            'professor': ProCM[j][0] if ProCM[j] else "En ligne",
+                            'required_sessions': int(required_onl),
+                            'scheduled_sessions': int(scheduled_onl),
+                            'missing_sessions': int(required_onl - scheduled_onl)
+                         })
             
             # Check TP classes
             for g in range(GT):
@@ -279,6 +318,38 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                             'scheduled_sessions': int(scheduled),
                             'missing_sessions': int(required - scheduled)
                         })
+                    
+                    # Check Online TD
+                    scheduled_onl_td = sum(U_TD[g][j][k].solution_value() for k in range(K))
+                    required_onl_td = Son_td[j][g]
+                    if required_onl_td > 0 and scheduled_onl_td < required_onl_td:
+                         unscheduled_classes.append({
+                             'group': Sous_Groupes[g],
+                             'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                             'subject': Matieres[j],
+                             'subject_code': Matiere_Codes[j],
+                             'type': 'TD Online',
+                             'professor': ProTD[j][0] if ProTD[j] else "En ligne",
+                             'required_sessions': int(required_onl_td),
+                             'scheduled_sessions': int(scheduled_onl_td),
+                             'missing_sessions': int(required_onl_td - scheduled_onl_td)
+                         })
+                    
+                    # Check Online TP
+                    scheduled_onl_tp = sum(U_TP[g][j][k].solution_value() for k in range(K))
+                    required_onl_tp = Son_tp[j][g]
+                    if required_onl_tp > 0 and scheduled_onl_tp < required_onl_tp:
+                         unscheduled_classes.append({
+                             'group': Sous_Groupes[g],
+                             'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                             'subject': Matieres[j],
+                             'subject_code': Matiere_Codes[j],
+                             'type': 'TP Online',
+                             'professor': ProTP[j][0] if ProTP[j] else "En ligne",
+                             'required_sessions': int(required_onl_tp),
+                             'scheduled_sessions': int(scheduled_onl_tp),
+                             'missing_sessions': int(required_onl_tp - scheduled_onl_tp)
+                         })
             
             # Save unscheduled classes to JSON file
             import json

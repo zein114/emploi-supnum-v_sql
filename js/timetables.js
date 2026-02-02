@@ -508,9 +508,9 @@ async function renderTimetable(sheetName, archive = null) {
                   typeStr = line2Match[1];
                   groupStr = line2Match[2];
                 } else {
-                  // Fallback: remove parens if present (e.g., "(CM)")
                   typeStr = typeStr.replace(/^\(|\)$/g, "");
                 }
+                typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "");
 
                 // Clean group name:
                 // If it's empty (like CM), use the type.
@@ -556,13 +556,32 @@ async function renderTimetable(sheetName, archive = null) {
             const mergedProfs = profs.join(" / ");
             const mergedRooms = rooms.join(" / ");
 
+            let roomDisplayHtml = "";
+            if (mergedRooms === "En ligne") {
+              roomDisplayHtml = `<span class="event-room" style="font-weight: 500;">En ligne</span>`;
+            } else {
+              roomDisplayHtml = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span class="event-room">${mergedRooms}</span>
+                 `;
+            }
+
             // Determine styling class
             let typeClass = "mixed";
             if (new Set(types).size === 1) {
-              typeClass = types[0]
-                .toLowerCase()
-                .replace(")", "")
-                .replace("(", "");
+              const t = types[0].toLowerCase();
+              if (t.includes("cm")) {
+                typeClass = "cm";
+              } else if (t.includes("tp")) {
+                typeClass = "tp";
+              } else if (t.includes("td")) {
+                typeClass = "td";
+              } else {
+                typeClass = t
+                  .replace(")", "")
+                  .replace("(", "")
+                  .replace(/\s+/g, "-");
+              }
             }
 
             cellHtml += `
@@ -579,8 +598,7 @@ async function renderTimetable(sheetName, archive = null) {
                               <span class="event-prof">${mergedProfs}</span>
                           </div>
                           <div class="event-row">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                              <span class="event-room">${mergedRooms}</span>
+                              ${roomDisplayHtml}
                           </div>
                       </div>
                   </div>

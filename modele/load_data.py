@@ -108,14 +108,54 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
         gid = w['group_id']
         if sid not in Workload_Map: Workload_Map[sid] = {}
         key = gid if gid else 'DEFAULT'
-        Workload_Map[sid][key] = {'CM': w['cm_hours'], 'TP': w['tp_hours'], 'TD': w['td_hours']}
+        Workload_Map[sid][key] = {
+            'CM': w['cm_hours'], 
+            'TP': w['tp_hours'], 
+            'TD': w['td_hours'], 
+            'ONL_CM': w.get('cm_online', 0),
+            'ONL_TD': w.get('td_online', 0),
+            'ONL_TP': w.get('tp_online', 0)
+        }
 
-    # Initialize P matrices is usually done via Assignments loop in original code logic?
-    # Original logic: Pcm init to 0. Then loops Assignments.
-    # Inside assignments loop: Pcm[j][g] = charges[group].
-    # So if there is NO assignment, Pcm is 0.
-    # If there IS assignment, it takes the charge.
+    # Initialize Pon (Online Main), Son_td (Online TD), Son_tp (Online TP)
+    Pon = [[0]*GP for _ in range(J)]
+    Son_td = [[0]*GT for _ in range(J)]
+    Son_tp = [[0]*GT for _ in range(J)]
     
+    # Fill Online Workloads directly from Map
+    for sid, groups_map in Workload_Map.items():
+        if sid not in Subj_Id_To_Index: continue
+        j = Subj_Id_To_Index[sid]
+        
+        for gid, charges in groups_map.items():
+            if gid == 'DEFAULT': continue
+            
+            # 1. Online CM -> Pon
+            onl_cm = charges.get('ONL_CM', 0)
+            if onl_cm > 0:
+                if gid in Group_Id_To_Index:
+                    Pon[j][Group_Id_To_Index[gid]] = onl_cm
+            
+            # 2. Online TD -> Son_td
+            onl_td = charges.get('ONL_TD', 0)
+            if onl_td > 0:
+                if gid in Sous_Group_Id_To_Index:
+                    Son_td[j][Sous_Group_Id_To_Index[gid]] = onl_td
+                elif gid in Group_Id_To_Index:
+                     for idx, sub_g in enumerate(groups_td):
+                         if sub_g['parent_group_id'] == gid:
+                             Son_td[j][idx] = onl_td
+
+            # 3. Online TP -> Son_tp
+            onl_tp = charges.get('ONL_TP', 0)
+            if onl_tp > 0:
+                if gid in Sous_Group_Id_To_Index:
+                    Son_tp[j][Sous_Group_Id_To_Index[gid]] = onl_tp
+                elif gid in Group_Id_To_Index:
+                     for idx, sub_g in enumerate(groups_td):
+                         if sub_g['parent_group_id'] == gid:
+                             Son_tp[j][idx] = onl_tp
+
     # 5. Affectations (Ccm, Ctp, Ctd)
     Ccm = [[] for _ in range(I)]
     Ctp = [[] for _ in range(I)]
@@ -144,7 +184,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
 
         # Get charges
         w_map = Workload_Map.get(sid_db, {})
-        charges = w_map.get(gid_db, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0}))
+        charges = w_map.get(gid_db, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL':0}))
         
         # --- LOGIC REPLICATION ---
         
@@ -341,4 +381,4 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     
     print("Données chargées depuis BDD avec succès.")
     
-    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Code_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Code_Map, Matiere_Codes, All_Rooms, Semester_Of_Group
+    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Code_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Code_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp

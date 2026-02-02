@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "group": "RSS-L2",
+    "group_code": "17",
+    "subject": "Anglais",
+    "subject_code": "DPR311",
+    "type": "CM",
+    "professor": "Blake",
+    "required_sessions": 2,
+    "scheduled_sessions": 1,
+    "missing_sessions": 1
+  },
+  {
+    "group": "RSS-L2",
+    "group_code": "17",
+    "subject": "BD & CSI",
+    "subject_code": "RSS321",
+    "type": "CM Online",
+    "professor": "Med Lemine",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  }
+]

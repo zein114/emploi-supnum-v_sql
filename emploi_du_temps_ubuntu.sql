@@ -35,7 +35,7 @@ CREATE TABLE `classrooms` (
   `name` varchar(100) DEFAULT NULL,
   `capacity` int DEFAULT '0',
   `type` enum('CM','TP','TD','Unknown') DEFAULT 'Unknown'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `classrooms`
@@ -85,7 +85,7 @@ CREATE TABLE `course_workloads` (
   `cm_online` int DEFAULT '0',
   `td_online` int DEFAULT '0',
   `tp_online` int DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `course_workloads`
@@ -137,7 +137,7 @@ CREATE TABLE `days` (
   `name` varchar(50) NOT NULL,
   `order_index` int NOT NULL DEFAULT '0',
   `is_active` tinyint(1) NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `days`
@@ -166,7 +166,7 @@ CREATE TABLE `groups` (
   `semester_id` int DEFAULT NULL,
   `parent_group_id` int DEFAULT NULL,
   `student_count` int DEFAULT '30'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `groups`
@@ -216,7 +216,7 @@ CREATE TABLE `professors` (
   `id` int NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `professors`
@@ -312,7 +312,7 @@ CREATE TABLE `professor_availability` (
   `day_id` int DEFAULT NULL,
   `time_slot_id` int DEFAULT NULL,
   `is_available` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `professor_availability`
@@ -3026,7 +3026,7 @@ CREATE TABLE `semesters` (
   `name` varchar(50) NOT NULL,
   `display_name` varchar(100) NOT NULL,
   `order_index` int NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `semesters`
@@ -3049,7 +3049,7 @@ INSERT INTO `semesters` (`id`, `name`, `display_name`, `order_index`) VALUES
 CREATE TABLE `settings` (
   `setting_key` varchar(100) NOT NULL,
   `setting_value` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `settings`
@@ -3069,7 +3069,7 @@ CREATE TABLE `subjects` (
   `code` varchar(50) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `semester_id` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `subjects`
@@ -3177,7 +3177,7 @@ CREATE TABLE `teacher_assignments` (
   `subject_id` int DEFAULT NULL,
   `group_id` int DEFAULT NULL,
   `type` enum('CM','TP','TD') DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `teacher_assignments`
@@ -3239,7 +3239,7 @@ CREATE TABLE `time_slots` (
   `id` int NOT NULL,
   `time_range` varchar(50) NOT NULL,
   `is_active` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `time_slots`
@@ -3267,7 +3267,7 @@ CREATE TABLE `users` (
   `email` varchar(255) DEFAULT NULL,
   `id_prof` int DEFAULT NULL,
   `remember_token` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`

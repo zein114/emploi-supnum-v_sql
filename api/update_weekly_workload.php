@@ -35,12 +35,15 @@ try {
     $stmtSubject = $conn->prepare("SELECT id FROM subjects WHERE code = ?");
     $stmtGroup = $conn->prepare("SELECT id FROM `groups` WHERE code = ?");
     $stmtUpsert = $conn->prepare("
-        INSERT INTO course_workloads (subject_id, group_id, cm_hours, td_hours, tp_hours)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO course_workloads (subject_id, group_id, cm_hours, td_hours, tp_hours, cm_online, td_online, tp_online)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
             cm_hours = VALUES(cm_hours), 
             td_hours = VALUES(td_hours), 
-            tp_hours = VALUES(tp_hours)
+            tp_hours = VALUES(tp_hours),
+            cm_online = VALUES(cm_online),
+            td_online = VALUES(td_online),
+            tp_online = VALUES(tp_online)
     ");
 
     // Track which (code, group) are processed
@@ -56,6 +59,9 @@ try {
         $cm = isset($item['cm']) ? (int)$item['cm'] : 0;
         $td = isset($item['td']) ? (int)$item['td'] : 0;
         $tp = isset($item['tp']) ? (int)$item['tp'] : 0;
+        $onl_cm = isset($item['online_cm']) ? (int)$item['online_cm'] : 0;
+        $onl_td = isset($item['online_td']) ? (int)$item['online_td'] : 0;
+        $onl_tp = isset($item['online_tp']) ? (int)$item['online_tp'] : 0;
         
         // A. Get subject_id
         $stmtSubject->bind_param('s', $code);
@@ -78,7 +84,7 @@ try {
         }
         
         // C. Upsert
-        $stmtUpsert->bind_param('iiiii', $subjectId, $groupId, $cm, $td, $tp);
+        $stmtUpsert->bind_param('iiiiiiii', $subjectId, $groupId, $cm, $td, $tp, $onl_cm, $onl_td, $onl_tp);
         if ($stmtUpsert->execute()) {
             $updatesCount++;
         }

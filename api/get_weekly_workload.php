@@ -17,6 +17,7 @@ try {
         SELECT s.id as subject_id, s.code as subject_code, s.name as subject_name, 
                sem.name as semester_name, sem.order_index,
                cw.cm_hours, cw.td_hours, cw.tp_hours,
+               cw.cm_online, cw.td_online, cw.tp_online,
                g.code as group_code
         FROM subjects s
         LEFT JOIN semesters sem ON s.semester_id = sem.id
@@ -53,7 +54,10 @@ try {
             'semester' => $row['semester_name'] ?? '',
             'cm' => (int)($row['cm_hours'] ?? 0),
             'td' => (int)($row['td_hours'] ?? 0),
-            'tp' => (int)($row['tp_hours'] ?? 0)
+            'tp' => (int)($row['tp_hours'] ?? 0),
+            'online_cm' => (int)($row['cm_online'] ?? 0),
+            'online_td' => (int)($row['td_online'] ?? 0),
+            'online_tp' => (int)($row['tp_online'] ?? 0)
         ];
 
         if (empty($row['group_code'])) {
@@ -89,10 +93,15 @@ try {
             // No general entry in database, synthesize one
             // Use MAX of group entries if they exist, otherwise 0
             $maxCm = 0; $maxTd = 0; $maxTp = 0;
+            $maxOnlCm = 0; $maxOnlTd = 0; $maxOnlTp = 0;
+            
             foreach ($data['group_entries'] as $ge) {
                 $maxCm = max($maxCm, $ge['cm']);
                 $maxTd = max($maxTd, $ge['td']);
                 $maxTp = max($maxTp, $ge['tp']);
+                $maxOnlCm = max($maxOnlCm, $ge['online_cm']);
+                $maxOnlTd = max($maxOnlTd, $ge['online_td']);
+                $maxOnlTp = max($maxOnlTp, $ge['online_tp']);
             }
             
             $finalData[] = [
@@ -102,7 +111,10 @@ try {
                 'semester' => $data['info']['semester'],
                 'cm' => $maxCm,
                 'td' => $maxTd,
-                'tp' => $maxTp
+                'tp' => $maxTp,
+                'online_cm' => $maxOnlCm,
+                'online_td' => $maxOnlTd,
+                'online_tp' => $maxOnlTp
             ];
         }
 

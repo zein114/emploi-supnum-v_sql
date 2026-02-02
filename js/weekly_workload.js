@@ -1,4 +1,31 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Load saved semester
+  const savedSemester =
+    localStorage.getItem("weekly_workload_semester") || "all";
+  const semesterBtn = document.getElementById("semesterFilterBtn");
+  if (semesterBtn) {
+    semesterBtn.setAttribute("data-value", savedSemester);
+    const text =
+      savedSemester === "all"
+        ? "Tous les semestres"
+        : "Semestre " + savedSemester;
+    const textSpan = semesterBtn.querySelector(".dropdown-text");
+    if (textSpan) textSpan.textContent = text;
+
+    // Update selected class in menu
+    const menu = semesterBtn
+      .closest(".dropdown-container")
+      .querySelector(".dropdown-menu");
+    if (menu) {
+      menu.querySelectorAll(".dropdown-item").forEach((item) => {
+        item.classList.toggle(
+          "selected",
+          item.getAttribute("data-value") === savedSemester,
+        );
+      });
+    }
+  }
+
   loadAllData();
 
   // Global Save button (main table)
@@ -12,6 +39,14 @@ document.addEventListener("DOMContentLoaded", function () {
   if (searchInput) {
     searchInput.addEventListener("input", filterTable);
   }
+
+  // Semester dropdown change listener
+  document.addEventListener("dropdown-change", function (e) {
+    if (e.detail.dropdownId === "semesterFilter") {
+      localStorage.setItem("weekly_workload_semester", e.detail.value);
+      renderTable(originalData);
+    }
+  });
 });
 
 let originalData = [];
@@ -54,10 +89,22 @@ function renderTable(data) {
   const tableBody = document.getElementById("workloadTableBody");
   tableBody.innerHTML = "";
 
-  // Filter for General workloads (code_groupe is empty)
-  const generalRows = data.filter(
-    (row) => !row.code_groupe || row.code_groupe === "",
-  );
+  const semesterBtn = document.getElementById("semesterFilterBtn");
+  const selectedSemester = semesterBtn
+    ? semesterBtn.getAttribute("data-value")
+    : "all";
+
+  // Filter for General workloads (code_groupe is empty) and Semester
+  const generalRows = data.filter((row) => {
+    const isGeneral = !row.code_groupe || row.code_groupe === "";
+    if (!isGeneral) return false;
+
+    if (selectedSemester === "all") return true;
+
+    // Support both numeric and 'S' prefix (e.g., '1' or 'S1')
+    const rowSem = String(row.semester || "").replace(/\D/g, "");
+    return rowSem === selectedSemester;
+  });
 
   if (generalRows.length === 0) {
     tableBody.innerHTML =
@@ -107,6 +154,7 @@ function renderTable(data) {
   });
 
   attachInputListeners();
+  filterTable();
 }
 
 function attachInputListeners() {
@@ -190,6 +238,9 @@ function openExcludeModal(btn, code, name, semester) {
           cm: parseFloat(ex.cm || 0),
           td: parseFloat(ex.td || 0),
           tp: parseFloat(ex.tp || 0),
+          online_cm: parseFloat(ex.online_cm || 0),
+          online_td: parseFloat(ex.online_td || 0),
+          online_tp: parseFloat(ex.online_tp || 0),
         })),
       );
 
@@ -243,41 +294,59 @@ function addExclusionRow(data = null) {
   });
 
   div.innerHTML = `
-        <div class="exclusion-top-row">
-            <div class="form-group">
-                <label class="form-label">CM</label>
-                <input type="number" step="1" class="form-input ex-cm" value="${
-                  data ? data.cm : 0
-                }">
-            </div>
-            <div class="form-group">
-                <label class="form-label">TD</label>
-                <input type="number" step="1" class="form-input ex-td" value="${
-                  data ? data.td : 0
-                }">
-            </div>
-            <div class="form-group">
-                <label class="form-label">TP</label>
-                <input type="number" step="1" class="form-input ex-tp" value="${
-                  data ? data.tp : 0
-                }">
-            </div>
-            <div class="remove-action">
-                <button type="button" class="remove-exclusion" onclick="this.closest('.exclusion-item').remove()">
-                    &times;
-                </button>
-            </div>
-        </div>
-        <div class="exclusion-bottom-row">
-            <div class="form-group">
-                <label class="form-label">Groupe</label>
-                <div class="dropdown-container">
-                    <button type="button" class="dropdown-button" data-dropdown-id="${rowId}" data-value="${selectedGroupValue}">
+        <div class="exclusion-header" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+             <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600;">Choix du Groupe</label>
+                <div class="dropdown-container" style="width: 100%;">
+                    <button type="button" class="dropdown-button" data-dropdown-id="${rowId}" data-value="${selectedGroupValue}" style="width: 100%; text-align: left; justify-content: space-between;">
                         <span class="dropdown-text">${selectedGroupName}</span>
                         <div class="dropdown-arrow"></div>
                     </button>
                     <div class="dropdown-menu">
                         ${menuOptions}
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="remove-exclusion" onclick="this.closest('.exclusion-item').remove()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5rem; color: #666; cursor: pointer;">
+                &times;
+            </button>
+        </div>
+
+        <div class="exclusion-inputs-grid" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Présentiel Row -->
+            <div class="hours-row" style="display: flex; align-items: center; gap: 10px;">
+                <div class="row-label" style="width: 80px; font-weight: 500; font-size: 0.9rem; color: var(--text-primary);">Présentiel</div>
+                <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">CM</label>
+                        <input type="number" step="1" class="form-input ex-cm" value="${data ? data.cm : 0}" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TD</label>
+                        <input type="number" step="1" class="form-input ex-td" value="${data ? data.td : 0}" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TP</label>
+                        <input type="number" step="1" class="form-input ex-tp" value="${data ? data.tp : 0}" style="width: 100%;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- En ligne Row -->
+            <div class="hours-row" style="display: flex; align-items: center; gap: 10px;">
+                <div class="row-label" style="width: 80px; font-weight: 500; font-size: 0.9rem;">En ligne</div>
+                <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">Onl CM</label>
+                        <input type="number" step="1" class="form-input ex-online-cm" value="${data ? data.online_cm : 0}" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">Onl TD</label>
+                        <input type="number" step="1" class="form-input ex-online-td" value="${data ? data.online_td : 0}" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">Onl TP</label>
+                        <input type="number" step="1" class="form-input ex-online-tp" value="${data ? data.online_tp : 0}" style="width: 100%;">
                     </div>
                 </div>
             </div>
@@ -325,6 +394,12 @@ async function saveExclusions() {
       cm: parseFloat(row.querySelector(".ex-cm").value) || 0,
       td: parseFloat(row.querySelector(".ex-td").value) || 0,
       tp: parseFloat(row.querySelector(".ex-tp").value) || 0,
+      cm: parseFloat(row.querySelector(".ex-cm").value) || 0,
+      td: parseFloat(row.querySelector(".ex-td").value) || 0,
+      tp: parseFloat(row.querySelector(".ex-tp").value) || 0,
+      online_cm: parseFloat(row.querySelector(".ex-online-cm").value) || 0,
+      online_td: parseFloat(row.querySelector(".ex-online-td").value) || 0,
+      online_tp: parseFloat(row.querySelector(".ex-online-tp").value) || 0,
     });
   });
 
@@ -342,6 +417,12 @@ async function saveExclusions() {
       cm: parseFloat(u.cm),
       td: parseFloat(u.td),
       tp: parseFloat(u.tp),
+      cm: parseFloat(u.cm),
+      td: parseFloat(u.td),
+      tp: parseFloat(u.tp),
+      online_cm: parseFloat(u.online_cm),
+      online_td: parseFloat(u.online_td),
+      online_tp: parseFloat(u.online_tp),
     })),
   );
 

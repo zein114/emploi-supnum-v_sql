@@ -12,7 +12,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
     """
     Exporte tous les emplois du temps des groupes dans un seul fichier Excel avec plusieurs feuilles.
     """
-    X, Y, Z = solver_results
+    X, Y, Z, W, U_TD, U_TP = solver_results
     
     # Définition des jours et des créneaux horaires
     if days is None or len(days) == 0:
@@ -43,8 +43,12 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             assigned_rooms_at_k.add(room_found)
                             break
                     slot_room_assignments[k].append(('CM', g, j, room_found))
+                
+                # CM Online
+                if W[g][j][k].solution_value() > 0.5:
+                    slot_room_assignments[k].append(('CM Online', g, j, 'En ligne'))
         
-        # 2. Identifier les sessions de TP/TD au créneau k
+        # 2. Identifier les sessions de TP/TD/OnlineSub au créneau k
         for gt in range(GT):
             for j in range(J):
                 if Y[gt][j][k].solution_value() > 0.5:
@@ -58,13 +62,20 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                 
                 if Z[gt][j][k].solution_value() > 0.5:
                     room_found = "N/A"
-                    # Les TD utilisent souvent des salles de TP ou CM si aucun type TD n'est spécifié
                     for r in All_Rooms:
                         if r['Type'] in ['TP', 'TD', 'CM'] and r['Salle'] not in assigned_rooms_at_k:
                             room_found = r['Salle']
                             assigned_rooms_at_k.add(room_found)
                             break
                     slot_room_assignments[k].append(('TD', gt, j, room_found))
+                
+                # TP Online
+                if U_TP[gt][j][k].solution_value() > 0.5:
+                    slot_room_assignments[k].append(('TP Online', gt, j, 'En ligne'))
+                
+                # TD Online
+                if U_TD[gt][j][k].solution_value() > 0.5:
+                    slot_room_assignments[k].append(('TD Online', gt, j, 'En ligne'))
 
     # Création du nom du fichier de sortie
     output_file = "Tous_les_Emplois_du_Temps.xlsx"
@@ -137,7 +148,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                 else:
                     sessions_list = []
                     
-                    # Vérifier si ce groupe g a une session de CM à (g, k)
+                    # CM et CM Online
                     for j in range(J):
                         if X[g][j][k].solution_value() > 0.5:
                             prof = ProCM[j][0] if ProCM[j] else "CM"
@@ -145,9 +156,14 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==g and r[2]==j), "N/A")
                             session_str = f"[{code}] {Matieres[j]}\n(CM)\nProf: {prof}\nSalle: {room}"
                             sessions_list.append(session_str)
+                            
+                        if W[g][j][k].solution_value() > 0.5:
+                            prof = ProCM[j][0] if ProCM[j] else "CM Online"
+                            code = Matiere_Codes[j]
+                            session_str = f"[{code}] {Matieres[j]}\n(CM Online)\nProf: {prof}\nSalle: En ligne"
+                            sessions_list.append(session_str)
                     
-                    # Vérifier les sous-groupes
-                    # Trouver les codes des sous-groupes pour le groupe principal g
+                    # Sous-groupes (TD, TP, TD Online, TP Online)
                     group_code_val = None
                     for code_val, idx in Group_Code_Map.items():
                         if idx == g:
@@ -160,39 +176,39 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                         if group_code_val in refs:
                             subgroups_of_g.append(sub_code)
                     
-                    # Indices des groupes pour ces sous-groupes
                     subgroup_indices = [Sous_Group_Code_Map[sc] for sc in subgroups_of_g if sc in Sous_Group_Code_Map]
                     
                     for j in range(J):
-                        # Compter combien de sous-groupes de g sont programmés pour (j, k)
                         active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
                         active_td = [si for si in subgroup_indices if Z[si][j][k].solution_value() > 0.5]
+                        active_onl_tp = [si for si in subgroup_indices if U_TP[si][j][k].solution_value() > 0.5]
+                        active_onl_td = [si for si in subgroup_indices if U_TD[si][j][k].solution_value() > 0.5]
                         
-                        if active_tp or active_td:
-                            sess_type = "TP" if active_tp else "TD"
-                            active_indices = active_tp if active_tp else active_td
-                            
-                            prof_list = ProTP[j] if sess_type == "TP" else ProTD[j]
-                            prof = prof_list[0] if prof_list else sess_type
-                            code = Matiere_Codes[j]
-                            
-                            # Détails des sous-groupes
-                            if len(active_indices) == len(subgroup_indices) and len(subgroup_indices) > 1:
-                                sg_detail = "G-S Complet"
-                            else:
-                                sg_names = sorted([Sous_Groupes[si] for si in active_indices])
-                                sg_detail = ", ".join(sg_names)
-                            
-                            # Pour chaque sous-groupe actif, trouver sa salle (potentiellement différent)
-                            # Ici on simplifie en affichant les salles. Si multiples salles, on les liste.
-                            rooms = []
-                            for idx_sg in active_indices:
-                                r = next((r[3] for r in slot_room_assignments[k] if r[0]==sess_type and r[1]==idx_sg and r[2]==j), "N/A")
-                                if r not in rooms: rooms.append(r)
-                            room_str = ", ".join(rooms)
-                            
-                            session_str = f"[{code}] {Matieres[j]}\n({sess_type}) - {sg_detail}\nProf: {prof}\nSalle: {room_str}"
-                            sessions_list.append(session_str)
+                        # Combiner par type pour l'affichage
+                        for sess_type, indices in [("TP", active_tp), ("TD", active_td), ("TP Online", active_onl_tp), ("TD Online", active_onl_td)]:
+                            if indices:
+                                base_type = "TP" if "TP" in sess_type else "TD"
+                                prof_list = ProTP[j] if base_type == "TP" else ProTD[j]
+                                prof = prof_list[0] if prof_list else sess_type
+                                code = Matiere_Codes[j]
+                                
+                                if len(indices) == len(subgroup_indices) and len(subgroup_indices) > 1:
+                                    sg_detail = "G-S Complet"
+                                else:
+                                    sg_names = sorted([Sous_Groupes[si] for si in indices])
+                                    sg_detail = ", ".join(sg_names)
+                                
+                                rooms = []
+                                for idx_sg in indices:
+                                    if "Online" in sess_type:
+                                        r = "En ligne"
+                                    else:
+                                        r = next((r[3] for r in slot_room_assignments[k] if r[0]==sess_type and r[1]==idx_sg and r[2]==j), "N/A")
+                                    if r not in rooms: rooms.append(r)
+                                room_str = ", ".join(rooms)
+                                
+                                session_str = f"[{code}] {Matieres[j]}\n({sess_type}) - {sg_detail}\nProf: {prof}\nSalle: {room_str}"
+                                sessions_list.append(session_str)
 
                     if sessions_list:
                         # Trier les sessions pour s'assurer que TD1/TP1 apparaissent avant TD2/TP2

@@ -322,6 +322,7 @@ async function renderTimetable(sheetName) {
                   // Fallback: remove parens if present (e.g., "(CM)")
                   typeStr = typeStr.replace(/^\(|\)$/g, "");
                 }
+                typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "");
 
                 // Clean group name:
                 // If it's empty (like CM), use the type.
