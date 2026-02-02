@@ -112,9 +112,7 @@ function renderTable(data) {
     return;
   }
 
-  // Use a map to ensure we only show one row per module code in the main table
   const shownModules = new Set();
-
   generalRows.forEach((row) => {
     if (shownModules.has(row.code)) return;
     shownModules.add(row.code);
@@ -124,25 +122,59 @@ function renderTable(data) {
       (d) => d.code === row.code && (!d.code_groupe || d.code_groupe === ""),
     );
 
+    const isSingleGroup = row.assigned_group_count === 1;
+    const isUnassigned = row.assigned_group_count === 0;
+
     const tr = document.createElement("tr");
     tr.dataset.index = dataIndex;
 
     tr.innerHTML = `
-        <td class="code-col"><strong>${row.code} - ${row.nom}</strong></td>
-        <td class="workload-col">
-            <input type="number" min="0" step="1" class="workload-input"
-                value="${row.cm}" data-field="cm" data-index="${dataIndex}">
+        <td class="code-col">
+          <strong>${row.code} - ${row.nom}</strong>
+          ${isUnassigned ? '<span class="unassigned-note">Ce module n\'a pas encore été affecté</span>' : ""}
         </td>
         <td class="workload-col">
-            <input type="number" min="0" step="1" class="workload-input"
-                value="${row.td}" data-field="td" data-index="${dataIndex}">
+            <div class="input-stack">
+                <input type="number" min="0" step="1" class="workload-input"
+                    value="${row.cm}" data-field="cm" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
+                ${
+                  isSingleGroup
+                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
+                    value="${row.online_cm || 0}" data-field="online_cm" data-index="${dataIndex}" placeholder="En ligne CM">`
+                    : ""
+                }
+            </div>
         </td>
         <td class="workload-col">
-            <input type="number" min="0" step="1" class="workload-input"
-                value="${row.tp}" data-field="tp" data-index="${dataIndex}">
+            <div class="input-stack">
+                <input type="number" min="0" step="1" class="workload-input"
+                    value="${row.td}" data-field="td" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
+                ${
+                  isSingleGroup
+                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
+                    value="${row.online_td || 0}" data-field="online_td" data-index="${dataIndex}" placeholder="En ligne TD">`
+                    : ""
+                }
+            </div>
+        </td>
+        <td class="workload-col">
+            <div class="input-stack">
+                <input type="number" min="0" step="1" class="workload-input"
+                    value="${row.tp}" data-field="tp" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
+                ${
+                  isSingleGroup
+                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
+                    value="${row.online_tp || 0}" data-field="online_tp" data-index="${dataIndex}" placeholder="En ligne TP">`
+                    : ""
+                }
+            </div>
         </td>
         <td class="status-col" style="text-align: center; width: 120px;">
-            <button class="btn btn-secondary btn-sm" onclick="openExcludeModal(this, '${row.code}', '${row.nom}', '${row.semester}')" style="width: 100%;">
+            <button class="btn btn-secondary btn-sm" onclick="openExcludeModal(this, '${
+              row.code
+            }', '${row.nom}', '${row.semester}')" style="width: 100%; ${
+              isSingleGroup || isUnassigned ? "display: none;" : ""
+            }">
                 spécifier
             </button>
         </td>
@@ -172,10 +204,27 @@ function attachInputListeners() {
       const currentTP =
         parseFloat(row.querySelector('[data-field="tp"]').value) || 0;
 
+      const onlineCMInput = row.querySelector('[data-field="online_cm"]');
+      const onlineTDInput = row.querySelector('[data-field="online_td"]');
+      const onlineTPInput = row.querySelector('[data-field="online_tp"]');
+
+      const currentOnlineCM = onlineCMInput
+        ? parseFloat(onlineCMInput.value) || 0
+        : parseFloat(originalRow.online_cm) || 0;
+      const currentOnlineTD = onlineTDInput
+        ? parseFloat(onlineTDInput.value) || 0
+        : parseFloat(originalRow.online_td) || 0;
+      const currentOnlineTP = onlineTPInput
+        ? parseFloat(onlineTPInput.value) || 0
+        : parseFloat(originalRow.online_tp) || 0;
+
       const isModified =
         currentCM !== parseFloat(originalRow.cm) ||
         currentTD !== parseFloat(originalRow.td) ||
-        currentTP !== parseFloat(originalRow.tp);
+        currentTP !== parseFloat(originalRow.tp) ||
+        currentOnlineCM !== (parseFloat(originalRow.online_cm) || 0) ||
+        currentOnlineTD !== (parseFloat(originalRow.online_td) || 0) ||
+        currentOnlineTP !== (parseFloat(originalRow.online_tp) || 0);
 
       const indicator = row.querySelector(".status-indicator");
       if (isModified) {
@@ -224,11 +273,17 @@ function openExcludeModal(btn, code, name, semester) {
         (d) => d.code === code && d.code_groupe,
       );
 
+      // Find subject info to get assigned group codes
+      const subjectInfo = originalData.find((d) => d.code === code);
+      const assignedGroupCodes = subjectInfo
+        ? subjectInfo.assigned_group_codes
+        : "";
+
       if (exclusions.length === 0) {
         container.innerHTML =
           '<p class="text-secondary text-center" style="padding: 1rem;">Aucune exclusion pour ce module.</p>';
       } else {
-        exclusions.forEach((ex) => addExclusionRow(ex));
+        exclusions.forEach((ex) => addExclusionRow(ex, assignedGroupCodes));
       }
 
       // Store initial state for change detection
@@ -248,7 +303,8 @@ function openExcludeModal(btn, code, name, semester) {
       const addBtn = document.getElementById("addAnotherGroupBtn");
       const saveBtn = document.getElementById("saveExclusionsBtn");
 
-      if (addBtn) addBtn.onclick = () => addExclusionRow();
+      if (addBtn)
+        addBtn.onclick = () => addExclusionRow(null, assignedGroupCodes);
       if (saveBtn) saveBtn.onclick = saveExclusions;
 
       if (typeof Spinner !== "undefined") Spinner.hide(btn);
@@ -258,7 +314,7 @@ function openExcludeModal(btn, code, name, semester) {
   }
 }
 
-function addExclusionRow(data = null) {
+function addExclusionRow(data = null, assignedGroupCodes = "") {
   const container = document.getElementById("exclusionsList");
 
   // Remove "no exclusions" text if present
@@ -271,9 +327,18 @@ function addExclusionRow(data = null) {
   div.id = `ex-row-${rowId}`;
 
   const moduleSemester = document.getElementById("modalModuleSemester").value;
-  const filteredGroups = availableGroups.filter(
-    (g) => String(g.semester) === String(moduleSemester),
-  );
+  const assignedCodesArray = assignedGroupCodes
+    ? assignedGroupCodes.split(",")
+    : [];
+
+  const filteredGroups = availableGroups.filter((g) => {
+    const semMatch = String(g.semester) === String(moduleSemester);
+    const assignedMatch =
+      assignedCodesArray.length > 0
+        ? assignedCodesArray.includes(String(g.code))
+        : true;
+    return semMatch && assignedMatch;
+  });
   const sortedGroups = [...filteredGroups].sort((a, b) =>
     String(a.code).localeCompare(String(b.code), undefined, { numeric: true }),
   );
@@ -337,15 +402,15 @@ function addExclusionRow(data = null) {
                 <div class="row-label" style="width: 80px; font-weight: 500; font-size: 0.9rem;">En ligne</div>
                 <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">Onl CM</label>
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">CM</label>
                         <input type="number" step="1" class="form-input ex-online-cm" value="${data ? data.online_cm : 0}" style="width: 100%;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">Onl TD</label>
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TD</label>
                         <input type="number" step="1" class="form-input ex-online-td" value="${data ? data.online_td : 0}" style="width: 100%;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">Onl TP</label>
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TP</label>
                         <input type="number" step="1" class="form-input ex-online-tp" value="${data ? data.online_tp : 0}" style="width: 100%;">
                     </div>
                 </div>
@@ -480,13 +545,29 @@ async function saveWorkloadData() {
       const index = row.dataset.index;
       const dataRow = originalData[index];
 
+      const cmInput = row.querySelector('input[data-field="cm"]');
+      const tdInput = row.querySelector('input[data-field="td"]');
+      const tpInput = row.querySelector('input[data-field="tp"]');
+      const onlCmInput = row.querySelector('input[data-field="online_cm"]');
+      const onlTdInput = row.querySelector('input[data-field="online_td"]');
+      const onlTpInput = row.querySelector('input[data-field="online_tp"]');
+
       updates.push({
         code: dataRow.code,
         code_groupe: "",
         semester: dataRow.semester,
-        cm: parseFloat(row.querySelector('input[data-field="cm"]').value) || 0,
-        td: parseFloat(row.querySelector('input[data-field="td"]').value) || 0,
-        tp: parseFloat(row.querySelector('input[data-field="tp"]').value) || 0,
+        cm: cmInput ? parseFloat(cmInput.value) || 0 : dataRow.cm,
+        td: tdInput ? parseFloat(tdInput.value) || 0 : dataRow.td,
+        tp: tpInput ? parseFloat(tpInput.value) || 0 : dataRow.tp,
+        online_cm: onlCmInput
+          ? parseFloat(onlCmInput.value) || 0
+          : dataRow.online_cm,
+        online_td: onlTdInput
+          ? parseFloat(onlTdInput.value) || 0
+          : dataRow.online_td,
+        online_tp: onlTpInput
+          ? parseFloat(onlTpInput.value) || 0
+          : dataRow.online_tp,
       });
     }
   });

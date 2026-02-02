@@ -18,7 +18,21 @@ try {
                sem.name as semester_name, sem.order_index,
                cw.cm_hours, cw.td_hours, cw.tp_hours,
                cw.cm_online, cw.td_online, cw.tp_online,
-               g.code as group_code
+               g.code as group_code,
+               (
+                SELECT COUNT(DISTINCT COALESCE(pg.id, ghier.id))
+                FROM teacher_assignments ta
+                JOIN `groups` ghier ON ta.group_id = ghier.id
+                LEFT JOIN `groups` pg ON ghier.parent_group_id = pg.id
+                WHERE ta.subject_id = s.id
+               ) as assigned_group_count,
+               (
+                SELECT GROUP_CONCAT(DISTINCT COALESCE(pg.code, ghier.code))
+                FROM teacher_assignments ta
+                JOIN `groups` ghier ON ta.group_id = ghier.id
+                LEFT JOIN `groups` pg ON ghier.parent_group_id = pg.id
+                WHERE ta.subject_id = s.id
+               ) as assigned_group_codes
         FROM subjects s
         LEFT JOIN semesters sem ON s.semester_id = sem.id
         LEFT JOIN course_workloads cw ON cw.subject_id = s.id
@@ -43,7 +57,9 @@ try {
                     'semester' => $row['semester_name'] ?? '',
                 ],
                 'general_entry' => null,
-                'group_entries' => []
+                'group_entries' => [],
+                'assigned_group_count' => (int)$row['assigned_group_count'],
+                'assigned_group_codes' => $row['assigned_group_codes'] ?? ''
             ];
         }
         
@@ -57,7 +73,9 @@ try {
             'tp' => (int)($row['tp_hours'] ?? 0),
             'online_cm' => (int)($row['cm_online'] ?? 0),
             'online_td' => (int)($row['td_online'] ?? 0),
-            'online_tp' => (int)($row['tp_online'] ?? 0)
+            'online_tp' => (int)($row['tp_online'] ?? 0),
+            'assigned_group_count' => (int)$row['assigned_group_count'],
+            'assigned_group_codes' => $row['assigned_group_codes'] ?? ''
         ];
 
         if (empty($row['group_code'])) {
@@ -114,7 +132,9 @@ try {
                 'tp' => $maxTp,
                 'online_cm' => $maxOnlCm,
                 'online_td' => $maxOnlTd,
-                'online_tp' => $maxOnlTp
+                'online_tp' => $maxOnlTp,
+                'assigned_group_count' => $data['assigned_group_count'],
+                'assigned_group_codes' => $data['assigned_group_codes']
             ];
         }
 
