@@ -8,11 +8,11 @@ from openpyxl.utils import get_column_letter
 import shutil
 from datetime import datetime
 
-def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Group_Code_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days=None, time_slots=None):
+def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Group_Code_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days=None, time_slots=None, Pon=None, Son_td=None, Son_tp=None):
     """
     Exporte tous les emplois du temps des groupes dans un seul fichier Excel avec plusieurs feuilles.
     """
-    X, Y, Z, W, U_TD, U_TP = solver_results
+    X, Y, Z = solver_results
     
     # Définition des jours et des créneaux horaires
     if days is None or len(days) == 0:
@@ -35,47 +35,53 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
         for g in range(GP):
             for j in range(J):
                 if X[g][j][k].solution_value() > 0.5:
-                    # Trouver une salle de CM libre
-                    room_found = "N/A"
-                    for r in All_Rooms:
-                        if r['Type'] == 'CM' and r['Salle'] not in assigned_rooms_at_k:
-                            room_found = r['Salle']
-                            assigned_rooms_at_k.add(room_found)
-                            break
-                    slot_room_assignments[k].append(('CM', g, j, room_found))
-                
-                # CM Online
-                if W[g][j][k].solution_value() > 0.5:
-                    slot_room_assignments[k].append(('CM Online', g, j, 'En ligne'))
+                    # Check if online (Pon > 0)
+                    is_online = (Pon is not None and j < len(Pon) and g < len(Pon[j]) and Pon[j][g] > 0)
+                    
+                    if is_online:
+                        slot_room_assignments[k].append(('CM', g, j, 'En ligne'))
+                    else:
+                        # Trouver une salle de CM libre
+                        room_found = "N/A"
+                        for r in All_Rooms:
+                            if r['Type'] == 'CM' and r['Salle'] not in assigned_rooms_at_k:
+                                room_found = r['Salle']
+                                assigned_rooms_at_k.add(room_found)
+                                break
+                        slot_room_assignments[k].append(('CM', g, j, room_found))
         
-        # 2. Identifier les sessions de TP/TD/OnlineSub au créneau k
+        # 2. Identifier les sessions de TP/TD au créneau k
         for gt in range(GT):
             for j in range(J):
+                # TP session
                 if Y[gt][j][k].solution_value() > 0.5:
-                    room_found = "N/A"
-                    for r in All_Rooms:
-                        if r['Type'] == 'TP' and r['Salle'] not in assigned_rooms_at_k:
-                            room_found = r['Salle']
-                            assigned_rooms_at_k.add(room_found)
-                            break
-                    slot_room_assignments[k].append(('TP', gt, j, room_found))
+                    is_online_tp = (Son_tp is not None and j < len(Son_tp) and gt < len(Son_tp[j]) and Son_tp[j][gt] > 0)
+                    
+                    if is_online_tp:
+                        slot_room_assignments[k].append(('TP', gt, j, 'En ligne'))
+                    else:
+                        room_found = "N/A"
+                        for r in All_Rooms:
+                            if r['Type'] == 'TP' and r['Salle'] not in assigned_rooms_at_k:
+                                room_found = r['Salle']
+                                assigned_rooms_at_k.add(room_found)
+                                break
+                        slot_room_assignments[k].append(('TP', gt, j, room_found))
                 
+                # TD session
                 if Z[gt][j][k].solution_value() > 0.5:
-                    room_found = "N/A"
-                    for r in All_Rooms:
-                        if r['Type'] in ['TP', 'TD', 'CM'] and r['Salle'] not in assigned_rooms_at_k:
-                            room_found = r['Salle']
-                            assigned_rooms_at_k.add(room_found)
-                            break
-                    slot_room_assignments[k].append(('TD', gt, j, room_found))
-                
-                # TP Online
-                if U_TP[gt][j][k].solution_value() > 0.5:
-                    slot_room_assignments[k].append(('TP Online', gt, j, 'En ligne'))
-                
-                # TD Online
-                if U_TD[gt][j][k].solution_value() > 0.5:
-                    slot_room_assignments[k].append(('TD Online', gt, j, 'En ligne'))
+                    is_online_td = (Son_td is not None and j < len(Son_td) and gt < len(Son_td[j]) and Son_td[j][gt] > 0)
+                    
+                    if is_online_td:
+                        slot_room_assignments[k].append(('TD', gt, j, 'En ligne'))
+                    else:
+                        room_found = "N/A"
+                        for r in All_Rooms:
+                            if r['Type'] in ['TP', 'TD', 'CM'] and r['Salle'] not in assigned_rooms_at_k:
+                                room_found = r['Salle']
+                                assigned_rooms_at_k.add(room_found)
+                                break
+                        slot_room_assignments[k].append(('TD', gt, j, room_found))
 
     # Création du nom du fichier de sortie
     output_file = "Tous_les_Emplois_du_Temps.xlsx"
@@ -151,16 +157,18 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                     # CM et CM Online
                     for j in range(J):
                         if X[g][j][k].solution_value() > 0.5:
+                            # Check if online (Pon > 0)
+                            is_online = (Pon is not None and j < len(Pon) and g < len(Pon[j]) and Pon[j][g] > 0)
+                            
                             prof = ProCM[j][0] if ProCM[j] else "CM"
                             code = Matiere_Codes[j]
-                            room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==g and r[2]==j), "N/A")
-                            session_str = f"[{code}] {Matieres[j]}\n(CM)\nProf: {prof}\nSalle: {room}"
-                            sessions_list.append(session_str)
                             
-                        if W[g][j][k].solution_value() > 0.5:
-                            prof = ProCM[j][0] if ProCM[j] else "CM Online"
-                            code = Matiere_Codes[j]
-                            session_str = f"[{code}] {Matieres[j]}\n(CM Online)\nProf: {prof}\nSalle: En ligne"
+                            if is_online:
+                                session_str = f"[{code}] {Matieres[j]}\n(CM Online)\nProf: {prof}\nSalle: En ligne"
+                            else:
+                                room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==g and r[2]==j), "N/A")
+                                session_str = f"[{code}] {Matieres[j]}\n(CM)\nProf: {prof}\nSalle: {room}"
+                            
                             sessions_list.append(session_str)
                     
                     # Sous-groupes (TD, TP, TD Online, TP Online)
@@ -179,17 +187,18 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                     subgroup_indices = [Sous_Group_Code_Map[sc] for sc in subgroups_of_g if sc in Sous_Group_Code_Map]
                     
                     for j in range(J):
-                        active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
-                        active_td = [si for si in subgroup_indices if Z[si][j][k].solution_value() > 0.5]
-                        active_onl_tp = [si for si in subgroup_indices if U_TP[si][j][k].solution_value() > 0.5]
-                        active_onl_td = [si for si in subgroup_indices if U_TD[si][j][k].solution_value() > 0.5]
+                        # Detect all active types including online
+                        active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5 and (Son_tp is None or j >= len(Son_tp) or si >= len(Son_tp[j]) or Son_tp[j][si] == 0)]
+                        active_td = [si for si in subgroup_indices if Z[si][j][k].solution_value() > 0.5 and (Son_td is None or j >= len(Son_td) or si >= len(Son_td[j]) or Son_td[j][si] == 0)]
+                        active_onl_tp = [si for si in subgroup_indices if Son_tp is not None and j < len(Son_tp) and si < len(Son_tp[j]) and Son_tp[j][si] > 0 and Y[si][j][k].solution_value() > 0.5]
+                        active_onl_td = [si for si in subgroup_indices if Son_td is not None and j < len(Son_td) and si < len(Son_td[j]) and Son_td[j][si] > 0 and Z[si][j][k].solution_value() > 0.5]
                         
-                        # Combiner par type pour l'affichage
-                        for sess_type, indices in [("TP", active_tp), ("TD", active_td), ("TP Online", active_onl_tp), ("TD Online", active_onl_td)]:
+                        # Process each category
+                        for sess_label, indices in [("TP", active_tp), ("TD", active_td), ("TP Online", active_onl_tp), ("TD Online", active_onl_td)]:
                             if indices:
-                                base_type = "TP" if "TP" in sess_type else "TD"
+                                base_type = "TP" if "TP" in sess_label else "TD"
                                 prof_list = ProTP[j] if base_type == "TP" else ProTD[j]
-                                prof = prof_list[0] if prof_list else sess_type
+                                prof = prof_list[0] if prof_list else base_type
                                 code = Matiere_Codes[j]
                                 
                                 if len(indices) == len(subgroup_indices) and len(subgroup_indices) > 1:
@@ -198,16 +207,17 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                                     sg_names = sorted([Sous_Groupes[si] for si in indices])
                                     sg_detail = ", ".join(sg_names)
                                 
+                                # Gather rooms
                                 rooms = []
                                 for idx_sg in indices:
-                                    if "Online" in sess_type:
+                                    if "Online" in sess_label:
                                         r = "En ligne"
                                     else:
-                                        r = next((r[3] for r in slot_room_assignments[k] if r[0]==sess_type and r[1]==idx_sg and r[2]==j), "N/A")
+                                        r = next((r[3] for r in slot_room_assignments[k] if r[0]==base_type and r[1]==idx_sg and r[2]==j), "N/A")
                                     if r not in rooms: rooms.append(r)
                                 room_str = ", ".join(rooms)
                                 
-                                session_str = f"[{code}] {Matieres[j]}\n({sess_type}) - {sg_detail}\nProf: {prof}\nSalle: {room_str}"
+                                session_str = f"[{code}] {Matieres[j]}\n({sess_label}) - {sg_detail}\nProf: {prof}\nSalle: {room_str}"
                                 sessions_list.append(session_str)
 
                     if sessions_list:
@@ -216,7 +226,6 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             if "(CM)" in s: return (0, "")
                             if "G-S Complet" in s: return (1, "0")
                             # Extraire les noms des sous-groupes de la chaîne de session pour les utiliser comme clé de tri
-                            # Le format est : ...\n(TP/TD) - TD1, TD2\n...
                             try:
                                 if " - " in s:
                                     sub_part = s.split(" - ")[1].split("\n")[0]
@@ -235,7 +244,10 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                 
                 # Colorer la cellule selon le type de session
                 if cell.value:
-                    if "(CM)" in cell.value:
+                    if "Online" in cell.value:
+                        # Light blue for online
+                        cell.fill = PatternFill(start_color="D6EAF8", end_color="D6EAF8", fill_type="solid")
+                    elif "(CM)" in cell.value:
                         cell.fill = PatternFill(start_color="FFE699", end_color="FFE699", fill_type="solid")
                     elif "(TP)" in cell.value:
                         cell.fill = PatternFill(start_color="C6E0B4", end_color="C6E0B4", fill_type="solid")

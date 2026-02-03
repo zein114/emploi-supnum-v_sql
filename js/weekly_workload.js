@@ -137,44 +137,24 @@ function renderTable(data) {
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
                     value="${row.cm}" data-field="cm" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
-                ${
-                  isSingleGroup
-                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_cm || 0}" data-field="online_cm" data-index="${dataIndex}" placeholder="En ligne CM">`
-                    : ""
-                }
             </div>
         </td>
         <td class="workload-col">
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
                     value="${row.td}" data-field="td" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
-                ${
-                  isSingleGroup
-                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_td || 0}" data-field="online_td" data-index="${dataIndex}" placeholder="En ligne TD">`
-                    : ""
-                }
             </div>
         </td>
         <td class="workload-col">
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
                     value="${row.tp}" data-field="tp" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
-                ${
-                  isSingleGroup
-                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_tp || 0}" data-field="online_tp" data-index="${dataIndex}" placeholder="En ligne TP">`
-                    : ""
-                }
             </div>
         </td>
         <td class="status-col" style="text-align: center; width: 120px;">
-            <button class="btn btn-secondary btn-sm" onclick="openExcludeModal(this, '${
-              row.code
-            }', '${row.nom}', '${row.semester}')" style="width: 100%; ${
-              isSingleGroup || isUnassigned ? "display: none;" : ""
-            }">
+            <button class="btn btn-secondary btn-sm" onclick="openExcludeModal(this, '${row.code
+      }', '${row.nom}', '${row.semester}')" style="width: 100%; ${isUnassigned ? "display: none;" : ""
+      }">
                 spécifier
             </button>
         </td>
@@ -201,30 +181,10 @@ function attachInputListeners() {
         parseFloat(row.querySelector('[data-field="cm"]').value) || 0;
       const currentTD =
         parseFloat(row.querySelector('[data-field="td"]').value) || 0;
-      const currentTP =
-        parseFloat(row.querySelector('[data-field="tp"]').value) || 0;
-
-      const onlineCMInput = row.querySelector('[data-field="online_cm"]');
-      const onlineTDInput = row.querySelector('[data-field="online_td"]');
-      const onlineTPInput = row.querySelector('[data-field="online_tp"]');
-
-      const currentOnlineCM = onlineCMInput
-        ? parseFloat(onlineCMInput.value) || 0
-        : parseFloat(originalRow.online_cm) || 0;
-      const currentOnlineTD = onlineTDInput
-        ? parseFloat(onlineTDInput.value) || 0
-        : parseFloat(originalRow.online_td) || 0;
-      const currentOnlineTP = onlineTPInput
-        ? parseFloat(onlineTPInput.value) || 0
-        : parseFloat(originalRow.online_tp) || 0;
-
       const isModified =
         currentCM !== parseFloat(originalRow.cm) ||
         currentTD !== parseFloat(originalRow.td) ||
-        currentTP !== parseFloat(originalRow.tp) ||
-        currentOnlineCM !== (parseFloat(originalRow.online_cm) || 0) ||
-        currentOnlineTD !== (parseFloat(originalRow.online_td) || 0) ||
-        currentOnlineTP !== (parseFloat(originalRow.online_tp) || 0);
+        currentTP !== parseFloat(originalRow.tp);
 
       const indicator = row.querySelector(".status-indicator");
       if (isModified) {
@@ -353,9 +313,8 @@ function addExclusionRow(data = null, assignedGroupCodes = "") {
       selectedGroupName = g.name;
       selectedGroupValue = g.code;
     }
-    menuOptions += `<div class="dropdown-item ${
-      isSelected ? "selected" : ""
-    }" data-value="${g.code}">${g.name}</div>`;
+    menuOptions += `<div class="dropdown-item ${isSelected ? "selected" : ""
+      }" data-value="${g.code}">${g.name}</div>`;
   });
 
   div.innerHTML = `
@@ -378,42 +337,35 @@ function addExclusionRow(data = null, assignedGroupCodes = "") {
         </div>
 
         <div class="exclusion-inputs-grid" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Présentiel Row -->
             <div class="hours-row" style="display: flex; align-items: center; gap: 10px;">
-                <div class="row-label" style="width: 80px; font-weight: 500; font-size: 0.9rem; color: var(--text-primary);">Présentiel</div>
+                <div class="row-label" style="width: 80px; font-weight: 500; font-size: 0.9rem; color: var(--text-primary);">Volumes</div>
                 <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">CM</label>
-                        <input type="number" step="1" class="form-input ex-cm" value="${data ? data.cm : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-val-cm" value="${data ? (data.online_cm > 0 ? data.online_cm : data.cm) : 0}" style="width: 100%;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TD</label>
-                        <input type="number" step="1" class="form-input ex-td" value="${data ? data.td : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-val-td" value="${data ? (data.online_td > 0 ? data.online_td : data.td) : 0}" style="width: 100%;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TP</label>
-                        <input type="number" step="1" class="form-input ex-tp" value="${data ? data.tp : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-val-tp" value="${data ? (data.online_tp > 0 ? data.online_tp : data.tp) : 0}" style="width: 100%;">
                     </div>
                 </div>
             </div>
 
-            <!-- En ligne Row -->
-            <div class="hours-row" style="display: flex; align-items: center; gap: 10px;">
-                <div class="row-label" style="width: 80px; font-weight: 500; font-size: 0.9rem;">En ligne</div>
-                <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">CM</label>
-                        <input type="number" step="1" class="form-input ex-online-cm" value="${data ? data.online_cm : 0}" style="width: 100%;">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TD</label>
-                        <input type="number" step="1" class="form-input ex-online-td" value="${data ? data.online_td : 0}" style="width: 100%;">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TP</label>
-                        <input type="number" step="1" class="form-input ex-online-tp" value="${data ? data.online_tp : 0}" style="width: 100%;">
-                    </div>
-                </div>
+            <div class="online-toggle-row" style="display: flex; align-items: center; gap: 10px; margin-top: 5px; padding-left: 90px;">
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-right: 5px;">Organiser en ligne :</span>
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer;">
+                    <input type="checkbox" class="ex-chk-cm" ${data && data.online_cm > 0 ? 'checked' : ''}> CM
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer;">
+                    <input type="checkbox" class="ex-chk-td" ${data && data.online_td > 0 ? 'checked' : ''}> TD
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer;">
+                    <input type="checkbox" class="ex-chk-tp" ${data && data.online_tp > 0 ? 'checked' : ''}> TP
+                </label>
             </div>
         </div>
     `;
@@ -456,15 +408,12 @@ async function saveExclusions() {
     updates.push({
       code: code,
       code_groupe: groupCode,
-      cm: parseFloat(row.querySelector(".ex-cm").value) || 0,
-      td: parseFloat(row.querySelector(".ex-td").value) || 0,
-      tp: parseFloat(row.querySelector(".ex-tp").value) || 0,
-      cm: parseFloat(row.querySelector(".ex-cm").value) || 0,
-      td: parseFloat(row.querySelector(".ex-td").value) || 0,
-      tp: parseFloat(row.querySelector(".ex-tp").value) || 0,
-      online_cm: parseFloat(row.querySelector(".ex-online-cm").value) || 0,
-      online_td: parseFloat(row.querySelector(".ex-online-td").value) || 0,
-      online_tp: parseFloat(row.querySelector(".ex-online-tp").value) || 0,
+      cm: row.querySelector(".ex-chk-cm").checked ? 0 : (parseFloat(row.querySelector(".ex-val-cm").value) || 0),
+      td: row.querySelector(".ex-chk-td").checked ? 0 : (parseFloat(row.querySelector(".ex-val-td").value) || 0),
+      tp: row.querySelector(".ex-chk-tp").checked ? 0 : (parseFloat(row.querySelector(".ex-val-tp").value) || 0),
+      online_cm: row.querySelector(".ex-chk-cm").checked ? (parseFloat(row.querySelector(".ex-val-cm").value) || 0) : 0,
+      online_td: row.querySelector(".ex-chk-td").checked ? (parseFloat(row.querySelector(".ex-val-td").value) || 0) : 0,
+      online_tp: row.querySelector(".ex-chk-tp").checked ? (parseFloat(row.querySelector(".ex-val-tp").value) || 0) : 0,
     });
   });
 
@@ -548,9 +497,6 @@ async function saveWorkloadData() {
       const cmInput = row.querySelector('input[data-field="cm"]');
       const tdInput = row.querySelector('input[data-field="td"]');
       const tpInput = row.querySelector('input[data-field="tp"]');
-      const onlCmInput = row.querySelector('input[data-field="online_cm"]');
-      const onlTdInput = row.querySelector('input[data-field="online_td"]');
-      const onlTpInput = row.querySelector('input[data-field="online_tp"]');
 
       updates.push({
         code: dataRow.code,
@@ -559,15 +505,10 @@ async function saveWorkloadData() {
         cm: cmInput ? parseFloat(cmInput.value) || 0 : dataRow.cm,
         td: tdInput ? parseFloat(tdInput.value) || 0 : dataRow.td,
         tp: tpInput ? parseFloat(tpInput.value) || 0 : dataRow.tp,
-        online_cm: onlCmInput
-          ? parseFloat(onlCmInput.value) || 0
-          : dataRow.online_cm,
-        online_td: onlTdInput
-          ? parseFloat(onlTdInput.value) || 0
-          : dataRow.online_td,
-        online_tp: onlTpInput
-          ? parseFloat(onlTpInput.value) || 0
-          : dataRow.online_tp,
+        // Reset online flags for general case if any existed (though UI prevents it)
+        online_cm: 0,
+        online_td: 0,
+        online_tp: 0,
       });
     }
   });
