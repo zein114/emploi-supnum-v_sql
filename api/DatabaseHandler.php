@@ -192,6 +192,13 @@ class DatabaseHandler {
     // ========== GROUPS ==========
     
     public function getGroups() {
+        // Fetch current semester type setting
+        $settingResult = $this->db->query("SELECT setting_value FROM settings WHERE setting_key = 'current_semester_type'");
+        $currentType = 'impair'; // Default
+        if ($settingResult && $settingResult->num_rows > 0) {
+            $currentType = $settingResult->fetch_assoc()['setting_value'];
+        }
+
         $result = $this->db->query("
             SELECT g.id, g.name, s.name as semester, g.type
             FROM `groups` g
@@ -202,12 +209,32 @@ class DatabaseHandler {
         
         $groups = [];
         while ($row = $result->fetch_assoc()) {
-            $groups[] = [
-                'id' => $row['id'],
-                'name' => $row['name'],
-                'semester' => $row['semester'] ?? '',
-                'type' => $row['type']
-            ];
+            $shouldInclude = false;
+            if ($row['semester']) {
+                if (preg_match('/(\d+)/', $row['semester'], $matches)) {
+                    $num = intval($matches[1]);
+                    $isEven = ($num % 2 === 0);
+                    
+                    if ($currentType === 'pair' && $isEven) {
+                        $shouldInclude = true;
+                    } elseif ($currentType === 'impair' && !$isEven) {
+                         $shouldInclude = true;
+                    }
+                } else {
+                    $shouldInclude = true;
+                }
+            } else {
+                $shouldInclude = true;
+            }
+
+            if ($shouldInclude) {
+                $groups[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name'],
+                    'semester' => $row['semester'] ?? '',
+                    'type' => $row['type']
+                ];
+            }
         }
         
         return $groups;

@@ -186,3 +186,123 @@
   color: var(--text-muted);
   font-weight: bold;
 }
+/* Animated Radio Buttons */
+.radio-group.animated-radios {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  margin-top: 8px;
+  transition: all 0.3s ease;
+}
+
+.radio-group.animated-radios .radio-label {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  min-width: 0;
+  z-index: 1; /* Above glider */
+}
+
+/* Glider Background */
+.radio-group.animated-radios {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  margin-top: 8px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.radio-group.no-transition * {
+  transition: none !important;
+}
+
+.glider {
+  position: absolute;
+  display: flex;
+  height: calc(100% - 8px);
+  width: calc((100% - 8px - 20px) / 3); /* 8px padding total, 20px gap total */
+  background-color: var(--color-primary-blue);
+  z-index: 0;
+  left: 4px;
+  top: 4px;
+  border-radius: var(--radius-sm);
+  transition: 0.25s ease-out;
+  box-shadow: 0 4px 15px rgba(61, 127, 242, 0.3);
+}
+
+/* Move glider based on checked input */
+.radio-group:has(input[value="odd"]:checked) .glider {
+  transform: translateX(0);
+}
+.radio-group:has(input[value="even"]:checked) .glider {
+  transform: translateX(calc(100% + 10px));
+}
+.radio-group:has(input[value="both"]:checked) .glider {
+  transform: translateX(calc(200% + 20px));
+}
+
+.radio-group.animated-radios .radio-label input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radio-group.animated-radios .radio-label span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.25s;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+/* Selected State - Labels */
+.radio-group.animated-radios .radio-label:has(input:checked) span {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.radio-group.animated-radios .radio-label:has(input:checked) {
+  transform: translateY(-1px);
+}
+
+/* Disabled State */
+.radio-group.disabled-radios {
+  opacity: 0.3;
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: grayscale(1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.radio-group.disabled-radios .radio-label {
+  cursor: not-allowed;
+}
+
+/* Hover effect on non-checked */
+.radio-group.animated-radios .radio-label:hover:not(:has(input:checked)) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.radio-group.animated-radios .radio-label:active {
+  transform: scale(0.98);
+}

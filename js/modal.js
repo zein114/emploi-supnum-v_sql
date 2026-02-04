@@ -88,6 +88,7 @@ const Modal = (function () {
       // Reset callbacks to prevent memory leaks or potential errors
       onConfirmCallback = null;
       onCancelCallback = null;
+      isLocked = false; // Reset lock state for next modal
     }, 300);
 
     if (onCancelCallback) {
@@ -124,7 +125,7 @@ const Modal = (function () {
       message,
       onConfirm,
       onCancel = null,
-      options = {}
+      options = {},
     ) {
       ensureModalStructure();
 
@@ -141,7 +142,7 @@ const Modal = (function () {
         // We assume modal-content is the parent of modalTitle's parent div (modal-header)
         // Actually structure is likely: .modal-content > .modal-header, .modal-body
         const contentEl = document.querySelector(
-          "#globalModalBackdrop .modal-content"
+          "#globalModalBackdrop .modal-content",
         );
         if (contentEl) contentEl.appendChild(actionsEl);
       }
@@ -194,7 +195,7 @@ const Modal = (function () {
         actionsEl.id = "modalActions";
         actionsEl.className = "modal-actions";
         const contentEl = document.querySelector(
-          "#globalModalBackdrop .modal-content"
+          "#globalModalBackdrop .modal-content",
         );
         if (contentEl) contentEl.appendChild(actionsEl);
       }

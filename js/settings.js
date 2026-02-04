@@ -64,8 +64,12 @@
 
 // Global variables to store dynamic settings
 let availableSemesters = [];
-let availableGroupTypes = ["principale", "TD", "specialite", "langues && ppp"]; // Updated types
+let availableSemesterPairs = [];
+let currentGlobalSemesterType = "impair";
+let availableGroupTypes = ["principale", "TD", "specialite", "langues && ppp"];
 let availablePrincipaleGroups = []; // Store for parent selection in add/edit group
+let globalGroups = []; // Store all groups for reference
+let allGroupsUnfiltered = []; // Store ALL groups (unfiltered) for semester coverage checking
 
 async function loadTabData(tabId) {
   if (tabId === "classrooms") {
@@ -82,15 +86,20 @@ async function loadTabData(tabId) {
     );
     const result = await response.json();
 
-    // Always update semesters if they are returned (even if not 'general' tab, if API sends them)
+    // Always update semesters if they are returned
     if (result.semesters) {
       availableSemesters = result.semesters;
+    }
+    if (result.semester_pairs) {
+      availableSemesterPairs = result.semester_pairs;
+    }
+    if (result.current_semester_type) {
+      currentGlobalSemesterType = result.current_semester_type;
     }
 
     // Update group types (if sent by API)
     if (result.group_types) {
       availableGroupTypes = result.group_types;
-      // Ensure defaults are present if array is empty
       if (availableGroupTypes.length === 0)
         availableGroupTypes = ["principale", "TD"];
     }
@@ -99,16 +108,12 @@ async function loadTabData(tabId) {
       // Render semesters list
       if (result.semesters) {
         renderSemesters(result.semesters);
-
         // Update semester dropdown with available semesters
         updateSemesterDropdown(result.semesters);
       }
 
       // Update Semester Type UI
-      // Note: API needs to return current_semester_type in get_settings response
-      // I should update get_settings.php if it doesn't return it yet, but it returns all settings keys.
-      // Let's assume result.current_semester_type exists or default 'impair'
-      const typeValue = result.current_semester_type || "impair";
+      const typeValue = currentGlobalSemesterType;
       const typeText =
         typeValue === "impair"
           ? "Impair (S1, S3, S5...)"
@@ -123,11 +128,16 @@ async function loadTabData(tabId) {
     } else if (tabId === "classrooms") {
       renderClassrooms(result.classrooms);
     } else if (tabId === "groups") {
-      // Store principal groups for dropdowns (including languages as they are now top-level)
+      // Store principal groups for dropdowns
       if (result.groups) {
+        globalGroups = result.groups;
         availablePrincipaleGroups = result.groups.filter(
           (g) => g.type === "principale",
         );
+      }
+      // Store unfiltered groups for semester coverage checking
+      if (result.all_groups) {
+        allGroupsUnfiltered = result.all_groups;
       }
       renderGroups(result.groups);
     }
@@ -572,12 +582,12 @@ function deleteClassroom(name) {
 // Group functions
 
 function addGroup() {
-  // Generate semester options
-  const semesterOptions = availableSemesters.length
-    ? availableSemesters
+  // Generate semester options from PAIRS
+  const semesterOptions = availableSemesterPairs.length
+    ? availableSemesterPairs
         .map(
-          (s) =>
-            `<div class="dropdown-item" data-value="${s.name}">${s.name}</div>`,
+          (p) =>
+            `<div class="dropdown-item" data-value="${p.pair_id}" data-odd="${p.odd_semester.name}" data-even="${p.even_semester.name}">${p.display}</div>`,
         )
         .join("")
     : "";
@@ -597,7 +607,7 @@ function addGroup() {
     ? availablePrincipaleGroups
         .map(
           (g) =>
-            `<div class="dropdown-item" data-value="${g.id}">${g.name}</div>`,
+            `<div class="dropdown-item" data-value="${g.id}">${g.name} (${g.semester})</div>`,
         )
         .join("")
     : "";
@@ -609,7 +619,7 @@ function addGroup() {
                 <input type="text" id="addGroupName" class="form-input" placeholder="ex: Licence 1 - G1" required>
             </div>
             <div class="mb-1">
-                <label class="form-label">Semestre</label>
+                <label class="form-label">Semestre (Année)</label>
                 <div class="dropdown-container">
                     <button type="button" class="dropdown-button" data-dropdown-id="addGroupSemester">
                         <span class="dropdown-text">Choisir</span>
@@ -645,6 +655,27 @@ function addGroup() {
                     </div>
                 </div>
             </div>
+            
+             <!-- Specialite Semester Coverage (Disabled by default) -->
+            <div class="mb-1" id="addGroupSemesterCoverageContainer">
+                <label class="form-label">Couverture Semestrielle</label>
+                <div class="radio-group animated-radios disabled-radios" id="addGroupSemesterCoverage">
+                    <label class="radio-label">
+                        <input type="radio" name="semesterCoverage" value="odd" checked disabled>
+                        <span>Semestre Impair</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="semesterCoverage" value="even" disabled>
+                        <span>Semestre Pair</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="semesterCoverage" value="both" disabled>
+                        <span>Les deux semestres</span>
+                    </label>
+                    <div class="glider"></div>
+                </div>
+            </div>
+
             <div class="mb-1">
                 <label class="form-label">Nombre d'étudiants</label>
                 <input type="number" id="addGroupCapacity" class="form-input" placeholder="ex: 30" min="1" required>
@@ -664,6 +695,17 @@ function addGroup() {
           '[data-dropdown-id="addGroupParent"]',
         );
         const typeValue = e.detail.value;
+        const coverageDiv = document.getElementById("addGroupSemesterCoverage");
+        const coverageInputs = coverageDiv.querySelectorAll("input");
+
+        // Specialite Logic: Enable radios only for Specialite
+        if (typeValue === "specialite") {
+          coverageDiv.classList.remove("disabled-radios");
+          coverageInputs.forEach((i) => (i.disabled = false));
+        } else {
+          coverageDiv.classList.add("disabled-radios");
+          coverageInputs.forEach((i) => (i.disabled = true));
+        }
 
         // Parent Group Visibility Logic
         if (parentBtn) {
@@ -691,30 +733,38 @@ function addGroup() {
           }
         }
       } else if (e.detail.dropdownId === "addGroupSemester") {
-        const selectedSemester = e.detail.value;
-        const parentBtn = document.querySelector(
-          '[data-dropdown-id="addGroupParent"]',
-        );
-        if (parentBtn) {
-          const filteredParents = availablePrincipaleGroups.filter(
-            (g) => g.semester === selectedSemester,
+        // Update Radio Labels and Parent Filter
+        const pairId = parseInt(e.detail.value);
+        const pair = availableSemesterPairs.find((p) => p.pair_id === pairId);
+
+        if (pair) {
+          // Update Parent filtering based on current GLOBAL semester
+          const parentBtn = document.querySelector(
+            '[data-dropdown-id="addGroupParent"]',
           );
+          if (parentBtn && !parentBtn.disabled) {
+            let targetSemName =
+              currentGlobalSemesterType === "impair"
+                ? pair.odd_semester.name
+                : pair.even_semester.name;
 
-          const itemsHtml = filteredParents
-            .map(
-              (g) =>
-                `<div class="dropdown-item" data-value="${g.id}">${g.name}</div>`,
-            )
-            .join("");
+            const filteredParents = availablePrincipaleGroups.filter(
+              (g) => g.semester === targetSemName,
+            );
 
-          // Reset current selection
-          parentBtn.setAttribute("data-value", "");
-          parentBtn.querySelector(".dropdown-text").textContent =
-            "Choisir un parent";
+            const itemsHtml = filteredParents
+              .map(
+                (g) =>
+                  `<div class="dropdown-item" data-value="${g.id}">${g.name} (${g.semester})</div>`,
+              )
+              .join("");
 
-          // Let customDropdown rebind click handlers
-          if (window.customDropdown) {
-            window.customDropdown.updateMenu("addGroupParent", itemsHtml);
+            parentBtn.setAttribute("data-value", "");
+            parentBtn.querySelector(".dropdown-text").textContent =
+              "Choisir un parent";
+            if (window.customDropdown) {
+              window.customDropdown.updateMenu("addGroupParent", itemsHtml);
+            }
           }
         }
       }
@@ -746,23 +796,12 @@ function addGroup() {
         return;
       }
 
-      const semBtn = document.querySelector(
-        '[data-dropdown-id="addGroupSemester"]',
-      );
       const typeBtn = document.querySelector(
         '[data-dropdown-id="addGroupType"]',
       );
       const parentBtn = document.querySelector(
         '[data-dropdown-id="addGroupParent"]',
       );
-
-      const semester =
-        semBtn.getAttribute("data-value") ||
-        semBtn.querySelector(".dropdown-text").textContent;
-      if (semester === "Choisir") {
-        Toast.error("Erreur", "Veuillez choisir un semestre.");
-        return;
-      }
 
       let typeValue =
         typeBtn.getAttribute("data-value") ||
@@ -776,25 +815,71 @@ function addGroup() {
 
       // Validate: if type is TD, parent must be selected
       if (typeValue.toLowerCase() === "td" && !parentId) {
-        Toast.error("Erreur", "Pour un groupe de type TD, vous devez sélectionner un groupe parent.");
+        Toast.error(
+          "Erreur",
+          "Pour un groupe de type TD, vous devez sélectionner un groupe parent.",
+        );
         return;
       }
 
       const capacityInput = document.getElementById("addGroupCapacity");
       const capacity = capacityInput ? parseInt(capacityInput.value) : 0;
       if (!capacity || isNaN(capacity) || capacity <= 0) {
-        Toast.error("Erreur", "Veuillez entrer un nombre d'étudiants valide (nombre positif).");
+        Toast.error(
+          "Erreur",
+          "Veuillez entrer un nombre d'étudiants valide (nombre positif).",
+        );
         return;
+      }
+
+      // 1. Resolve Semester Pair
+      const semBtn = document.querySelector(
+        '[data-dropdown-id="addGroupSemester"]',
+      );
+      const pairId = parseInt(semBtn.getAttribute("data-value"));
+      const pair = availableSemesterPairs.find((p) => p.pair_id === pairId);
+
+      if (!pair) {
+        Toast.error("Erreur", "Veuillez choisir un semestre (année).");
+        return;
+      }
+
+      let finalSemesterName = "";
+      let createNext = false;
+
+      // 2. Logic to pick correct semester
+      if (typeValue === "specialite") {
+        const coverage = document.querySelector(
+          'input[name="semesterCoverage"]:checked',
+        ).value;
+        if (coverage === "odd") {
+          finalSemesterName = pair.odd_semester.name;
+        } else if (coverage === "even") {
+          finalSemesterName = pair.even_semester.name;
+        } else if (coverage === "both") {
+          finalSemesterName = pair.odd_semester.name;
+          createNext = true;
+        }
+      } else {
+        // Standard Group: Follow Global Setting
+        if (currentGlobalSemesterType === "impair") {
+          finalSemesterName = pair.odd_semester.name;
+        } else {
+          finalSemesterName = pair.even_semester.name;
+        }
       }
 
       const success = await updateSettings(
         {
           action: "add_group",
           name: name,
-          semester: semester,
+          semester: finalSemesterName,
+          /* type: typeValue,  <-- already defined above */
+
           type: typeValue,
           parent_group_id: parentId,
           capacity: capacity,
+          create_next_semester: createNext,
         },
         saveBtn,
       );
@@ -840,7 +925,7 @@ function editGroup(id, name, semester, type, parentId, capacity) {
         .filter((g) => g.semester === semester)
         .map(
           (g) =>
-            `<div class="dropdown-item ${g.id == parentId ? "selected" : ""}" data-value="${g.id}">${g.name}</div>`,
+            `<div class="dropdown-item ${g.id == parentId ? "selected" : ""}" data-value="${g.id}">${g.name} (${g.semester})</div>`,
         )
         .join("")
     : "";
@@ -849,7 +934,7 @@ function editGroup(id, name, semester, type, parentId, capacity) {
   let parentName = "Choisir un parent";
   if (parentId) {
     const found = availablePrincipaleGroups.find((g) => g.id == parentId);
-    if (found) parentName = found.name;
+    if (found) parentName = `${found.name} (${found.semester})`;
   }
 
   // Check if parent should be disabled (Only enabled for TD)
@@ -878,7 +963,7 @@ function editGroup(id, name, semester, type, parentId, capacity) {
             <div class="mb-1">
                 <label class="form-label">Type</label>
                 <div class="dropdown-container">
-                    <button type="button" class="dropdown-button" data-dropdown-id="editGroupType">
+                    <button type="button" class="dropdown-button" data-dropdown-id="editGroupType" data-value="${type}">
                         <span class="dropdown-text">${displayType}</span>
                         <div class="dropdown-arrow"></div>
                     </button>
@@ -903,12 +988,81 @@ function editGroup(id, name, semester, type, parentId, capacity) {
                 <label class="form-label">Nombre d'étudiants</label>
                 <input type="number" id="editGroupCapacity" class="form-input" placeholder="ex: 30" min="1" value="${capacity || 0}" required>
             </div>
+            
+            <div class="mb-1" id="editGroupSemesterCoverageContainer">
+                <label class="form-label">Couverture Semestrielle</label>
+                <div class="radio-group animated-radios ${type === "specialite" ? "" : "disabled-radios"}" id="editGroupSemesterCoverage">
+                    <label class="radio-label">
+                        <input type="radio" name="editSemesterCoverage" value="odd" ${type === "specialite" ? "" : "disabled"}>
+                        <span>Semestre Impair</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="editSemesterCoverage" value="even" ${type === "specialite" ? "" : "disabled"}>
+                        <span>Semestre Pair</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="editSemesterCoverage" value="both" ${type === "specialite" ? "" : "disabled"}>
+                        <span>Les deux semestres</span>
+                    </label>
+                    <div class="glider"></div>
+                </div>
+            </div>
         </div>
     `;
   Modal.showContent("Modifier le groupe", html, () => {
     if (window.customDropdown) {
       window.customDropdown.initContainer(document.getElementById("modalBody"));
     }
+
+    // Initial Radio Setup for Edit
+    const coverageContainer = document.getElementById(
+      "editGroupSemesterCoverage",
+    );
+    if (coverageContainer) coverageContainer.classList.add("no-transition");
+
+    const initialPair = availableSemesterPairs.find(
+      (p) =>
+        p.odd_semester.name === semester || p.even_semester.name === semester,
+    );
+    if (initialPair) {
+      const radios = document.getElementsByName("editSemesterCoverage");
+
+      if (type.toLowerCase() === "specialite") {
+        const otherSemName =
+          semester === initialPair.odd_semester.name
+            ? initialPair.even_semester.name
+            : initialPair.odd_semester.name;
+
+        const targetParentId = parentId ? parseInt(parentId) : null;
+        const hasBoth = allGroupsUnfiltered.some((g) => {
+          const gParentId = g.parent_group_id
+            ? parseInt(g.parent_group_id)
+            : null;
+          return (
+            g.name === name &&
+            g.type === "specialite" &&
+            g.semester === otherSemName &&
+            gParentId === targetParentId
+          );
+        });
+
+        if (hasBoth) radios[2].checked = true;
+        else if (semester === initialPair.odd_semester.name)
+          radios[0].checked = true;
+        else radios[1].checked = true;
+      } else {
+        // Standard pre-selection based on current semester
+        if (semester === initialPair.odd_semester.name)
+          radios[0].checked = true;
+        else radios[1].checked = true;
+      }
+    }
+
+    // Remove no-transition after a short delay to allow static initial render
+    setTimeout(() => {
+      if (coverageContainer)
+        coverageContainer.classList.remove("no-transition");
+    }, 100);
 
     // Handle "Autre" option selection & Parent visibility
     const handler = function (e) {
@@ -917,6 +1071,19 @@ function editGroup(id, name, semester, type, parentId, capacity) {
           '[data-dropdown-id="editGroupParent"]',
         );
         const typeValue = e.detail.value;
+        const coverageDiv = document.getElementById(
+          "editGroupSemesterCoverage",
+        );
+        const coverageInputs = coverageDiv.querySelectorAll("input");
+
+        // Specialite Logic: Enable radios only for Specialite
+        if (typeValue === "specialite") {
+          coverageDiv.classList.remove("disabled-radios");
+          coverageInputs.forEach((i) => (i.disabled = false));
+        } else {
+          coverageDiv.classList.add("disabled-radios");
+          coverageInputs.forEach((i) => (i.disabled = true));
+        }
 
         // Parent Visibility
         if (parentBtn) {
@@ -930,8 +1097,6 @@ function editGroup(id, name, semester, type, parentId, capacity) {
             parentBtn.setAttribute("data-value", "");
             parentBtn.querySelector(".dropdown-text").textContent =
               "Choisir un parent";
-
-            // Clear selected item in menu
             const menu = parentBtn
               .closest(".dropdown-container")
               .querySelector(".dropdown-menu");
@@ -943,30 +1108,7 @@ function editGroup(id, name, semester, type, parentId, capacity) {
           }
         }
       } else if (e.detail.dropdownId === "editGroupSemester") {
-        const selectedSemester = e.detail.value;
-        const parentBtn = document.querySelector(
-          '[data-dropdown-id="editGroupParent"]',
-        );
-        if (parentBtn) {
-          const filteredParents = availablePrincipaleGroups.filter(
-            (g) => g.semester === selectedSemester,
-          );
-
-          const itemsHtml = filteredParents
-            .map(
-              (g) =>
-                `<div class=\"dropdown-item\" data-value=\"${g.id}\">${g.name}</div>`,
-            )
-            .join("");
-
-          parentBtn.setAttribute("data-value", "");
-          parentBtn.querySelector(".dropdown-text").textContent =
-            "Choisir un parent";
-
-          if (window.customDropdown) {
-            window.customDropdown.updateMenu("editGroupParent", itemsHtml);
-          }
-        }
+        // Parent filtering logic would go here if needed in edit mode
       }
     };
     document.addEventListener("dropdown-change", handler);
@@ -1001,10 +1143,6 @@ function editGroup(id, name, semester, type, parentId, capacity) {
         '[data-dropdown-id="editGroupParent"]',
       );
 
-      const newSemester =
-        semBtn.getAttribute("data-value") ||
-        semBtn.querySelector(".dropdown-text").textContent;
-
       let newType =
         typeBtn.getAttribute("data-value") ||
         typeBtn.querySelector(".dropdown-text").textContent;
@@ -1013,40 +1151,144 @@ function editGroup(id, name, semester, type, parentId, capacity) {
         ? parentBtn.getAttribute("data-value")
         : null;
 
+      // 1. Resolve Semester for Edit
+      let finalNewSemester = "";
+      const currentSemValue =
+        semBtn.getAttribute("data-value") ||
+        semBtn.querySelector(".dropdown-text").textContent;
+      const currentPair = availableSemesterPairs.find(
+        (p) =>
+          p.odd_semester.name === currentSemValue ||
+          p.even_semester.name === currentSemValue,
+      );
+
+      let coverageValue = null;
+      if (newType.toLowerCase() === "specialite" && currentPair) {
+        const selectedRadio = document.querySelector(
+          'input[name="editSemesterCoverage"]:checked',
+        );
+        coverageValue = selectedRadio ? selectedRadio.value : null;
+
+        console.log("Specialite coverage detection:", {
+          newType,
+          selectedRadio,
+          coverageValue,
+          currentPair,
+        });
+
+        if (coverageValue === "odd")
+          finalNewSemester = currentPair.odd_semester.name;
+        else if (coverageValue === "even")
+          finalNewSemester = currentPair.even_semester.name;
+        else finalNewSemester = currentPair.odd_semester.name;
+      } else {
+        finalNewSemester = currentSemValue;
+      }
+
       // Validate: if type is TD, parent must be selected
       if (newType.toLowerCase() === "td" && !newParentId) {
-        Toast.error("Erreur", "Pour un groupe de type TD, vous devez sélectionner un groupe parent.");
+        Toast.error(
+          "Erreur",
+          "Pour un groupe de type TD, vous devez sélectionner un groupe parent.",
+        );
         return;
       }
 
       const capacityInput = document.getElementById("editGroupCapacity");
       const newCapacity = capacityInput ? parseInt(capacityInput.value) : 0;
       if (!newCapacity || isNaN(newCapacity) || newCapacity <= 0) {
-        Toast.error("Erreur", "Veuillez entrer un nombre d'étudiants valide (nombre positif).");
+        Toast.error(
+          "Erreur",
+          "Veuillez entrer un nombre d'étudiants valide (nombre positif).",
+        );
         return;
       }
 
-      // Check if anything changed
+      // For specialite groups, also check if coverage changed
+      let coverageChanged = false;
       if (
-        newName === name &&
-        newSemester === semester &&
-        newType === type &&
-        newParentId == parentId &&
-        newCapacity === (capacity || 0)
+        newType.toLowerCase() === "specialite" &&
+        coverageValue &&
+        currentPair
       ) {
+        // Determine the original coverage based on the ORIGINAL semester (not currentPair)
+        // Find the pair that contains the original semester
+        const originalPair = availableSemesterPairs.find(
+          (p) =>
+            p.odd_semester.name === semester ||
+            p.even_semester.name === semester,
+        );
+
+        if (originalPair) {
+          const otherSem =
+            semester === originalPair.odd_semester.name
+              ? originalPair.even_semester.name
+              : originalPair.odd_semester.name;
+          const targetParentId = parentId ? parseInt(parentId) : null;
+          const hadBoth = allGroupsUnfiltered.some((g) => {
+            const gParentId = g.parent_group_id
+              ? parseInt(g.parent_group_id)
+              : null;
+            return (
+              g.name === name &&
+              g.type === "specialite" &&
+              g.semester === otherSem &&
+              gParentId === targetParentId
+            );
+          });
+
+          const originalCoverage = hadBoth
+            ? "both"
+            : semester === originalPair.odd_semester.name
+              ? "odd"
+              : "even";
+          coverageChanged = coverageValue !== originalCoverage;
+
+          console.log("Coverage check:", {
+            originalCoverage,
+            newCoverage: coverageValue,
+            coverageChanged,
+            hadBoth,
+            semester,
+            otherSem,
+          });
+        }
+      }
+
+      // Check if anything changed
+      const basicChanges =
+        newName !== name ||
+        finalNewSemester !== semester ||
+        newType !== type ||
+        newParentId != parentId ||
+        newCapacity !== (capacity || 0);
+
+      if (!basicChanges && !coverageChanged) {
         Toast.warning("Attention", "Aucune modification détectée");
         return;
       }
+
+      console.log("Submitting edit_group:", {
+        action: "edit_group",
+        id: document.getElementById("editGroupId").value,
+        name: newName,
+        semester: finalNewSemester,
+        type: newType,
+        parent_group_id: newParentId,
+        capacity: newCapacity,
+        coverage: coverageValue,
+      });
 
       const success = await updateSettings(
         {
           action: "edit_group",
           id: document.getElementById("editGroupId").value,
           name: newName,
-          semester: newSemester,
+          semester: finalNewSemester,
           type: newType,
           parent_group_id: newParentId,
           capacity: newCapacity,
+          coverage: coverageValue,
         },
         saveBtn,
       );

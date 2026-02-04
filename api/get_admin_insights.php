@@ -8,7 +8,16 @@ header('Content-Type: application/json; charset=utf-8');
 
 $insights = [];
 
+// 1. Fetch current semester type setting
+$settingResult = $conn->query("SELECT setting_value FROM settings WHERE setting_key = 'current_semester_type'");
+$currentType = 'impair'; // Default
+if ($settingResult && $settingResult->num_rows > 0) {
+    $currentType = $settingResult->fetch_assoc()['setting_value'];
+}
+$response['current_semester_type'] = $currentType; 
+
 // 1. Workload by Semester
+// Optimized query to filter by parity in SQL if possible, or filter in PHP
 $workload_query = "
     SELECT sem.name as semester, 
            SUM(cw.cm_hours) as total_cm, 
@@ -23,7 +32,23 @@ $workload_query = "
 $workload_res = $conn->query($workload_query);
 $insights['workload_by_semester'] = [];
 while ($row = $workload_res->fetch_assoc()) {
-    $insights['workload_by_semester'][] = $row;
+    $shouldInclude = false;
+    if (preg_match('/(\d+)/', $row['semester'], $matches)) {
+        $num = intval($matches[1]);
+        $isEven = ($num % 2 === 0);
+        
+        if ($currentType === 'pair' && $isEven) {
+            $shouldInclude = true;
+        } elseif ($currentType === 'impair' && !$isEven) {
+             $shouldInclude = true;
+        }
+    } else {
+        $shouldInclude = true;
+    }
+
+    if ($shouldInclude) {
+        $insights['workload_by_semester'][] = $row;
+    }
 }
 
 // 2. Room Utilization / Capacity Analytics
