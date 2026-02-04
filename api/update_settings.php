@@ -109,17 +109,15 @@ switch ($action) {
             }
         }
         
-        $parentId = !empty($input['parent_group_id']) ? $input['parent_group_id'] : null;
+        $capacity = isset($input['capacity']) ? intval($input['capacity']) : 0;
 
-        $stmt = $conn->prepare("INSERT INTO `groups` (code, name, type, semester_id, parent_group_id) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param('sssii', $input['code'], $input['name'], $input['type'], $semesterId, $parentId);
+        $stmt = $conn->prepare("INSERT INTO `groups` (name, type, semester_id, parent_group_id, student_count) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param('ssiii', $input['name'], $input['type'], $semesterId, $parentId, $capacity);
         $success = $stmt->execute();
         $message = $success ? 'Groupe ajouté avec succès' : 'Erreur lors de l\'ajout du groupe';
         break;
 
     case 'edit_group':
-        $oldCode = $input['old_code'] ?? $input['code'];
-        
         // Get semester_id
         $semesterId = null;
         if (!empty($input['semester'])) {
@@ -132,10 +130,10 @@ switch ($action) {
             }
         }
         
-        $parentId = !empty($input['parent_group_id']) ? $input['parent_group_id'] : null;
+        $capacity = isset($input['capacity']) ? intval($input['capacity']) : 0;
         
-        $stmt = $conn->prepare("UPDATE `groups` SET code = ?, name = ?, type = ?, semester_id = ?, parent_group_id = ? WHERE code = ?");
-        $stmt->bind_param('sssiis', $input['code'], $input['name'], $input['type'], $semesterId, $parentId, $oldCode);
+        $stmt = $conn->prepare("UPDATE `groups` SET name = ?, type = ?, semester_id = ?, parent_group_id = ?, student_count = ? WHERE id = ?");
+        $stmt->bind_param('ssiiii', $input['name'], $input['type'], $semesterId, $parentId, $capacity, $input['id']);
         $success = $stmt->execute();
         $message = $success ? 'Groupe modifié avec succès' : 'Erreur lors de la modification du groupe';
         break;
@@ -153,15 +151,15 @@ switch ($action) {
             }
         }
         
-        $stmt = $conn->prepare("UPDATE `groups` SET semester_id = ? WHERE code = ?");
-        $stmt->bind_param('is', $semesterId, $input['code']);
+        $stmt = $conn->prepare("UPDATE `groups` SET semester_id = ? WHERE id = ?");
+        $stmt->bind_param('ii', $semesterId, $input['id']);
         $success = $stmt->execute();
         $message = $success ? 'Semestre mis à jour' : 'Erreur lors de la mise à jour du semestre';
         break;
 
     case 'delete_group':
-        $stmt = $conn->prepare("DELETE FROM `groups` WHERE code = ?");
-        $stmt->bind_param('s', $input['code']);
+        $stmt = $conn->prepare("DELETE FROM `groups` WHERE id = ?");
+        $stmt->bind_param('i', $input['id']);
         $success = $stmt->execute();
         $message = $success ? 'Groupe supprimé avec succès' : 'Erreur lors de la suppression du groupe';
         break;

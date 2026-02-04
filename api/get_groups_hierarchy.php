@@ -9,10 +9,10 @@ try {
     // We want 'principale' and 'TD' (and potentially 'TP' if added later)
     // We treat 'principale' as parents, and others as potential children
     $query = "
-        SELECT g.id, g.code, g.name, g.type, g.semester_id, g.parent_group_id, s.name as semester_name
+        SELECT g.id, g.name, g.type, g.semester_id, g.parent_group_id, s.name as semester_name
         FROM `groups` g
         LEFT JOIN semesters s ON g.semester_id = s.id
-        ORDER BY s.name, FIELD(g.type, 'principale', 'langues && ppp', 'specialite', 'TD'), g.code
+        ORDER BY s.name, FIELD(g.type, 'principale', 'langues && ppp', 'specialite', 'TD'), g.name
     ";
     
     $result = $conn->query($query);

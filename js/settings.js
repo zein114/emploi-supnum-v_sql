@@ -126,7 +126,7 @@ async function loadTabData(tabId) {
       // Store principal groups for dropdowns (including languages as they are now top-level)
       if (result.groups) {
         availablePrincipaleGroups = result.groups.filter(
-          (g) => g.type === "principale" || g.type === "langues && ppp",
+          (g) => g.type === "principale",
         );
       }
       renderGroups(result.groups);
@@ -298,25 +298,19 @@ function renderGroups(groups) {
   const body = document.getElementById("groupsTableBody");
   body.innerHTML = groups
     .map((g) => {
-      const code = (g.code || g.A || "").trim();
       const name = (g.name || g.B || "").trim();
       const semester = (g.semester || g.C || "").trim();
       const type = (g.type || g.D || "").trim();
-      const speciality = (g.speciality || g.E || "").trim();
-      const capacity = g.capacity || g.G || 0;
 
-      const safeCodeHtml = escapeHtml(code);
       const safeNameHtml = escapeHtml(name);
       const safeSemesterHtml = escapeHtml(semester);
-      const safeTypeHtml = escapeHtml(type);
+      const speciality = (g.speciality || "").trim();
       const safeSpecialityHtml = escapeHtml(speciality);
 
-      const safeCodeJs = escapeJsArg(code);
       const safeNameJs = escapeJsArg(name);
       const safeSemesterJs = escapeJsArg(semester);
       const safeTypeJs = escapeJsArg(type);
-      const safeSpecialityJs = escapeJsArg(speciality);
-      const safeCapacityJs = escapeJsArg(capacity);
+      const parentId = g.reference || g.parent_group_id || "";
 
       return `
             <tr>
@@ -324,11 +318,10 @@ function renderGroups(groups) {
                 <td><span class="badge badge-warning">${safeSemesterHtml}</span></td>
                 <td><span class="badge badge-primary">${type}</span></td>
                 <td>${safeSpecialityHtml}</td>
-                <td>${capacity}</td>
                 <td>
                     <div class="settings-item-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="editGroup('${safeCodeJs}', '${safeCodeJs}', '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${safeSpecialityJs}', '${safeCapacityJs}', '${g.reference}')">Modifier</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteGroup('${safeCodeJs}')">Supprimer</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editGroup(${g.id}, '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${parentId}')">Modifier</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteGroup(${g.id})">Supprimer</button>
                     </div>
                 </td>
             </tr>
@@ -611,10 +604,6 @@ function addGroup() {
   const html = `
         <div class="form-group">
             <div class="mb-1">
-                <label class="form-label">Code du groupe</label>
-                <input type="text" id="addGroupCode" class="form-input" placeholder="ex: L1_G1" required>
-            </div>
-            <div class="mb-1">
                 <label class="form-label">Nom</label>
                 <input type="text" id="addGroupName" class="form-input" placeholder="ex: Licence 1 - G1" required>
             </div>
@@ -622,7 +611,7 @@ function addGroup() {
                 <label class="form-label">Semestre</label>
                 <div class="dropdown-container">
                     <button type="button" class="dropdown-button" data-dropdown-id="addGroupSemester">
-                        <span class="dropdown-text">Choisir...</span>
+                        <span class="dropdown-text">Choisir</span>
                         <div class="dropdown-arrow"></div>
                     </button>
                     <div class="dropdown-menu">
@@ -634,7 +623,7 @@ function addGroup() {
                 <label class="form-label">Type</label>
                 <div class="dropdown-container">
                     <button type="button" class="dropdown-button" data-dropdown-id="addGroupType">
-                        <span class="dropdown-text">Choisir...</span>
+                        <span class="dropdown-text">Choisir</span>
                         <div class="dropdown-arrow"></div>
                     </button>
                     <div class="dropdown-menu">
@@ -647,17 +636,13 @@ function addGroup() {
                 <label class="form-label">Groupe Parent</label>
                 <div class="dropdown-container">
                     <button type="button" class="dropdown-button" data-dropdown-id="addGroupParent" disabled>
-                        <span class="dropdown-text">Choisir un parent...</span>
+                        <span class="dropdown-text">Choisir un parent</span>
                         <div class="dropdown-arrow"></div>
                     </button>
                     <div class="dropdown-menu">
                          ${parentOptions}
                     </div>
                 </div>
-            </div>
-             <div class="mb-1">
-                <label class="form-label">Nombre d'étudiants</label>
-                <input type="number" step="1" id="addGroupCapacity" class="form-input" placeholder="ex: 40" required>
             </div>
         </div>
     `;
@@ -677,13 +662,17 @@ function addGroup() {
 
         // Parent Group Visibility Logic
         if (parentBtn) {
-          // Disable if "principale" or "langues && ppp", enable otherwise (TD, specialite)
-          const parentsToDisable = ["principale", "langues && ppp"];
+          // Disable for everything except "TD"
+          const parentsToDisable = [
+            "principale",
+            "langues && ppp",
+            "specialite",
+          ];
           if (parentsToDisable.includes(typeValue)) {
             parentBtn.disabled = true;
             parentBtn.setAttribute("data-value", "");
             parentBtn.querySelector(".dropdown-text").textContent =
-              "Choisir un parent...";
+              "Choisir un parent";
 
             // Clear selected item in menu
             const menu = parentBtn
@@ -718,21 +707,10 @@ function addGroup() {
     saveBtn.id = "modalConfirmBtn";
     saveBtn.textContent = "Ajouter";
     saveBtn.onclick = async () => {
-      const code = document.getElementById("addGroupCode").value.trim();
       const name = document.getElementById("addGroupName").value.trim();
-      const capacityInput = document.getElementById("addGroupCapacity").value;
 
-      if (!code || !name) {
+      if (!name) {
         Toast.error("Erreur", "Veuillez remplir les champs obligatoires.");
-        return;
-      }
-
-      if (
-        capacityInput === "" ||
-        isNaN(capacityInput) ||
-        parseInt(capacityInput) < 0
-      ) {
-        Toast.error("Erreur", "Veuillez entrer une capacité valide.");
         return;
       }
 
@@ -749,7 +727,7 @@ function addGroup() {
       const semester =
         semBtn.getAttribute("data-value") ||
         semBtn.querySelector(".dropdown-text").textContent;
-      if (semester === "Choisir...") {
+      if (semester === "Choisir") {
         Toast.error("Erreur", "Veuillez choisir un semestre.");
         return;
       }
@@ -757,7 +735,7 @@ function addGroup() {
       let typeValue =
         typeBtn.getAttribute("data-value") ||
         typeBtn.querySelector(".dropdown-text").textContent;
-      if (typeValue === "Choisir...") {
+      if (typeValue === "Choisir") {
         Toast.error("Erreur", "Veuillez choisir un type.");
         return;
       }
@@ -767,13 +745,10 @@ function addGroup() {
       const success = await updateSettings(
         {
           action: "add_group",
-          code: code,
           name: name,
           semester: semester,
           type: typeValue,
-          speciality: "", // Deprecated
           parent_group_id: parentId,
-          capacity: parseInt(capacityInput),
         },
         saveBtn,
       );
@@ -789,16 +764,7 @@ function addGroup() {
   });
 }
 
-function editGroup(
-  old_code,
-  code,
-  name,
-  semester,
-  type,
-  speciality,
-  capacity,
-  parentId,
-) {
+function editGroup(id, name, semester, type, parentId) {
   // Added parentId
   // Check if type is a custom value
   const displayType = type.charAt(0).toUpperCase() + type.slice(1);
@@ -833,19 +799,19 @@ function editGroup(
     : "";
 
   // Resolve Parent Name for initial button text
-  let parentName = "Choisir un parent...";
+  let parentName = "Choisir un parent";
   if (parentId) {
     const found = availablePrincipaleGroups.find((g) => g.id == parentId);
     if (found) parentName = found.name;
   }
 
-  // Check if parent should be disabled
-  const parentsToDisable = ["principale", "langues && ppp"];
-  const isParentDisabled = parentsToDisable.includes(type);
+  // Check if parent should be disabled (Only enabled for TD)
+  const parentsToDisable = ["principale", "langues && ppp", "specialite"];
+  const isParentDisabled = parentsToDisable.includes(type.toLowerCase());
 
   const html = `
         <div class="form-group">
-            <input type="hidden" id="editGroupOldCode" value="${old_code}">
+            <input type="hidden" id="editGroupId" value="${id}">
             <div class="mb-1">
                 <label class="form-label">Nom</label>
                 <input type="text" id="editGroupName" class="form-input" value="${name}" required>
@@ -872,7 +838,6 @@ function editGroup(
                     <div class="dropdown-menu">
                         ${typeOptions}
                     </div>
-                </div>
             </div>
             <!-- Parent Dropdown (Always shown, disabled for Principale/Languages) -->
             <div class="mb-1" id="editGroupParentContainer">
@@ -886,10 +851,6 @@ function editGroup(
                          ${parentOptions}
                     </div>
                 </div>
-            </div>
-             <div class="mb-1">
-                <label class="form-label">Nombre d'étudiants</label>
-                <input type="number" step="1" id="editGroupCapacity" class="form-input" value="${capacity}" required>
             </div>
         </div>
     `;
@@ -908,12 +869,16 @@ function editGroup(
 
         // Parent Visibility
         if (parentBtn) {
-          const parentsToDisable = ["principale", "langues && ppp"];
+          const parentsToDisable = [
+            "principale",
+            "langues && ppp",
+            "specialite",
+          ];
           if (parentsToDisable.includes(typeValue)) {
             parentBtn.disabled = true;
             parentBtn.setAttribute("data-value", "");
             parentBtn.querySelector(".dropdown-text").textContent =
-              "Choisir un parent...";
+              "Choisir un parent";
 
             // Clear selected item in menu
             const menu = parentBtn
@@ -949,8 +914,6 @@ function editGroup(
     saveBtn.textContent = "Enregistrer";
     saveBtn.onclick = async () => {
       const newName = document.getElementById("editGroupName").value.trim();
-      const capacityInput = document.getElementById("editGroupCapacity").value;
-      const newCapacity = parseInt(capacityInput);
 
       const semBtn = document.querySelector(
         '[data-dropdown-id="editGroupSemester"]',
@@ -970,43 +933,29 @@ function editGroup(
         typeBtn.getAttribute("data-value") ||
         typeBtn.querySelector(".dropdown-text").textContent;
 
-      // const newSpeciality = document.getElementById("editGroupSpeciality").value; // Deprecated
       const newParentId = parentBtn
         ? parentBtn.getAttribute("data-value")
         : null;
 
       // Check if anything changed
-      // Note: we need to check parentId too.
       if (
         newName === name &&
-        newCapacity === parseInt(capacity) &&
         newSemester === semester &&
         newType === type &&
-        newParentId == parentId // Loose equality for null vs "" vs undefined
+        newParentId == parentId
       ) {
         Toast.warning("Attention", "Aucune modification détectée");
-        return;
-      }
-
-      if (capacityInput === "" || isNaN(capacityInput) || newCapacity < 0) {
-        Toast.error(
-          "Erreur",
-          "Veuillez entrer une capacité valide (nombre positif ou 0).",
-        );
         return;
       }
 
       const success = await updateSettings(
         {
           action: "edit_group",
-          old_code: document.getElementById("editGroupOldCode").value,
-          code: document.getElementById("editGroupOldCode").value,
+          id: document.getElementById("editGroupId").value,
           name: newName,
           semester: newSemester,
           type: newType,
-          speciality: "",
           parent_group_id: newParentId,
-          capacity: newCapacity,
         },
         saveBtn,
       );
@@ -1022,13 +971,13 @@ function editGroup(
   });
 }
 
-function deleteGroup(code) {
+function deleteGroup(id) {
   Modal.confirm(
     "Supprimer le groupe",
-    `Voulez-vous vraiment supprimer le groupe avec le code "${code}" ?`,
+    `Voulez-vous vraiment supprimer ce groupe ?`,
     async () => {
       const confirmBtn = document.getElementById("modalConfirmBtn");
-      await updateSettings({ action: "delete_group", code: code }, confirmBtn);
+      await updateSettings({ action: "delete_group", id: id }, confirmBtn);
     },
     null,
     { isDelete: true, confirmText: "Supprimer" },

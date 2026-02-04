@@ -27,7 +27,7 @@ $existingAssignments = $dbHandler->getAssignments();
 foreach ($existingAssignments as $assignment) {
     if ($assignment['subject_code'] == $module_id && 
         $assignment['type'] == $assignment_type && 
-        $assignment['group_code'] == $group_id) {
+        $assignment['group_id'] == $group_id) {
         
         $existingProfName = $assignment['professor_name'] ?? $assignment['professor_id'];
         echo json_encode([

@@ -136,7 +136,7 @@ document.addEventListener("dropdown-change", async (e) => {
       } else {
         let html = "";
         groups.forEach((group) => {
-          html += `<div class="dropdown-item" data-value="${group.code}">${group.name}</div>`;
+          html += `<div class="dropdown-item" data-value="${group.id}">${group.name}</div>`;
         });
         window.customDropdown.updateMenu("groupSelect", html);
         groupBtn.disabled = false;

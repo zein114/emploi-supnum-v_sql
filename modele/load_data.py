@@ -39,39 +39,37 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     
     groups_principale = [g for g in all_groups if g['type'] in ('principale', 'langues && ppp')]
     Groupes_names_principale = [g['name'] for g in groups_principale]
-    Group_Code_Map = {str(g['code']).strip(): idx for idx, g in enumerate(groups_principale)}
+    Group_Id_Map = {str(g['id']).strip(): idx for idx, g in enumerate(groups_principale)}
     Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_principale)}
     
     # Sous-Groupes (TD, Specialite, Languages)
     # Note: Languages are in both to support CM (as main) and TD/TP (as sub)
     groups_td = [g for g in all_groups if g['type'] in ('TD', 'specialite', 'langues && ppp')]
     Sous_Groupes_names = [g['name'] for g in groups_td]
-    Sous_Group_Code_Map = {str(g['code']).strip(): idx for idx, g in enumerate(groups_td)}
+    Sous_Group_Id_Map = {str(g['id']).strip(): idx for idx, g in enumerate(groups_td)}
     Sous_Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_td)}
     
     # Référence Parent
-    Sous_Group_Reference_Group = {} # SubCode -> ParentCode
-    # Build a lookup for parent codes
-    # Identifiers for S1/S2 to detect L1
-    l1_sem_ids = [sid for sid, name in semesters.items() if name in ('S1', 'S2')]
-    id_to_code = {g['id']: str(g['code']).strip() for g in all_groups}
+    Sous_Group_Reference_Group = {} # SubId -> ParentId
+    # Build a lookup for parent IDs
+    id_to_id_str = {g['id']: str(g['id']).strip() for g in all_groups}
 
     for g in groups_td:
-        sub_code = str(g['code']).strip()
+        sub_id_str = str(g['id']).strip()
         sem_id = g['semester_id']
         g_type = g['type']
         
         if g_type in ('specialite', 'langues && ppp'):
             # These groups spread across all students of the semester
             # We ONLY link them to groups of type 'principale', not other 'langues && ppp'
-            parent_codes = [str(pg['code']).strip() for pg in groups_principale if pg['type'] == 'principale' and pg['semester_id'] == sem_id]
-            if parent_codes:
-                Sous_Group_Reference_Group[sub_code] = ",".join(parent_codes)
+            parent_ids = [str(pg['id']).strip() for pg in groups_principale if pg['type'] == 'principale' and pg['semester_id'] == sem_id]
+            if parent_ids:
+                Sous_Group_Reference_Group[sub_id_str] = ",".join(parent_ids)
         
         # 2. Regular Parenting (for TD etc.)
-        elif g['parent_group_id'] and g['parent_group_id'] in id_to_code:
-            parent_code = id_to_code[g['parent_group_id']]
-            Sous_Group_Reference_Group[sub_code] = parent_code
+        elif g['parent_group_id'] and g['parent_group_id'] in id_to_id_str:
+            parent_id_str = id_to_id_str[g['parent_group_id']]
+            Sous_Group_Reference_Group[sub_id_str] = parent_id_str
 
     GP = len(groups_principale)
     GT = len(groups_td)
@@ -212,7 +210,6 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                 if prof_name not in ProCM[j]: ProCM[j].append(prof_name)
                 
                 # OPTIONAL: Propagation logic for 'L1', 'L2' etc.
-                # If groups have semantic names like 'L1'
                 group_name = Groupes_names_principale[g]
                 if group_name.startswith('L') and len(group_name) >= 2:
                      target_sem = Semester_Of_Group.get(g)
@@ -227,7 +224,6 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                              Pcm[j][other_g] = other_charges['CM']
 
         if 'TP' in atype:
-             # Subgroup or Principal group?
              if gid_db in Sous_Group_Id_To_Index:
                  g = Sous_Group_Id_To_Index[gid_db]
                  if (j, g) not in Ctp[i]:
@@ -236,12 +232,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                  if prof_name not in ProTP[j]: ProTP[j].append(prof_name)
 
              elif gid_db in Group_Id_To_Index:
-                 # It's a main group. Propagate to ALL its subgroups.
-                 # Find subgroups for this parent gid_db
                  parent_g_idx = Group_Id_To_Index[gid_db]
-                 
-                 # Create list of subgroup indices belonging to this parent
-                 # We can check parent_group_id
                  target_sub_indices = []
                  for idx, sub_g in enumerate(groups_td):
                      if sub_g['parent_group_id'] == gid_db:
@@ -250,33 +241,26 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                  for g in target_sub_indices:
                      if (j, g) not in Ctp[i]:
                          Ctp[i].append((j, g))
-                     # Charge specific to subgroup?
                      sub_gid = groups_td[g]['id']
-                     sg_charges = w_map.get(sub_gid, charges) # Fallback to parent charges
+                     sg_charges = w_map.get(sub_gid, charges)
                      Ptp[j][g] = sg_charges['TP']
                      if prof_name not in ProTP[j]: ProTP[j].append(prof_name)
 
-                 # Logic Special: Level L...
                  group_name = Groupes_names_principale[parent_g_idx]
                  if group_name.startswith('L'):
                      target_sem = Semester_Of_Group.get(parent_g_idx)
-                     # Find all other main groups in semester
                      for other_g_idx, sem in Semester_Of_Group.items():
-                         if sem == target_sem: # Include self? Original code included self via other loop? No logic is tricky.
-                             # Original: iterate other_p_code. Find subgroups of other_p_code.
+                         if sem == target_sem:
                              other_gid = groups_principale[other_g_idx]['id']
-                             # Find subgroups of other_gid
                              for idx, sub_g in enumerate(groups_td):
                                  if sub_g['parent_group_id'] == other_gid:
                                      if (j, idx) not in Ctp[i]:
                                          Ctp[i].append((j, idx))
-                                     
                                      sg_charges = w_map.get(sub_g['id'], charges)
                                      Ptp[j][idx] = sg_charges['TP']
                                      if prof_name not in ProTP[j]: ProTP[j].append(prof_name)
 
         if 'TD' in atype:
-             # Similar to TP logic
              if gid_db in Sous_Group_Id_To_Index:
                  g = Sous_Group_Id_To_Index[gid_db]
                  if (j, g) not in Ctd[i]:
@@ -286,7 +270,6 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
 
              elif gid_db in Group_Id_To_Index:
                  parent_g_idx = Group_Id_To_Index[gid_db]
-                 
                  target_sub_indices = []
                  for idx, sub_g in enumerate(groups_td):
                      if sub_g['parent_group_id'] == gid_db:
@@ -320,24 +303,13 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     cursor.execute("SELECT * FROM professor_availability")
     avails = cursor.fetchall()
     
-    # Need to map day_id, slot_id to linear index K
-    # Fetch days and slots to ensure index mapping matches inputs
-    # If inputs (days_info, time_slots_info) are provided, we should use them to be consistent?
-    # Or just use DB IDs assuming they are 1..N and ordered.
-    # The safest is to map DB `days.id` -> index in `days_info` list if possible.
-    # But `days_info` might be strings.
-    
-    # Fetch DB reference for days/slots
     cursor.execute("SELECT * FROM days ORDER BY order_index")
-    db_days = cursor.fetchall() # e.g. [{id:1, name:'Lundi'}, ...]
-    
+    db_days = cursor.fetchall()
     cursor.execute("SELECT * FROM time_slots ORDER BY id")
     db_slots = cursor.fetchall()
     
-    # Build Map: day_id -> sequential index (0..5)
     Day_Id_Map = {d['id']: idx for idx, d in enumerate(db_days)}
     Slot_Id_Map = {s['id']: idx for idx, s in enumerate(db_slots)}
-    
     num_slots = len(db_slots)
     
     for row in avails:
@@ -351,12 +323,6 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
             d_idx = Day_Id_Map[did]
             s_idx = Slot_Id_Map[sid]
             
-            # Check if active
-            # If days_info is passed, check activeness?
-            # Usually K is computed before.
-            # We trust the K passed in matches the dimension.
-            
-            # Use 'days_info' to check active status if provided
             day_active = 1
             if days_info and d_idx < len(days_info):
                 d_inf = days_info[d_idx]
@@ -368,7 +334,6 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                 if isinstance(s_inf, dict) and s_inf.get('is_active', 1) == 0: slot_active = 0
                 
             k = d_idx * num_slots + s_idx
-            
             if k < K:
                 val = 1 if is_av else 0
                 if not day_active or not slot_active: val = 0
@@ -379,20 +344,9 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     db_rooms = cursor.fetchall()
     S_CM = len([r for r in db_rooms if 'CM' in str(r['type']).upper()])
     S_TP = len([r for r in db_rooms if 'TP' in str(r['type']).upper()])
-    
-    All_Rooms = []
-    for r in db_rooms:
-        All_Rooms.append({
-            'Salle': r['name'],
-            'Capacite': r['capacity'],
-            'Type': r['type']
-        })
-
-    # Constraints A (Chevauchements) - Empty
+    All_Rooms = [{'Salle': r['name'], 'Capacite': r['capacity'], 'Type': r['type']} for r in db_rooms]
     A = []
     
     conn.close()
-    
     print("Données chargées depuis BDD avec succès.")
-    
-    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Code_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Code_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp
+    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp

@@ -52,7 +52,7 @@ if ($tab === 'classrooms' || $tab === 'groups') {
     } else {
         // Get groups from database
         $result = $conn->query("
-            SELECT g.id, g.code, g.name, s.name as semester, g.type, g.parent_group_id, p.name as parent_name, g.student_count
+            SELECT g.id, g.name, s.name as semester, g.type, g.parent_group_id, p.name as parent_name, g.student_count
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             LEFT JOIN `groups` p ON g.parent_group_id = p.id
@@ -62,19 +62,21 @@ if ($tab === 'classrooms' || $tab === 'groups') {
         $groups = [];
         $types = ['principale', 'TD', 'specialite', 'langues && ppp'];
         while ($row = $result->fetch_assoc()) {
+            $rawType = strtolower(trim($row['type'] ?? ''));
+            $actualType = ($rawType === 'td') ? 'TD' : $rawType;
+            
             $groups[] = [
                 'id' => $row['id'],
-                'code' => trim($row['code'] ?? ''),
                 'name' => trim($row['name'] ?? ''),
                 'semester' => trim($row['semester'] ?? ''),
-                'type' => trim($row['type'] ?? ''),
+                'type' => $actualType,
                 'speciality' => trim($row['parent_name'] ?? ''), 
                 'reference' => trim($row['parent_group_id'] ?? ''),
                 'capacity' => $row['student_count'] ?? 30
             ];
             
-            if (!empty($row['type']) && !in_array($row['type'], $types)) {
-                $types[] = $row['type'];
+            if (!empty($actualType) && !in_array($actualType, $types)) {
+                $types[] = $actualType;
             }
         }
         

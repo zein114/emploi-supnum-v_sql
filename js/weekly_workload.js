@@ -99,11 +99,11 @@ async function loadAllData() {
 
     availableGroups = resultGR
       .map((g) => ({
-        code: String(g.code || ""),
+        id: String(g.id || ""),
         name: String(g.name || ""),
         semester: String(g.semester || ""),
       }))
-      .filter((g) => g.code);
+      .filter((g) => g.id);
 
     renderTable(originalData);
   } catch (error) {
@@ -122,9 +122,9 @@ function renderTable(data) {
     ? semesterBtn.getAttribute("data-value")
     : "all";
 
-  // Filter for General workloads (code_groupe is empty) and Semester
+  // Filter for General workloads (group_id is empty) and Semester
   const generalRows = data.filter((row) => {
-    const isGeneral = !row.code_groupe || row.code_groupe === "";
+    const isGeneral = !row.group_id || row.group_id === "";
     if (!isGeneral) return false;
 
     if (selectedSemester === "all") return true;
@@ -147,7 +147,7 @@ function renderTable(data) {
 
     // Find index in originalData
     const dataIndex = data.findIndex(
-      (d) => d.code === row.code && (!d.code_groupe || d.code_groupe === ""),
+      (d) => d.code === row.code && (!d.group_id || d.group_id === ""),
     );
 
     const isSingleGroup = row.assigned_group_count === 1;
@@ -298,26 +298,26 @@ function openExcludeModal(btn, code, name, semester) {
     Modal.showContent(title, html, () => {
       const container = document.getElementById("exclusionsList");
       const exclusions = originalData.filter(
-        (d) => d.code === code && d.code_groupe,
+        (d) => d.code === code && d.group_id,
       );
 
-      // Find subject info to get assigned group codes
+      // Find subject info to get assigned group IDs
       const subjectInfo = originalData.find((d) => d.code === code);
-      const assignedGroupCodes = subjectInfo
-        ? subjectInfo.assigned_group_codes
+      const assignedGroupIds = subjectInfo
+        ? subjectInfo.assigned_group_ids
         : "";
 
       if (exclusions.length === 0) {
         container.innerHTML =
           '<p class="text-secondary text-center" style="padding: 1rem;">Aucune exclusion pour ce module.</p>';
       } else {
-        exclusions.forEach((ex) => addExclusionRow(ex, assignedGroupCodes));
+        exclusions.forEach((ex) => addExclusionRow(ex, assignedGroupIds));
       }
 
       // Store initial state for change detection
       initialExclusionsState = JSON.stringify(
         exclusions.map((ex) => ({
-          code_groupe: String(ex.code_groupe || ""),
+          group_id: String(ex.group_id || ""),
           cm: parseFloat(ex.cm || 0),
           td: parseFloat(ex.td || 0),
           tp: parseFloat(ex.tp || 0),
@@ -332,7 +332,7 @@ function openExcludeModal(btn, code, name, semester) {
       const saveBtn = document.getElementById("saveExclusionsBtn");
 
       if (addBtn)
-        addBtn.onclick = () => addExclusionRow(null, assignedGroupCodes);
+        addBtn.onclick = () => addExclusionRow(null, assignedGroupIds);
       if (saveBtn) saveBtn.onclick = saveExclusions;
 
       if (typeof Spinner !== "undefined") Spinner.hide(btn);
@@ -342,7 +342,7 @@ function openExcludeModal(btn, code, name, semester) {
   }
 }
 
-function addExclusionRow(data = null, assignedGroupCodes = "") {
+function addExclusionRow(data = null, assignedGroupIds = "") {
   const container = document.getElementById("exclusionsList");
 
   // Remove "no exclusions" text if present
@@ -355,20 +355,18 @@ function addExclusionRow(data = null, assignedGroupCodes = "") {
   div.id = `ex-row-${rowId}`;
 
   const moduleSemester = document.getElementById("modalModuleSemester").value;
-  const assignedCodesArray = assignedGroupCodes
-    ? assignedGroupCodes.split(",")
-    : [];
+  const assignedIdsArray = assignedGroupIds ? assignedGroupIds.split(",") : [];
 
   const filteredGroups = availableGroups.filter((g) => {
     const semMatch = String(g.semester) === String(moduleSemester);
     const assignedMatch =
-      assignedCodesArray.length > 0
-        ? assignedCodesArray.includes(String(g.code))
+      assignedIdsArray.length > 0
+        ? assignedIdsArray.includes(String(g.id))
         : true;
     return semMatch && assignedMatch;
   });
   const sortedGroups = [...filteredGroups].sort((a, b) =>
-    String(a.code).localeCompare(String(b.code), undefined, { numeric: true }),
+    String(a.id).localeCompare(String(b.id), undefined, { numeric: true }),
   );
 
   let menuOptions = "";
@@ -376,14 +374,14 @@ function addExclusionRow(data = null, assignedGroupCodes = "") {
   let selectedGroupValue = "";
 
   sortedGroups.forEach((g) => {
-    const isSelected = data && String(data.code_groupe) === String(g.code);
+    const isSelected = data && String(data.group_id) === String(g.id);
     if (isSelected) {
       selectedGroupName = g.name;
-      selectedGroupValue = g.code;
+      selectedGroupValue = g.id;
     }
     menuOptions += `<div class="dropdown-item ${
       isSelected ? "selected" : ""
-    }" data-value="${g.code}">${g.name}</div>`;
+    }" data-value="${g.id}">${g.name}</div>`;
   });
 
   div.innerHTML = `
@@ -467,26 +465,21 @@ async function saveExclusions() {
 
   rows.forEach((row) => {
     const dropdownBtn = row.querySelector(".dropdown-button");
-    const groupCode = dropdownBtn
-      ? dropdownBtn.getAttribute("data-value")
-      : null;
+    const groupId = dropdownBtn ? dropdownBtn.getAttribute("data-value") : null;
 
-    if (!groupCode || groupCode === "") {
+    if (!groupId || groupId === "") {
       hasEmpty = true;
       return;
     }
-    if (usedGroups.has(groupCode)) {
-      Toast.error(`Le groupe ${groupCode} est sélectionné plusieurs fois.`);
+    if (usedGroups.has(groupId)) {
+      Toast.error(`Le groupe ${groupId} est sélectionné plusieurs fois.`);
       return;
     }
-    usedGroups.add(groupCode);
+    usedGroups.add(groupId);
 
     updates.push({
       code: code,
-      code_groupe: groupCode,
-      cm: parseFloat(row.querySelector(".ex-cm").value) || 0,
-      td: parseFloat(row.querySelector(".ex-td").value) || 0,
-      tp: parseFloat(row.querySelector(".ex-tp").value) || 0,
+      group_id: groupId,
       cm: parseFloat(row.querySelector(".ex-cm").value) || 0,
       td: parseFloat(row.querySelector(".ex-td").value) || 0,
       tp: parseFloat(row.querySelector(".ex-tp").value) || 0,
@@ -506,10 +499,7 @@ async function saveExclusions() {
   // Change detection
   const currentState = JSON.stringify(
     updates.map((u) => ({
-      code_groupe: String(u.code_groupe),
-      cm: parseFloat(u.cm),
-      td: parseFloat(u.td),
-      tp: parseFloat(u.tp),
+      group_id: String(u.group_id),
       cm: parseFloat(u.cm),
       td: parseFloat(u.td),
       tp: parseFloat(u.tp),
@@ -582,7 +572,7 @@ async function saveWorkloadData() {
 
       updates.push({
         code: dataRow.code,
-        code_groupe: "",
+        group_id: "",
         semester: dataRow.semester,
         cm: cmInput ? parseFloat(cmInput.value) || 0 : dataRow.cm,
         td: tdInput ? parseFloat(tdInput.value) || 0 : dataRow.td,

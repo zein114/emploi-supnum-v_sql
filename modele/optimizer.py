@@ -29,7 +29,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # PARTIE 1: IMPORTATION DES DONNÉES 
         # Def table des matiers 
         
-        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Code_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp = load_data(input_file, K, days, time_slots)
+        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp = load_data(input_file, K, days, time_slots)
         
         # PARTIE 2: MODELE: IMPLEMENTATION ET RESOLUTION 
         solver = pywraplp.Solver.CreateSolver('CBC')
@@ -86,20 +86,20 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # Mais les sous-groupes ENTRE EUX peuvent avoir cours simultanément (si pas de constraint 5 strict).
         # Cartographie des Groupes Principaux vers les Sous-Groupes
         GP_to_SG = {g: [] for g in range(GP)} 
-        for sg_code, gp_refs in Sous_Groupes_Reference_Groupes.items():
+        for sg_id, gp_refs in Sous_Group_Reference_Group.items():
             # Support multiple parent groups (comma separated)
             refs = [r.strip() for r in str(gp_refs).split(',')]
-            for gp_code in refs:
-                if gp_code in Group_Code_Map:
-                    g = Group_Code_Map[gp_code]
-                    sg = Sous_Group_Code_Map[sg_code]
+            for gp_id in refs:
+                if gp_id in Group_Id_Map:
+                    g = Group_Id_Map[gp_id]
+                    sg = Sous_Group_Id_Map[sg_id]
                     GP_to_SG[g].append(sg)
 
         # Reverse mapping: Sub-group (GT index) -> Principal group (GP index)
         GT_to_GP_Map = {}
-        for code, gt_idx in Sous_Group_Code_Map.items():
-            if code in Group_Code_Map:
-                GT_to_GP_Map[gt_idx] = Group_Code_Map[code]
+        for id_str, gt_idx in Sous_Group_Id_Map.items():
+            if id_str in Group_Id_Map:
+                GT_to_GP_Map[gt_idx] = Group_Id_Map[id_str]
 
         for g in range(GP):
             for k in range(K):
@@ -241,8 +241,8 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             # PARTIE 3 : EXPORTATION DES RÉSULTATS 
             solver_results = (X, Y, Z, W, U_TD, U_TP)
             
-            # Inverser la correspondance pour l'exportation (Index -> Code)
-            Sous_Group_Index_To_Code = {v: k for k, v in Sous_Group_Code_Map.items()}
+            # Inverser la correspondance pour l'exportation (Index -> Id)
+            Sous_Group_Index_To_Id = {v: k for k, v in Sous_Group_Id_Map.items()}
             
             # Track unscheduled classes
             unscheduled_classes = []
@@ -253,17 +253,17 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     scheduled = sum(X[g][j][k].solution_value() for k in range(K))
                     required = Pcm[j][g]
                     if required > 0 and scheduled < required:
-                        # Find group code
-                        group_code = None
-                        for code, idx in Group_Code_Map.items():
+                        # Find group id
+                        group_id = None
+                        for gid, idx in Group_Id_Map.items():
                             if idx == g:
-                                group_code = code
+                                group_id = gid
                                 break
                         
                         prof = ProCM[j][0] if ProCM[j] else "Non assigné"
                         unscheduled_classes.append({
                             'group': Groupes_Principale[g],
-                            'group_code': group_code,
+                            'group_id': group_id,
                             'subject': Matieres[j],
                             'subject_code': Matiere_Codes[j],
                             'type': 'CM',
@@ -277,14 +277,14 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     scheduled_onl = sum(W[g][j][k].solution_value() for k in range(K))
                     required_onl = Pon[j][g]
                     if required_onl > 0 and scheduled_onl < required_onl:
-                         group_code = None
-                         for code, idx in Group_Code_Map.items():
+                         group_id = None
+                         for gid, idx in Group_Id_Map.items():
                             if idx == g:
-                                group_code = code
+                                group_id = gid
                                 break
                          unscheduled_classes.append({
                             'group': Groupes_Principale[g],
-                            'group_code': group_code,
+                            'group_id': group_id,
                             'subject': Matieres[j],
                             'subject_code': Matiere_Codes[j],
                             'type': 'CM Online',
@@ -303,7 +303,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                         prof = ProTP[j][0] if ProTP[j] else "Non assigné"
                         unscheduled_classes.append({
                             'group': Sous_Groupes[g],
-                            'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                            'group_id': Sous_Group_Index_To_Id.get(g, ''),
                             'subject': Matieres[j],
                             'subject_code': Matiere_Codes[j],
                             'type': 'TP',
@@ -322,7 +322,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                         prof = ProTD[j][0] if ProTD[j] else "Non assigné"
                         unscheduled_classes.append({
                             'group': Sous_Groupes[g],
-                            'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                            'group_id': Sous_Group_Index_To_Id.get(g, ''),
                             'subject': Matieres[j],
                             'subject_code': Matiere_Codes[j],
                             'type': 'TD',
@@ -338,7 +338,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     if required_onl_td > 0 and scheduled_onl_td < required_onl_td:
                          unscheduled_classes.append({
                              'group': Sous_Groupes[g],
-                             'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                             'group_id': Sous_Group_Index_To_Id.get(g, ''),
                              'subject': Matieres[j],
                              'subject_code': Matiere_Codes[j],
                              'type': 'TD Online',
@@ -354,7 +354,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     if required_onl_tp > 0 and scheduled_onl_tp < required_onl_tp:
                          unscheduled_classes.append({
                              'group': Sous_Groupes[g],
-                             'group_code': Sous_Group_Index_To_Code.get(g, ''),
+                             'group_id': Sous_Group_Index_To_Id.get(g, ''),
                              'subject': Matieres[j],
                              'subject_code': Matiere_Codes[j],
                              'type': 'TP Online',
@@ -374,7 +374,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             if unscheduled_classes:
                 print("Warning: Some classes could not be scheduled!")
             
-            export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Group_Code_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days, time_slots)
+            export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Group_Id_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days, time_slots)
             # Affichage des vars de décision (pour débogage)
             Xv = []  
             Yv = []  

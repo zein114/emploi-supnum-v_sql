@@ -193,7 +193,7 @@ class DatabaseHandler {
     
     public function getGroups() {
         $result = $this->db->query("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type IN ('principale', 'langues && ppp', 'specialite')
@@ -203,7 +203,7 @@ class DatabaseHandler {
         $groups = [];
         while ($row = $result->fetch_assoc()) {
             $groups[] = [
-                'code' => $row['code'],
+                'id' => $row['id'],
                 'name' => $row['name'],
                 'semester' => $row['semester'] ?? '',
                 'type' => $row['type']
@@ -253,7 +253,7 @@ class DatabaseHandler {
         if ($professorId) {
             $stmt = $this->db->prepare("
                 SELECT ta.*, s.code as subject_code, s.name as subject_name, 
-                       g.code as group_code, g.name as group_name
+                       g.id as group_id, g.name as group_name
                 FROM teacher_assignments ta
                 JOIN subjects s ON ta.subject_id = s.id
                 JOIN `groups` g ON ta.group_id = g.id
@@ -266,7 +266,7 @@ class DatabaseHandler {
         } else {
             $result = $this->db->query("
                 SELECT ta.*, s.code as subject_code, s.name as subject_name, 
-                       g.code as group_code, g.name as group_name,
+                       g.id as group_id, g.name as group_name,
                        p.name as professor_name
                 FROM teacher_assignments ta
                 JOIN subjects s ON ta.subject_id = s.id
@@ -284,19 +284,20 @@ class DatabaseHandler {
         return $assignments;
     }
 
-    public function addAssignment($professorId, $subjectCode, $groupCode, $type) {
-        // Get subject_id and group_id from codes
+    public function addAssignment($professorId, $subjectCode, $groupId, $type) {
+        // Get subject_id from code
         $stmt = $this->db->prepare("SELECT id FROM subjects WHERE code = ?");
         $stmt->bind_param('s', $subjectCode);
         $stmt->execute();
         $subjectId = $stmt->get_result()->fetch_assoc()['id'] ?? null;
         
-        $stmt = $this->db->prepare("SELECT id FROM `groups` WHERE code = ?");
-        $stmt->bind_param('s', $groupCode);
+        // Group ID is already passed, but we should verify it exists
+        $stmt = $this->db->prepare("SELECT id FROM `groups` WHERE id = ?");
+        $stmt->bind_param('i', $groupId);
         $stmt->execute();
-        $groupId = $stmt->get_result()->fetch_assoc()['id'] ?? null;
+        $groupExists = $stmt->get_result()->fetch_assoc();
         
-        if (!$subjectId || !$groupId) {
+        if (!$subjectId || !$groupExists) {
             return ['success' => false, 'error' => 'Matière ou groupe introuvable'];
         }
         
@@ -329,11 +330,11 @@ class DatabaseHandler {
     public function getWorkloads() {
         $result = $this->db->query("
             SELECT cw.*, s.code as subject_code, s.name as subject_name,
-                   g.code as group_code, g.name as group_name
+                   g.id as group_id, g.name as group_name
             FROM course_workloads cw
             JOIN subjects s ON cw.subject_id = s.id
             LEFT JOIN `groups` g ON cw.group_id = g.id
-            ORDER BY s.code, g.code
+            ORDER BY s.code, g.id
         ");
         
         $workloads = [];
@@ -344,7 +345,7 @@ class DatabaseHandler {
         return $workloads;
     }
 
-    public function updateWorkload($subjectCode, $groupCode, $cm, $td, $tp) {
+    public function updateWorkload($subjectCode, $groupId, $cm, $td, $tp) {
         // Get subject_id
         $sqlSubject = "SELECT id FROM subjects WHERE code = ?";
         $stmt = $this->getStmt($sqlSubject);
@@ -356,14 +357,15 @@ class DatabaseHandler {
             return ['success' => false, 'error' => 'Matière introuvable'];
         }
         
-        // Get group_id (can be NULL)
-        $groupId = null;
-        if ($groupCode) {
-            $sqlGroup = "SELECT id FROM `groups` WHERE code = ?";
+        // Verify group exists if provided
+        if ($groupId) {
+            $sqlGroup = "SELECT id FROM `groups` WHERE id = ?";
             $stmt = $this->getStmt($sqlGroup);
-            $stmt->bind_param('s', $groupCode);
+            $stmt->bind_param('i', $groupId);
             $stmt->execute();
-            $groupId = $stmt->get_result()->fetch_assoc()['id'] ?? null;
+            if (!$stmt->get_result()->fetch_assoc()) {
+                return ['success' => false, 'error' => 'Groupe introuvable'];
+            }
         }
         
         // Insert or update

@@ -142,7 +142,6 @@ $user = getCurrentUser();
                                             <th>Semestre</th>
                                             <th>Type</th>
                                             <th>Parent/Spécialité</th>
-                                            <th>Étudiants</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>

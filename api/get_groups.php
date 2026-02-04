@@ -11,7 +11,7 @@ try {
     // Build query with optional semester filter
     if (!empty($requestedSemester)) {
         $stmt = $conn->prepare("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type IN ('principale', 'langues && ppp', 'specialite') AND s.name = ?
@@ -22,7 +22,7 @@ try {
         $result = $stmt->get_result();
     } else {
         $result = $conn->query("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type IN ('principale', 'langues && ppp', 'specialite')
@@ -33,13 +33,10 @@ try {
     $groups = [];
     while ($row = $result->fetch_assoc()) {
         $groups[] = [
-            'code' => $row['code'],
+            'id' => $row['id'],
             'name' => $row['name'],
             'semester' => $row['semester'] ?? '',
-            'type' => $row['type'],
-            'speciality' => '',  // Not stored in DB currently
-            'reference' => '',   // Not applicable for principale groups
-            'capacity' => 0      // Not stored in DB currently
+            'type' => $row['type']
         ];
     }
     

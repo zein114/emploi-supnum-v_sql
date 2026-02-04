@@ -8,7 +8,7 @@ from openpyxl.utils import get_column_letter
 import shutil
 from datetime import datetime
 
-def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Code_Map, Sous_Groupes_Reference_Groupes, Group_Code_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days=None, time_slots=None):
+def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Group_Id_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days=None, time_slots=None):
     """
     Exporte tous les emplois du temps des groupes dans un seul fichier Excel avec plusieurs feuilles.
     """
@@ -26,9 +26,9 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
     
     # Reverse mapping: Sub-group (GT index) -> Principal group (GP index)
     GT_to_GP_Map = {}
-    for code, gt_idx in Sous_Group_Code_Map.items():
-        if code in Group_Code_Map:
-            GT_to_GP_Map[gt_idx] = Group_Code_Map[code]
+    for gid, gt_idx in Sous_Group_Id_Map.items():
+        if gid in Group_Id_Map:
+            GT_to_GP_Map[gt_idx] = Group_Id_Map[gid]
 
     # Pré-calcul des affectations de salles pour chaque créneau k
     slot_room_assignments = {} # k -> liste de (type_session, g_ou_gt, j, nom_salle)
@@ -102,10 +102,10 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
         last_col_letter = get_column_letter(1 + len(days))
         ws.merge_cells(f'A1:{last_col_letter}1')
         title_cell = ws['A1']
-        title_cell.value = f"Emploi du Temps - {group_name}"
         title_cell.font = Font(size=16, bold=True, color="FFFFFF")
         title_cell.fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
         title_cell.alignment = Alignment(horizontal="center", vertical="center")
+        title_cell.value = f"Emploi du Temps - {group_name}"
         ws.row_dimensions[1].height = 30
         
         # Ajout des en-têtes (jours)
@@ -124,7 +124,6 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
         
         # Construction des données de l'emploi du temps
         for row_idx, time_slot in enumerate(time_slots, start=3):
-            # Colonne des créneaux horaires
             slot_range = time_slot
             slot_is_active = 1
             if isinstance(time_slot, dict):
@@ -137,7 +136,6 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
             time_cell.fill = PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid")
             time_cell.alignment = Alignment(horizontal="center", vertical="center")
             
-            # Remplissage pour chaque jour
             for col_idx, day_info in enumerate(days, start=2):
                 day_idx = col_idx - 2
                 is_active = day_info.get('is_active', 1) if isinstance(day_info, dict) else 1
@@ -170,19 +168,19 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             sessions_list.append(session_str)
                     
                     # Sous-groupes (TD, TP, TD Online, TP Online)
-                    group_code_val = None
-                    for code_val, idx in Group_Code_Map.items():
+                    group_id_val = None
+                    for gid_val, idx in Group_Id_Map.items():
                         if idx == g:
-                            group_code_val = code_val
+                            group_id_val = gid_val
                             break
                     
                     subgroups_of_g = []
-                    for sub_code, ref_val in Sous_Groupes_Reference_Groupes.items():
+                    for sub_id, ref_val in Sous_Group_Reference_Group.items():
                         refs = [r.strip() for r in str(ref_val).split(',')]
-                        if group_code_val in refs:
-                            subgroups_of_g.append(sub_code)
+                        if group_id_val in refs:
+                            subgroups_of_g.append(sub_id)
                     
-                    subgroup_indices = [Sous_Group_Code_Map[sc] for sc in subgroups_of_g if sc in Sous_Group_Code_Map]
+                    subgroup_indices = [Sous_Group_Id_Map[si] for si in subgroups_of_g if si in Sous_Group_Id_Map]
                     
                     for j in range(J):
                         # CM sessions of subgroups that are also principal groups

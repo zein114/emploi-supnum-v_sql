@@ -18,7 +18,7 @@ try {
                sem.name as semester_name, sem.order_index,
                cw.cm_hours, cw.td_hours, cw.tp_hours,
                cw.cm_online, cw.td_online, cw.tp_online,
-               g.code as group_code,
+               g.id as group_id,
                (
                 SELECT COUNT(DISTINCT COALESCE(pg.id, ghier.id))
                 FROM teacher_assignments ta
@@ -27,17 +27,17 @@ try {
                 WHERE ta.subject_id = s.id
                ) as assigned_group_count,
                (
-                SELECT GROUP_CONCAT(DISTINCT COALESCE(pg.code, ghier.code))
+                SELECT GROUP_CONCAT(DISTINCT COALESCE(pg.id, ghier.id))
                 FROM teacher_assignments ta
                 JOIN `groups` ghier ON ta.group_id = ghier.id
                 LEFT JOIN `groups` pg ON ghier.parent_group_id = pg.id
                 WHERE ta.subject_id = s.id
-               ) as assigned_group_codes
+               ) as assigned_group_ids
         FROM subjects s
         LEFT JOIN semesters sem ON s.semester_id = sem.id
         LEFT JOIN course_workloads cw ON cw.subject_id = s.id
         LEFT JOIN `groups` g ON cw.group_id = g.id
-        ORDER BY sem.order_index, s.code, g.code
+        ORDER BY sem.order_index, s.code, g.id
     ";
     
     $result = $conn->query($query);
@@ -59,13 +59,13 @@ try {
                 'general_entry' => null,
                 'group_entries' => [],
                 'assigned_group_count' => (int)$row['assigned_group_count'],
-                'assigned_group_codes' => $row['assigned_group_codes'] ?? ''
+                'assigned_group_ids' => $row['assigned_group_ids'] ?? ''
             ];
         }
         
         $entry = [
             'code' => $row['subject_code'],
-            'code_groupe' => $row['group_code'] ?? '',
+            'group_id' => $row['group_id'] ?? '',
             'nom' => $row['subject_name'],
             'semester' => $row['semester_name'] ?? '',
             'cm' => (int)($row['cm_hours'] ?? 0),
@@ -75,10 +75,10 @@ try {
             'online_td' => (int)($row['td_online'] ?? 0),
             'online_tp' => (int)($row['tp_online'] ?? 0),
             'assigned_group_count' => (int)$row['assigned_group_count'],
-            'assigned_group_codes' => $row['assigned_group_codes'] ?? ''
+            'assigned_group_ids' => $row['assigned_group_ids'] ?? ''
         ];
 
-        if (empty($row['group_code'])) {
+        if (empty($row['group_id'])) {
             // This is the general workload entry (or the NULL result of the LEFT JOIN)
             // We check if cw.id is not null to know if it's a real entry in DB
             if ($row['cm_hours'] !== null) {
@@ -120,7 +120,7 @@ try {
             
             $finalData[] = [
                 'code' => $data['info']['code'],
-                'code_groupe' => '',
+                'group_id' => '',
                 'nom' => $data['info']['nom'],
                 'semester' => $data['info']['semester'],
                 'cm' => $maxCm,
@@ -130,7 +130,7 @@ try {
                 'online_td' => $maxOnlTd,
                 'online_tp' => $maxOnlTp,
                 'assigned_group_count' => $data['assigned_group_count'],
-                'assigned_group_codes' => $data['assigned_group_codes']
+                'assigned_group_ids' => $data['assigned_group_ids']
             ];
         }
 

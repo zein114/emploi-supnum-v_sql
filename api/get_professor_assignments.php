@@ -29,7 +29,7 @@ $formatted = array_map(function($assignment) use ($prof_id) {
         $assignment['group_name'],             // [3] group name
         $assignment['id'],                     // [4] assignment id (for deletion)
         $assignment['subject_code'],           // [5] subject code
-        $assignment['group_code']              // [6] group code
+        $assignment['group_id']                // [6] group id
     ];
 }, $assignments);
 

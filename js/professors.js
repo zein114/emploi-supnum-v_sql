@@ -241,10 +241,8 @@ function setupModalListeners() {
   // 1. On Group Change -> Filter Modules & Reset downstream
   document.addEventListener("dropdown-change", function (e) {
     if (e.detail.dropdownId === "groupSelect") {
-      const groupCode = e.detail.value;
-      const selectedGroup = globalGroupsHierarchy.find(
-        (g) => g.code == groupCode,
-      );
+      const groupId = e.detail.value;
+      const selectedGroup = globalGroupsHierarchy.find((g) => g.id == groupId);
 
       // Reset Module
       const moduleBtn = document.querySelector(
@@ -304,16 +302,16 @@ function setupModalListeners() {
       const groupBtn = document.querySelector(
         '[data-dropdown-id="groupSelect"]',
       );
-      const groupCode = groupBtn.getAttribute("data-value");
+      const groupId = groupBtn.getAttribute("data-value");
 
       // Always reset subgroup selection first
       resetSubgroupDropdown();
 
       if (type === "TD" || type === "TP") {
         // Show as mandatory (though it's always visible now, we enable it)
-        if (groupCode) {
+        if (groupId) {
           const selectedGroup = globalGroupsHierarchy.find(
-            (g) => g.code == groupCode,
+            (g) => g.id == groupId,
           );
           if (selectedGroup) {
             updateSubgroupDropdown(selectedGroup.subgroups, true); // true = enable
@@ -351,7 +349,7 @@ function populateGroupDropdown(groups) {
   let html = "";
   groups.forEach((group) => {
     // Only Principale groups are returned by API logic effectively
-    html += `<div class="dropdown-item" data-value="${group.code}">${group.name} (${group.semester_name || ""})</div>`;
+    html += `<div class="dropdown-item" data-value="${group.id}">${group.name} (${group.semester_name || ""})</div>`;
   });
 
   window.customDropdown.updateMenu("groupSelect", html);
@@ -378,7 +376,7 @@ function updateSubgroupDropdown(subgroups, enable) {
 
   let html = "";
   subgroups.forEach((sg) => {
-    html += `<div class="dropdown-item" data-value="${sg.code}">${sg.name}</div>`;
+    html += `<div class="dropdown-item" data-value="${sg.id}">${sg.name}</div>`;
   });
 
   window.customDropdown.updateMenu("subgroupSelect", html);

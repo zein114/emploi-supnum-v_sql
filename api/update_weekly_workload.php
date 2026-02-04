@@ -33,7 +33,6 @@ try {
     
     // 1. Prepare statements ONCE outside the loop (Crucial for performance)
     $stmtSubject = $conn->prepare("SELECT id FROM subjects WHERE code = ?");
-    $stmtGroup = $conn->prepare("SELECT id FROM `groups` WHERE code = ?");
     $stmtUpsert = $conn->prepare("
         INSERT INTO course_workloads (subject_id, group_id, cm_hours, td_hours, tp_hours, cm_online, td_online, tp_online)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -52,8 +51,8 @@ try {
     
     foreach ($input as $item) {
         $code = trim($item['code']);
-        $groupCode = trim($item['code_groupe'] ?? '');
-        $key = $code . '|' . $groupCode;
+        $groupId = !empty($item['group_id']) ? (int)$item['group_id'] : null;
+        $key = $code . '|' . ($groupId ?? '');
         $processedKeys[] = $key;
         
         $cm = isset($item['cm']) ? (int)$item['cm'] : 0;
@@ -71,15 +70,7 @@ try {
         
         if (!$subjectId) continue;
         
-        // B. Get group_id
-        $groupId = null;
-        if (!empty($groupCode)) {
-            $stmtGroup->bind_param('s', $groupCode);
-            $stmtGroup->execute();
-            $res = $stmtGroup->get_result();
-            if ($row = $res->fetch_assoc()) {
-                $groupId = $row['id'];
-            }
+        if ($groupId) {
             $modulesInRequest[] = $code;
         }
         
@@ -100,7 +91,7 @@ try {
     if (!empty($modulesInRequest)) {
         $processedKeysSet = array_flip($processedKeys);
         $stmtDelCheck = $conn->prepare("
-            SELECT cw.id, g.code as group_code
+            SELECT cw.id, g.id as group_id
             FROM course_workloads cw
             JOIN `groups` g ON cw.group_id = g.id
             JOIN subjects s ON cw.subject_id = s.id
@@ -114,7 +105,7 @@ try {
             $existingResult = $stmtDelCheck->get_result();
             
             while ($existing = $existingResult->fetch_assoc()) {
-                $existingKey = $moduleCode . '|' . $existing['group_code'];
+                $existingKey = $moduleCode . '|' . $existing['group_id'];
                 if (!isset($processedKeysSet[$existingKey])) {
                     $stmtDelete->bind_param('i', $existing['id']);
                     $stmtDelete->execute();
