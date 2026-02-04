@@ -64,7 +64,8 @@
 
 // Global variables to store dynamic settings
 let availableSemesters = [];
-let availableGroupTypes = ["principale", "TD"]; // Default fallback
+let availableGroupTypes = ["principale", "TD", "specialite", "langues && ppp"]; // Updated types
+let availablePrincipaleGroups = []; // Store for parent selection in add/edit group
 
 async function loadTabData(tabId) {
   if (tabId === "classrooms") {
@@ -122,6 +123,12 @@ async function loadTabData(tabId) {
     } else if (tabId === "classrooms") {
       renderClassrooms(result.classrooms);
     } else if (tabId === "groups") {
+      // Store principal groups for dropdowns (including languages as they are now top-level)
+      if (result.groups) {
+        availablePrincipaleGroups = result.groups.filter(
+          (g) => g.type === "principale" || g.type === "langues && ppp",
+        );
+      }
       renderGroups(result.groups);
     }
   } catch (error) {
@@ -315,12 +322,12 @@ function renderGroups(groups) {
             <tr>
                 <td class="font-semibold">${safeNameHtml}</td>
                 <td><span class="badge badge-warning">${safeSemesterHtml}</span></td>
-                <td>${type}</td>
+                <td><span class="badge badge-primary">${type}</span></td>
                 <td>${safeSpecialityHtml}</td>
                 <td>${capacity}</td>
                 <td>
                     <div class="settings-item-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="editGroup('${safeCodeJs}', '${safeCodeJs}', '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${safeSpecialityJs}', '${safeCapacityJs}')">Modifier</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editGroup('${safeCodeJs}', '${safeCodeJs}', '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${safeSpecialityJs}', '${safeCapacityJs}', '${g.reference}')">Modifier</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteGroup('${safeCodeJs}')">Supprimer</button>
                     </div>
                 </td>
@@ -582,16 +589,24 @@ function addGroup() {
     : "";
 
   // Generate type options
-  const typeOptions =
-    availableGroupTypes
-      .map(
-        (t) =>
-          `<div class="dropdown-item" data-value="${t}">${
-            t.charAt(0).toUpperCase() + t.slice(1)
-          }</div>`,
-      )
-      .join("") +
-    `<div class="dropdown-item" data-value="autre">Autre...</div>`;
+  const typeOptions = availableGroupTypes
+    .map(
+      (t) =>
+        `<div class="dropdown-item" data-value="${t}">${
+          t.charAt(0).toUpperCase() + t.slice(1)
+        }</div>`,
+    )
+    .join("");
+
+  // Generate Parent Group options
+  const parentOptions = availablePrincipaleGroups.length
+    ? availablePrincipaleGroups
+        .map(
+          (g) =>
+            `<div class="dropdown-item" data-value="${g.id}">${g.name}</div>`,
+        )
+        .join("")
+    : "";
 
   const html = `
         <div class="form-group">
@@ -627,13 +642,18 @@ function addGroup() {
                     </div>
                 </div>
             </div>
-            <div class="mb-1" id="addGroupCustomTypeContainer" style="display: none;">
-                <label class="form-label">Type personnalisé</label>
-                <input type="text" id="addGroupCustomType" class="form-input" placeholder="ex: Languages...">
-            </div>
-            <div class="mb-1">
-                <label class="form-label">Spécialité</label>
-                <input type="text" id="addGroupSpeciality" class="form-input" placeholder="ex: Informatique">
+            <!-- Parent Group Dropdown (Always shown, disabled for Principale/Languages) -->
+             <div class="mb-1" id="addGroupParentContainer">
+                <label class="form-label">Groupe Parent</label>
+                <div class="dropdown-container">
+                    <button type="button" class="dropdown-button" data-dropdown-id="addGroupParent" disabled>
+                        <span class="dropdown-text">Choisir un parent...</span>
+                        <div class="dropdown-arrow"></div>
+                    </button>
+                    <div class="dropdown-menu">
+                         ${parentOptions}
+                    </div>
+                </div>
             </div>
              <div class="mb-1">
                 <label class="form-label">Nombre d'étudiants</label>
@@ -647,19 +667,33 @@ function addGroup() {
       window.customDropdown.initContainer(document.getElementById("modalBody"));
     }
 
-    // Handle "Autre" option selection
+    // Handle "Autre" option selection & Parent visibility
     const handler = function (e) {
       if (e.detail.dropdownId === "addGroupType") {
-        const customContainer = document.getElementById(
-          "addGroupCustomTypeContainer",
+        const parentBtn = document.querySelector(
+          '[data-dropdown-id="addGroupParent"]',
         );
-        if (customContainer) {
-          if (e.detail.value === "autre") {
-            customContainer.style.display = "block";
-            document.getElementById("addGroupCustomType").focus();
+        const typeValue = e.detail.value;
+
+        // Parent Group Visibility Logic
+        if (parentBtn) {
+          // Disable if "principale" or "langues && ppp", enable otherwise (TD, specialite)
+          const parentsToDisable = ["principale", "langues && ppp"];
+          if (parentsToDisable.includes(typeValue)) {
+            parentBtn.disabled = true;
+            parentBtn.setAttribute("data-value", "");
+            parentBtn.querySelector(".dropdown-text").textContent =
+              "Choisir un parent...";
+
+            // Clear selected item in menu
+            const menu = parentBtn
+              .closest(".dropdown-container")
+              .querySelector(".dropdown-menu");
+            menu
+              .querySelectorAll(".dropdown-item")
+              .forEach((i) => i.classList.remove("selected"));
           } else {
-            customContainer.style.display = "none";
-            document.getElementById("addGroupCustomType").value = "";
+            parentBtn.disabled = false;
           }
         }
       }
@@ -708,6 +742,9 @@ function addGroup() {
       const typeBtn = document.querySelector(
         '[data-dropdown-id="addGroupType"]',
       );
+      const parentBtn = document.querySelector(
+        '[data-dropdown-id="addGroupParent"]',
+      );
 
       const semester =
         semBtn.getAttribute("data-value") ||
@@ -725,13 +762,7 @@ function addGroup() {
         return;
       }
 
-      if (typeValue === "autre") {
-        typeValue = document.getElementById("addGroupCustomType").value.trim();
-        if (!typeValue) {
-          Toast.error("Erreur", "Veuillez saisir un type personnalisé.");
-          return;
-        }
-      }
+      const parentId = parentBtn ? parentBtn.getAttribute("data-value") : null;
 
       const success = await updateSettings(
         {
@@ -740,7 +771,8 @@ function addGroup() {
           name: name,
           semester: semester,
           type: typeValue,
-          speciality: document.getElementById("addGroupSpeciality").value,
+          speciality: "", // Deprecated
+          parent_group_id: parentId,
           capacity: parseInt(capacityInput),
         },
         saveBtn,
@@ -757,41 +789,59 @@ function addGroup() {
   });
 }
 
-function editGroup(old_code, code, name, semester, type, speciality, capacity) {
-  // Check if type is a custom value (not in predefined list - currently checking against availableGroupTypes)
-  const isCustomType =
-    !availableGroupTypes.includes(type) &&
-    !["autre", "Autre..."].includes(type);
-  const displayType = isCustomType
-    ? "Autre..."
-    : type.charAt(0).toUpperCase() + type.slice(1);
-  const customTypeValue = isCustomType ? type : "";
+function editGroup(
+  old_code,
+  code,
+  name,
+  semester,
+  type,
+  speciality,
+  capacity,
+  parentId,
+) {
+  // Added parentId
+  // Check if type is a custom value
+  const displayType = type.charAt(0).toUpperCase() + type.slice(1);
 
   // Generate semester options
   const semesterOptions = availableSemesters.length
     ? availableSemesters
         .map(
           (s) =>
-            `<div class="dropdown-item ${
-              s.name === semester ? "selected" : ""
-            }" data-value="${s.name}">${s.name}</div>`,
+            `<div class="dropdown-item ${s.name === semester ? "selected" : ""}" data-value="${s.name}">${s.name}</div>`,
         )
         .join("")
     : "";
 
   // Generate type options
-  const typeOptions =
-    availableGroupTypes
-      .map(
-        (t) =>
-          `<div class="dropdown-item ${
-            t === type ? "selected" : ""
-          }" data-value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</div>`,
-      )
-      .join("") +
-    `<div class="dropdown-item ${
-      isCustomType ? "selected" : ""
-    }" data-value="autre">Autre...</div>`;
+  const typeOptions = availableGroupTypes
+    .map(
+      (t) =>
+        `<div class="dropdown-item ${t === type ? "selected" : ""}" data-value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</div>`,
+    )
+    .join("");
+
+  // Generate Parent Group options
+  // Find Parent Name for display if needed, but dropdown handles render
+  const parentOptions = availablePrincipaleGroups.length
+    ? availablePrincipaleGroups
+        .map(
+          (g) =>
+            `<div class="dropdown-item ${g.id == parentId ? "selected" : ""}" data-value="${g.id}">${g.name}</div>`,
+        )
+        .join("")
+    : "";
+
+  // Resolve Parent Name for initial button text
+  let parentName = "Choisir un parent...";
+  if (parentId) {
+    const found = availablePrincipaleGroups.find((g) => g.id == parentId);
+    if (found) parentName = found.name;
+  }
+
+  // Check if parent should be disabled
+  const parentsToDisable = ["principale", "langues && ppp"];
+  const isParentDisabled = parentsToDisable.includes(type);
 
   const html = `
         <div class="form-group">
@@ -816,9 +866,7 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
                 <label class="form-label">Type</label>
                 <div class="dropdown-container">
                     <button type="button" class="dropdown-button" data-dropdown-id="editGroupType">
-                        <span class="dropdown-text">${
-                          isCustomType ? "Autre..." : displayType
-                        }</span>
+                        <span class="dropdown-text">${displayType}</span>
                         <div class="dropdown-arrow"></div>
                     </button>
                     <div class="dropdown-menu">
@@ -826,15 +874,18 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
                     </div>
                 </div>
             </div>
-            <div class="mb-1" id="editGroupCustomTypeContainer" style="display: ${
-              isCustomType ? "block" : "none"
-            };">
-                <label class="form-label">Type personnalisé</label>
-                <input type="text" id="editGroupCustomType" class="form-input" value="${customTypeValue}" placeholder="ex: Languages...">
-            </div>
-            <div class="mb-1">
-                <label class="form-label">Spécialité</label>
-                <input type="text" id="editGroupSpeciality" class="form-input" value="${speciality}">
+            <!-- Parent Dropdown (Always shown, disabled for Principale/Languages) -->
+            <div class="mb-1" id="editGroupParentContainer">
+                <label class="form-label">Groupe Parent</label>
+                <div class="dropdown-container">
+                    <button type="button" class="dropdown-button" data-dropdown-id="editGroupParent" data-value="${parentId || ""}" ${isParentDisabled ? "disabled" : ""}>
+                        <span class="dropdown-text">${parentName}</span>
+                        <div class="dropdown-arrow"></div>
+                    </button>
+                    <div class="dropdown-menu">
+                         ${parentOptions}
+                    </div>
+                </div>
             </div>
              <div class="mb-1">
                 <label class="form-label">Nombre d'étudiants</label>
@@ -847,19 +898,32 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
       window.customDropdown.initContainer(document.getElementById("modalBody"));
     }
 
-    // Handle "Autre" option selection
+    // Handle "Autre" option selection & Parent visibility
     const handler = function (e) {
       if (e.detail.dropdownId === "editGroupType") {
-        const customContainer = document.getElementById(
-          "editGroupCustomTypeContainer",
+        const parentBtn = document.querySelector(
+          '[data-dropdown-id="editGroupParent"]',
         );
-        if (customContainer) {
-          if (e.detail.value === "autre") {
-            customContainer.style.display = "block";
-            document.getElementById("editGroupCustomType").focus();
+        const typeValue = e.detail.value;
+
+        // Parent Visibility
+        if (parentBtn) {
+          const parentsToDisable = ["principale", "langues && ppp"];
+          if (parentsToDisable.includes(typeValue)) {
+            parentBtn.disabled = true;
+            parentBtn.setAttribute("data-value", "");
+            parentBtn.querySelector(".dropdown-text").textContent =
+              "Choisir un parent...";
+
+            // Clear selected item in menu
+            const menu = parentBtn
+              .closest(".dropdown-container")
+              .querySelector(".dropdown-menu");
+            menu
+              .querySelectorAll(".dropdown-item")
+              .forEach((i) => i.classList.remove("selected"));
           } else {
-            customContainer.style.display = "none";
-            document.getElementById("editGroupCustomType").value = "";
+            parentBtn.disabled = false;
           }
         }
       }
@@ -894,6 +958,9 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
       const typeBtn = document.querySelector(
         '[data-dropdown-id="editGroupType"]',
       );
+      const parentBtn = document.querySelector(
+        '[data-dropdown-id="editGroupParent"]',
+      );
 
       const newSemester =
         semBtn.getAttribute("data-value") ||
@@ -902,21 +969,20 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
       let newType =
         typeBtn.getAttribute("data-value") ||
         typeBtn.querySelector(".dropdown-text").textContent;
-      if (newType === "autre" || newType === "Autre...") {
-        newType = document.getElementById("editGroupCustomType").value.trim();
-      }
 
-      const newSpeciality = document.getElementById(
-        "editGroupSpeciality",
-      ).value;
+      // const newSpeciality = document.getElementById("editGroupSpeciality").value; // Deprecated
+      const newParentId = parentBtn
+        ? parentBtn.getAttribute("data-value")
+        : null;
 
       // Check if anything changed
+      // Note: we need to check parentId too.
       if (
         newName === name &&
         newCapacity === parseInt(capacity) &&
         newSemester === semester &&
         newType === type &&
-        newSpeciality === speciality
+        newParentId == parentId // Loose equality for null vs "" vs undefined
       ) {
         Toast.warning("Attention", "Aucune modification détectée");
         return;
@@ -930,11 +996,6 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
         return;
       }
 
-      if (!newType && (newType === "autre" || newType === "Autre...")) {
-        Toast.error("Erreur", "Veuillez saisir un type personnalisé.");
-        return;
-      }
-
       const success = await updateSettings(
         {
           action: "edit_group",
@@ -943,7 +1004,8 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
           name: newName,
           semester: newSemester,
           type: newType,
-          speciality: newSpeciality,
+          speciality: "",
+          parent_group_id: newParentId,
           capacity: newCapacity,
         },
         saveBtn,

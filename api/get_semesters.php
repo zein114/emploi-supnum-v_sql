@@ -14,10 +14,16 @@ if ($settingResult && $settingResult->num_rows > 0) {
 $result = $conn->query("SELECT * FROM semesters ORDER BY order_index, id");
 
 $semesters = [];
+$showAll = isset($_GET['all']) && $_GET['all'] === 'true';
+
 if ($result) {
     while ($row = $result->fetch_assoc()) {
+        if ($showAll) {
+            $semesters[] = $row;
+            continue;
+        }
+
         // 3. Filter Logic
-        // Extract number from name e.g. "S1" -> 1
         if (preg_match('/(\d+)/', $row['name'], $matches)) {
             $num = intval($matches[1]);
             $isEven = ($num % 2 === 0);
@@ -28,10 +34,7 @@ if ($result) {
                 $semesters[] = $row;
             }
         } else {
-            // Fallback: include if format unknown or handle differently
-             // For now, let's include if we can't determine, or exclude?
-             // Safest is to include to avoid hiding everything if naming is weird
-             $semesters[] = $row;
+            $semesters[] = $row;
         }
     }
 }

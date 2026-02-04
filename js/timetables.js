@@ -91,7 +91,7 @@ function updateAdminSubmitButtonState() {
 document.addEventListener("DOMContentLoaded", async () => {
   // Load Semesters
   try {
-    const response = await fetch("../api/get_semesters.php");
+    const response = await fetch("../api/get_semesters.php?all=true");
     const semesters = await response.json();
 
     const semesterMenu = document.getElementById("adminSemesterOptionsMenu");

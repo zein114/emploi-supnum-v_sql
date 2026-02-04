@@ -185,8 +185,8 @@ INSERT INTO `groups` (`id`, `name`, `code`, `type`, `semester_id`, `parent_group
 (10, 'TD6', '10', 'TD', 1, 3, 40),
 (11, 'TD7', '11', 'TD', 1, 4, 40),
 (12, 'TD8', '12', 'TD', 1, 4, 40),
-(13, 'IDS1', '13', 'specialite', 1, 1, 30),
-(14, 'IDS2', '14', 'specialite', 1, 1, 30),
+(13, 'IDS1', '13', 'specialite', 1, NULL, 30),
+(14, 'IDS2', '14', 'specialite', 1, NULL, 30),
 (15, 'DSI1-L2', '15', 'principale', 3, NULL, 100),
 (16, 'DSI2-L2', '16', 'principale', 3, NULL, 100),
 (17, 'RSS-L2', '17', 'principale', 3, NULL, 100),
@@ -199,12 +199,12 @@ INSERT INTO `groups` (`id`, `name`, `code`, `type`, `semester_id`, `parent_group
 (24, 'TD2', '24', 'TD', 3, 17, 40),
 (25, 'TD1', '25', 'TD', 3, 18, 40),
 (26, 'TD2', '26', 'TD', 3, 18, 40),
-(27, 'G1', '27', 'langues && ppp', 3, 15, 30),
-(28, 'G2', '28', 'langues && ppp', 3, 15, 30),
-(29, 'G3', '29', 'langues && ppp', 3, 15, 30),
-(30, 'G4', '30', 'langues && ppp', 3, 15, 30),
-(31, 'G5', '31', 'langues && ppp', 3, 15, 30),
-(32, 'G6', '32', 'langues && ppp', 3, 15, 30);
+(27, 'G1', '27', 'langues && ppp', 3, NULL, 30),
+(28, 'G2', '28', 'langues && ppp', 3, NULL, 30),
+(29, 'G3', '29', 'langues && ppp', 3, NULL, 30),
+(30, 'G4', '30', 'langues && ppp', 3, NULL, 30),
+(31, 'G5', '31', 'langues && ppp', 3, NULL, 30),
+(32, 'G6', '32', 'langues && ppp', 3, NULL, 30);
 
 -- --------------------------------------------------------
 

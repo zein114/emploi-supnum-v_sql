@@ -17,6 +17,17 @@ $user = getCurrentUser();
     <link rel="stylesheet" href="../css/settings.css">
     <link rel="icon" type="image/png" href="../assets/logo-supnum.png">
     <script src="../js/theme-switcher.js"></script>
+    <style>
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-layout">
@@ -130,7 +141,7 @@ $user = getCurrentUser();
                                             <th>Nom</th>
                                             <th>Semestre</th>
                                             <th>Type</th>
-                                            <th>Spécialité</th>
+                                            <th>Parent/Spécialité</th>
                                             <th>Étudiants</th>
                                             <th>Actions</th>
                                         </tr>

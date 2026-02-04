@@ -107,8 +107,9 @@ const addAssignmentsFormHtml = `
         <input type="hidden" id="professorId">
     </div>
 
+    <!-- 1. Group Selection -->
     <div class="form-group">
-        <label class="form-label">Groupe</label>
+        <label class="form-label">Groupe Principal</label>
         <input type="hidden" id="group">
         
         <div class="dropdown-container">
@@ -122,13 +123,14 @@ const addAssignmentsFormHtml = `
         </div>
     </div>
 
+    <!-- 2. Subject Selection -->
     <div class="form-group">
-        <label class="form-label">Module</label>
+        <label class="form-label">Matière (Filtré par semestre)</label>
         <input type="hidden" id="newModule">
         
         <div class="dropdown-container">
-            <button type="button" class="dropdown-button" data-dropdown-id="moduleSelect">
-                <span class="dropdown-text">Sélectionner un module</span>
+            <button type="button" class="dropdown-button" data-dropdown-id="moduleSelect" disabled>
+                <span class="dropdown-text">Veuillez d'abord sélectionner un groupe</span>
                 <div class="dropdown-arrow"></div>
             </button>
             <div class="dropdown-menu" data-dropdown-menu-id="moduleSelect">
@@ -137,18 +139,35 @@ const addAssignmentsFormHtml = `
         </div>
     </div>
 
+    <!-- 3. Type Selection -->
     <div class="form-group">
         <label class="form-label">Type d'attribution</label>
         
         <div class="dropdown-container">
-            <button type="button" class="dropdown-button" data-dropdown-id="assignmentType">
-                <span class="dropdown-text">Sélectionner un type d'attribution</span>
+            <button type="button" class="dropdown-button" data-dropdown-id="assignmentType" disabled>
+                <span class="dropdown-text">Sélectionner un type</span>
                 <div class="dropdown-arrow"></div>
             </button>
             <div class="dropdown-menu">
                 <div class="dropdown-item" data-value="CM">CM</div>
                 <div class="dropdown-item" data-value="TP">TP</div>
                 <div class="dropdown-item" data-value="TD">TD</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 4. Subgroup Selection (Disabled until needed) -->
+    <div class="form-group" id="subgroupContainer">
+        <label class="form-label">Sous-groupe (Obligatoire pour TD/TP)</label>
+        <input type="hidden" id="subgroup">
+        
+        <div class="dropdown-container">
+            <button type="button" class="dropdown-button" data-dropdown-id="subgroupSelect" disabled>
+                <span class="dropdown-text">Sél. un groupe et type d'abord</span>
+                <div class="dropdown-arrow"></div>
+            </button>
+            <div class="dropdown-menu" data-dropdown-menu-id="subgroupSelect">
+                <!-- Will be populated by JavaScript -->
             </div>
         </div>
     </div>
@@ -167,6 +186,10 @@ const viewAssignmentsHtml = `
         <button type="button" class="btn btn-secondary" onclick="Modal.cancel()">Fermer</button>
     </div>
 `;
+
+// Global state for invalidation if needed
+let globalGroupsHierarchy = [];
+let globalModules = [];
 
 // Modal functions
 
@@ -187,67 +210,218 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
         .getElementById("submitAddAssignments")
         .addEventListener("click", submitAddAssignments);
 
-      // Fetch Groups
+      // Listeners for logic
+      setupModalListeners();
+
+      // Fetch Groups Data
       try {
-        const response = await fetch(
-          "../api/get_all_groups_with_excel_file.php",
-        );
-        const groups = await response.json();
+        const response = await fetch("../api/get_groups_hierarchy.php");
+        globalGroupsHierarchy = await response.json();
 
-        const groupBtn = document.querySelector(
-          '[data-dropdown-id="groupSelect"]',
-        );
-        const groupText = groupBtn.querySelector(".dropdown-text");
-
-        if (groups.length === 0) {
-          groupText.textContent = "Aucun groupe disponible";
-          groupBtn.disabled = true;
-        } else {
-          let html = "";
-          groups.forEach((group) => {
-            html += `<div class="dropdown-item" data-value="${group[0]}">${
-              group[1] + " - " + group[2]
-            }</div>`;
-          });
-          window.customDropdown.updateMenu("groupSelect", html);
-          groupText.textContent = "Sélectionner un groupe";
-          groupBtn.disabled = false;
-        }
+        populateGroupDropdown(globalGroupsHierarchy);
       } catch (error) {
         console.error("Error loading groups:", error);
         Toast.error("Échec du chargement des groupes.");
       }
 
-      // Fetch Modules
+      // Fetch Modules Data
       try {
         const response = await fetch("../api/get_all_modules.php");
-        const modules = await response.json();
-
-        const moduleBtn = document.querySelector(
-          '[data-dropdown-id="moduleSelect"]',
-        );
-        const moduleText = moduleBtn.querySelector(".dropdown-text");
-
-        if (modules.length === 0) {
-          moduleText.textContent = "Aucun module disponible";
-          moduleBtn.disabled = true;
-        } else {
-          let html = "";
-          modules.forEach((module) => {
-            html += `<div class="dropdown-item" data-value="${module[0]}">${
-              module[0] + " - " + module[1]
-            }</div>`;
-          });
-          window.customDropdown.updateMenu("moduleSelect", html);
-          moduleText.textContent = "Sélectionner un module";
-          moduleBtn.disabled = false;
-        }
+        globalModules = await response.json();
+        // Modules will be populated when group is selected
       } catch (error) {
         console.error("Error loading modules:", error);
         Toast.error("Échec du chargement des modules.");
       }
     },
   );
+}
+
+function setupModalListeners() {
+  // 1. On Group Change -> Filter Modules & Reset downstream
+  document.addEventListener("dropdown-change", function (e) {
+    if (e.detail.dropdownId === "groupSelect") {
+      const groupCode = e.detail.value;
+      const selectedGroup = globalGroupsHierarchy.find(
+        (g) => g.code == groupCode,
+      );
+
+      // Reset Module
+      const moduleBtn = document.querySelector(
+        '[data-dropdown-id="moduleSelect"]',
+      );
+      if (moduleBtn) {
+        moduleBtn.setAttribute("data-value", "");
+        moduleBtn.querySelector(".dropdown-text").textContent =
+          "Sélectionner une matière";
+      }
+
+      // Reset Type
+      const typeBtn = document.querySelector(
+        '[data-dropdown-id="assignmentType"]',
+      );
+      if (typeBtn) {
+        typeBtn.setAttribute("data-value", "");
+        typeBtn.querySelector(".dropdown-text").textContent =
+          "Sélectionner un type";
+        typeBtn.disabled = true; // Wait for module
+      }
+
+      // Reset Subgroup
+      resetSubgroupDropdown();
+
+      if (selectedGroup) {
+        // Filter Modules
+        filterModulesBySemester(selectedGroup.semester_name);
+      }
+    }
+
+    // 2. On Subject (Module) Change -> Enable Type
+    if (e.detail.dropdownId === "moduleSelect") {
+      const moduleCode = e.detail.value;
+      const typeBtn = document.querySelector(
+        '[data-dropdown-id="assignmentType"]',
+      );
+
+      if (moduleCode) {
+        typeBtn.disabled = false;
+      } else {
+        typeBtn.disabled = true;
+      }
+
+      // Reset Type selection
+      typeBtn.setAttribute("data-value", "");
+      typeBtn.querySelector(".dropdown-text").textContent =
+        "Sélectionner un type";
+
+      // Reset Subgroup
+      resetSubgroupDropdown();
+    }
+
+    // 3. On Type Change -> Control Subgroup
+    if (e.detail.dropdownId === "assignmentType") {
+      const type = e.detail.value;
+      const groupBtn = document.querySelector(
+        '[data-dropdown-id="groupSelect"]',
+      );
+      const groupCode = groupBtn.getAttribute("data-value");
+
+      // Always reset subgroup selection first
+      resetSubgroupDropdown();
+
+      if (type === "TD" || type === "TP") {
+        // Show as mandatory (though it's always visible now, we enable it)
+        if (groupCode) {
+          const selectedGroup = globalGroupsHierarchy.find(
+            (g) => g.code == groupCode,
+          );
+          if (selectedGroup) {
+            updateSubgroupDropdown(selectedGroup.subgroups, true); // true = enable
+          }
+        }
+      } else {
+        // CM or others -> Disable Subgroup
+        updateSubgroupDropdown([], false); // false = disable
+      }
+    }
+  });
+}
+
+function resetSubgroupDropdown() {
+  const subBtn = document.querySelector('[data-dropdown-id="subgroupSelect"]');
+  if (subBtn) {
+    subBtn.setAttribute("data-value", "");
+    subBtn.querySelector(".dropdown-text").textContent =
+      "Sél. un groupe et type d'abord";
+    subBtn.disabled = true;
+    window.customDropdown.updateMenu("subgroupSelect", "");
+  }
+}
+
+function populateGroupDropdown(groups) {
+  const groupBtn = document.querySelector('[data-dropdown-id="groupSelect"]');
+  const groupText = groupBtn.querySelector(".dropdown-text");
+
+  if (groups.length === 0) {
+    groupText.textContent = "Aucun groupe disponible";
+    groupBtn.disabled = true;
+    return;
+  }
+
+  let html = "";
+  groups.forEach((group) => {
+    // Only Principale groups are returned by API logic effectively
+    html += `<div class="dropdown-item" data-value="${group.code}">${group.name} (${group.semester_name || ""})</div>`;
+  });
+
+  window.customDropdown.updateMenu("groupSelect", html);
+  groupBtn.disabled = false;
+}
+
+function updateSubgroupDropdown(subgroups, enable) {
+  const subBtn = document.querySelector('[data-dropdown-id="subgroupSelect"]');
+  const subText = subBtn.querySelector(".dropdown-text");
+
+  if (!enable) {
+    subBtn.disabled = true;
+    subText.textContent = "Non applicable pour CM";
+    window.customDropdown.updateMenu("subgroupSelect", "");
+    return;
+  }
+
+  if (!subgroups || subgroups.length === 0) {
+    subText.textContent = "Aucun sous-groupe disponible";
+    subBtn.disabled = true;
+    window.customDropdown.updateMenu("subgroupSelect", "");
+    return;
+  }
+
+  let html = "";
+  subgroups.forEach((sg) => {
+    html += `<div class="dropdown-item" data-value="${sg.code}">${sg.name}</div>`;
+  });
+
+  window.customDropdown.updateMenu("subgroupSelect", html);
+  subBtn.disabled = false;
+  subText.textContent = "Sélectionner un sous-groupe";
+}
+
+function filterModulesBySemester(semesterName) {
+  const moduleBtn = document.querySelector('[data-dropdown-id="moduleSelect"]');
+  const moduleText = moduleBtn.querySelector(".dropdown-text");
+
+  // Normalize semester name (e.g. "Semestre 1" -> matches "S1"? Logic might be needed)
+  // API returns "S1", "S2" usually.
+
+  // If semesterName is not present, showing all? Or none?
+  // Let's match roughly.
+
+  // Filter modules
+  // module structure from API: [code, name, semester_name]
+
+  // Simple cleaning for matching: "S1" in "Semestre 1" ?
+  // Usually DB has "S1", "S2".
+
+  const filtered = globalModules.filter((m) => {
+    if (!semesterName) return true;
+    // If module has no semester, show it? Or hide?
+    if (!m[2]) return true;
+    return m[2] === semesterName;
+  });
+
+  if (filtered.length === 0) {
+    moduleText.textContent = "Aucune matière pour ce semestre";
+    moduleBtn.disabled = true;
+    window.customDropdown.updateMenu("moduleSelect", "");
+  } else {
+    let html = "";
+    filtered.forEach((module) => {
+      html += `<div class="dropdown-item" data-value="${module[0]}">${module[0]} - ${module[1]}</div>`;
+    });
+    window.customDropdown.updateMenu("moduleSelect", html);
+    moduleText.textContent = "Sélectionner une matière";
+    moduleBtn.disabled = false;
+  }
 }
 
 function closeProfessorAddAssignmentsModal() {
@@ -382,21 +556,40 @@ async function openProfessorAssignmentsModal(prof_id, btn) {
 async function submitAddAssignments() {
   const professorId = document.getElementById("professorId").value;
   const groupBtn = document.querySelector('[data-dropdown-id="groupSelect"]');
+  const subgroupBtn = document.querySelector(
+    '[data-dropdown-id="subgroupSelect"]',
+  );
   const moduleBtn = document.querySelector('[data-dropdown-id="moduleSelect"]');
   const assignmentTypeBtn = document.querySelector(
     '[data-dropdown-id="assignmentType"]',
   );
 
-  const groupId = groupBtn ? groupBtn.getAttribute("data-value") : null;
-  const moduleId = moduleBtn ? moduleBtn.getAttribute("data-value") : null;
+  let groupId = groupBtn ? groupBtn.getAttribute("data-value") : null;
+  const subGroupId = subgroupBtn
+    ? subgroupBtn.getAttribute("data-value")
+    : null;
+
   const assignmentType = assignmentTypeBtn
     ? assignmentTypeBtn.getAttribute("data-value")
     : null;
 
+  // Validation: Mandatory Subgroup for TD/TP
+  if (assignmentType === "TD" || assignmentType === "TP") {
+    if (!subGroupId) {
+      Toast.warning(
+        "Veuillez sélectionner un sous-groupe pour ce type d'attribution.",
+      );
+      return;
+    }
+    groupId = subGroupId;
+  }
+
+  const moduleId = moduleBtn ? moduleBtn.getAttribute("data-value") : null;
+
   const submitBtn = document.getElementById("submitAddAssignments");
 
   if (!professorId || !groupId || !moduleId || !assignmentType) {
-    Toast.warning("Veuillez remplir tous les champs.");
+    Toast.warning("Veuillez remplir tous les champs obligatoires.");
     return;
   }
 

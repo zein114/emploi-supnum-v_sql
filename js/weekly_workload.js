@@ -58,6 +58,34 @@ async function loadAllData() {
     '<tr><td colspan="7" class="text-center" style="padding: 2rem;">Chargement des données...</td></tr>';
 
   try {
+    // 1. Load Semesters for the filter
+    const responseSem = await fetch("../api/get_semesters.php?all=true");
+    const semesters = await responseSem.json();
+    const menu = document.getElementById("semesterFilterMenu");
+    if (menu) {
+      let html =
+        '<div class="dropdown-item" data-value="all">Tous les semestres</div>';
+      semesters.forEach((sem) => {
+        // Extract number for data-value if possible, otherwise use name
+        const numMatch = sem.name.match(/\d+/);
+        const val = numMatch ? numMatch[0] : sem.name;
+        html += `<div class="dropdown-item" data-value="${val}">${sem.name}</div>`;
+      });
+      menu.innerHTML = html;
+
+      // Update selected state
+      const savedSemester =
+        localStorage.getItem("weekly_workload_semester") || "all";
+      menu.querySelectorAll(".dropdown-item").forEach((item) => {
+        if (item.getAttribute("data-value") === savedSemester) {
+          item.classList.add("selected");
+          const btn = document.getElementById("semesterFilterBtn");
+          if (btn)
+            btn.querySelector(".dropdown-text").textContent = item.textContent;
+        }
+      });
+    }
+
     const responseWL = await fetch("../api/get_weekly_workload.php");
     const resultWL = await responseWL.json();
     if (!responseWL.ok)

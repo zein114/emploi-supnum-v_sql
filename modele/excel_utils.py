@@ -24,6 +24,12 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
     num_slots_per_day = len(time_slots)
     K = len(days) * num_slots_per_day
     
+    # Reverse mapping: Sub-group (GT index) -> Principal group (GP index)
+    GT_to_GP_Map = {}
+    for code, gt_idx in Sous_Group_Code_Map.items():
+        if code in Group_Code_Map:
+            GT_to_GP_Map[gt_idx] = Group_Code_Map[code]
+
     # Pré-calcul des affectations de salles pour chaque créneau k
     slot_room_assignments = {} # k -> liste de (type_session, g_ou_gt, j, nom_salle)
     
@@ -179,6 +185,25 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                     subgroup_indices = [Sous_Group_Code_Map[sc] for sc in subgroups_of_g if sc in Sous_Group_Code_Map]
                     
                     for j in range(J):
+                        # CM sessions of subgroups that are also principal groups
+                        for idx_sg in subgroup_indices:
+                            if idx_sg in GT_to_GP_Map:
+                                sg_gp_idx = GT_to_GP_Map[idx_sg]
+                                if X[sg_gp_idx][j][k].solution_value() > 0.5:
+                                    prof = ProCM[j][0] if ProCM[j] else "CM"
+                                    code = Matiere_Codes[j]
+                                    room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==sg_gp_idx and r[2]==j), "N/A")
+                                    sg_name = Sous_Groupes[idx_sg]
+                                    session_str = f"[{code}] {Matieres[j]}\n(CM) - {sg_name}\nProf: {prof}\nSalle: {room}"
+                                    sessions_list.append(session_str)
+                                
+                                if W[sg_gp_idx][j][k].solution_value() > 0.5:
+                                    prof = ProCM[j][0] if ProCM[j] else "CM Online"
+                                    code = Matiere_Codes[j]
+                                    sg_name = Sous_Groupes[idx_sg]
+                                    session_str = f"[{code}] {Matieres[j]}\n(CM Online) - {sg_name}\nProf: {prof}\nSalle: En ligne"
+                                    sessions_list.append(session_str)
+
                         active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
                         active_td = [si for si in subgroup_indices if Z[si][j][k].solution_value() > 0.5]
                         active_onl_tp = [si for si in subgroup_indices if U_TP[si][j][k].solution_value() > 0.5]

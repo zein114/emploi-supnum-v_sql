@@ -95,6 +95,12 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     sg = Sous_Group_Code_Map[sg_code]
                     GP_to_SG[g].append(sg)
 
+        # Reverse mapping: Sub-group (GT index) -> Principal group (GP index)
+        GT_to_GP_Map = {}
+        for code, gt_idx in Sous_Group_Code_Map.items():
+            if code in Group_Code_Map:
+                GT_to_GP_Map[gt_idx] = Group_Code_Map[code]
+
         for g in range(GP):
             for k in range(K):
                 # Variable binaire: Est-ce que le groupe principal 'g' a cours au créneau 'k' ?
@@ -103,7 +109,14 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                 # Pour chaque sous-groupe associé
                 for sg in GP_to_SG[g]:
                     # Variable binaire: Est-ce que le sous-groupe 'sg' a cours au créneau 'k' ?
-                    sub_active = sum(Y[sg][j][k] + Z[sg][j][k] + U_TD[sg][j][k] + U_TP[sg][j][k] for j in range(J))
+                    # Include TP/TD and also its CM classes if it's a dual-type group (like Languages)
+                    sub_active_vars = [Y[sg][j][k] + Z[sg][j][k] + U_TD[sg][j][k] + U_TP[sg][j][k] for j in range(J)]
+                    
+                    if sg in GT_to_GP_Map:
+                        sg_gp_idx = GT_to_GP_Map[sg]
+                        sub_active_vars += [X[sg_gp_idx][j][k] + W[sg_gp_idx][j][k] for j in range(J)]
+                    
+                    sub_active = sum(sub_active_vars)
                     
                     # Exclusion mutuelle : Soit le parent, soit le sous-groupe, soit aucun. Pas les deux.
                     solver.Add(main_active + sub_active <= 1)

@@ -52,23 +52,25 @@ if ($tab === 'classrooms' || $tab === 'groups') {
     } else {
         // Get groups from database
         $result = $conn->query("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id, g.code, g.name, s.name as semester, g.type, g.parent_group_id, p.name as parent_name, g.student_count
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
+            LEFT JOIN `groups` p ON g.parent_group_id = p.id
             ORDER BY g.id
         ");
         
         $groups = [];
-        $types = [];
+        $types = ['principale', 'TD', 'specialite', 'langues && ppp'];
         while ($row = $result->fetch_assoc()) {
             $groups[] = [
+                'id' => $row['id'],
                 'code' => trim($row['code'] ?? ''),
                 'name' => trim($row['name'] ?? ''),
                 'semester' => trim($row['semester'] ?? ''),
                 'type' => trim($row['type'] ?? ''),
-                'speciality' => '', // Not stored in DB currently
-                'reference' => '',  // Would need parent_group_id lookup
-                'capacity' => 0     // Not stored in DB currently
+                'speciality' => trim($row['parent_name'] ?? ''), 
+                'reference' => trim($row['parent_group_id'] ?? ''),
+                'capacity' => $row['student_count'] ?? 30
             ];
             
             if (!empty($row['type']) && !in_array($row['type'], $types)) {
@@ -77,7 +79,8 @@ if ($tab === 'classrooms' || $tab === 'groups') {
         }
         
         $response['groups'] = $groups;
-        sort($types);
+        // Don't sort to keep my order, or sort if preferred. 
+        // Let's keep the defined order and append others.
         $response['group_types'] = array_values($types);
     }
 }

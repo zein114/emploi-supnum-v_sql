@@ -98,11 +98,7 @@ try {
         $semNum = (int)preg_replace('/[^0-9]/', '', $semesterStr);
         
         if ($semNum === 0) continue;
-        if ($currentSemester === 'impair') {
-            if ($semNum % 2 === 0) continue;
-        } else {
-            if ($semNum % 2 !== 0) continue;
-        }
+        // No filtering here anymore, we let the frontend filter by semester name/number if needed
 
         // Handle General Entry
         if ($data['general_entry']) {
