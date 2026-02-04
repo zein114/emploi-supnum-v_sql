@@ -72,7 +72,7 @@ if ($tab === 'classrooms' || $tab === 'groups') {
                 'type' => $actualType,
                 'speciality' => trim($row['parent_name'] ?? ''), 
                 'reference' => trim($row['parent_group_id'] ?? ''),
-                'capacity' => $row['student_count'] ?? 30
+                'capacity' => $row['student_count'] ?? 0
             ];
             
             if (!empty($actualType) && !in_array($actualType, $types)) {

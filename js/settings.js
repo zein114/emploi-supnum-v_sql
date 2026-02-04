@@ -318,9 +318,10 @@ function renderGroups(groups) {
                 <td><span class="badge badge-warning">${safeSemesterHtml}</span></td>
                 <td><span class="badge badge-primary">${type}</span></td>
                 <td>${safeSpecialityHtml}</td>
+                <td>${g.capacity || 0} étudiants</td>
                 <td>
                     <div class="settings-item-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="editGroup(${g.id}, '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${parentId}', ${g.capacity || 30})">Modifier</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editGroup(${g.id}, '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${parentId}', ${g.capacity || 0})">Modifier</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteGroup(${g.id})">Supprimer</button>
                     </div>
                 </td>
@@ -900,7 +901,7 @@ function editGroup(id, name, semester, type, parentId, capacity) {
             </div>
             <div class="mb-1">
                 <label class="form-label">Nombre d'étudiants</label>
-                <input type="number" id="editGroupCapacity" class="form-input" placeholder="ex: 30" min="1" value="${capacity || 30}" required>
+                <input type="number" id="editGroupCapacity" class="form-input" placeholder="ex: 30" min="1" value="${capacity || 0}" required>
             </div>
         </div>
     `;
@@ -1019,8 +1020,8 @@ function editGroup(id, name, semester, type, parentId, capacity) {
       }
 
       const capacityInput = document.getElementById("editGroupCapacity");
-      const capacity = capacityInput ? parseInt(capacityInput.value) : 0;
-      if (!capacity || isNaN(capacity) || capacity <= 0) {
+      const newCapacity = capacityInput ? parseInt(capacityInput.value) : 0;
+      if (!newCapacity || isNaN(newCapacity) || newCapacity <= 0) {
         Toast.error("Erreur", "Veuillez entrer un nombre d'étudiants valide (nombre positif).");
         return;
       }
@@ -1030,7 +1031,8 @@ function editGroup(id, name, semester, type, parentId, capacity) {
         newName === name &&
         newSemester === semester &&
         newType === type &&
-        newParentId == parentId
+        newParentId == parentId &&
+        newCapacity === (capacity || 0)
       ) {
         Toast.warning("Attention", "Aucune modification détectée");
         return;
@@ -1044,7 +1046,7 @@ function editGroup(id, name, semester, type, parentId, capacity) {
           semester: newSemester,
           type: newType,
           parent_group_id: newParentId,
-          capacity: capacity,
+          capacity: newCapacity,
         },
         saveBtn,
       );
