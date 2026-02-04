@@ -15,7 +15,7 @@ try {
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type IN ('principale', 'langues && ppp', 'specialite') AND s.name = ?
-            ORDER BY g.id
+            ORDER BY CAST(SUBSTRING(s.name, 2) AS UNSIGNED), g.type, g.name, g.id
         ");
         $stmt->bind_param('s', $requestedSemester);
         $stmt->execute();
@@ -26,7 +26,7 @@ try {
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type IN ('principale', 'langues && ppp', 'specialite')
-            ORDER BY g.id
+            ORDER BY CAST(SUBSTRING(s.name, 2) AS UNSIGNED), g.type, g.name, g.id
         ");
     }
     

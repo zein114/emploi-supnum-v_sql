@@ -320,7 +320,7 @@ function renderGroups(groups) {
                 <td>${safeSpecialityHtml}</td>
                 <td>
                     <div class="settings-item-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="editGroup(${g.id}, '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${parentId}')">Modifier</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editGroup(${g.id}, '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${parentId}', ${g.capacity || 30})">Modifier</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteGroup(${g.id})">Supprimer</button>
                     </div>
                 </td>
@@ -644,6 +644,10 @@ function addGroup() {
                     </div>
                 </div>
             </div>
+            <div class="mb-1">
+                <label class="form-label">Nombre d'étudiants</label>
+                <input type="number" id="addGroupCapacity" class="form-input" placeholder="ex: 30" min="1" required>
+            </div>
         </div>
     `;
 
@@ -683,6 +687,33 @@ function addGroup() {
               .forEach((i) => i.classList.remove("selected"));
           } else {
             parentBtn.disabled = false;
+          }
+        }
+      } else if (e.detail.dropdownId === "addGroupSemester") {
+        const selectedSemester = e.detail.value;
+        const parentBtn = document.querySelector(
+          '[data-dropdown-id="addGroupParent"]',
+        );
+        if (parentBtn) {
+          const filteredParents = availablePrincipaleGroups.filter(
+            (g) => g.semester === selectedSemester,
+          );
+
+          const itemsHtml = filteredParents
+            .map(
+              (g) =>
+                `<div class="dropdown-item" data-value="${g.id}">${g.name}</div>`,
+            )
+            .join("");
+
+          // Reset current selection
+          parentBtn.setAttribute("data-value", "");
+          parentBtn.querySelector(".dropdown-text").textContent =
+            "Choisir un parent";
+
+          // Let customDropdown rebind click handlers
+          if (window.customDropdown) {
+            window.customDropdown.updateMenu("addGroupParent", itemsHtml);
           }
         }
       }
@@ -742,6 +773,19 @@ function addGroup() {
 
       const parentId = parentBtn ? parentBtn.getAttribute("data-value") : null;
 
+      // Validate: if type is TD, parent must be selected
+      if (typeValue.toLowerCase() === "td" && !parentId) {
+        Toast.error("Erreur", "Pour un groupe de type TD, vous devez sélectionner un groupe parent.");
+        return;
+      }
+
+      const capacityInput = document.getElementById("addGroupCapacity");
+      const capacity = capacityInput ? parseInt(capacityInput.value) : 0;
+      if (!capacity || isNaN(capacity) || capacity <= 0) {
+        Toast.error("Erreur", "Veuillez entrer un nombre d'étudiants valide (nombre positif).");
+        return;
+      }
+
       const success = await updateSettings(
         {
           action: "add_group",
@@ -749,6 +793,7 @@ function addGroup() {
           semester: semester,
           type: typeValue,
           parent_group_id: parentId,
+          capacity: capacity,
         },
         saveBtn,
       );
@@ -764,7 +809,7 @@ function addGroup() {
   });
 }
 
-function editGroup(id, name, semester, type, parentId) {
+function editGroup(id, name, semester, type, parentId, capacity) {
   // Added parentId
   // Check if type is a custom value
   const displayType = type.charAt(0).toUpperCase() + type.slice(1);
@@ -787,10 +832,11 @@ function editGroup(id, name, semester, type, parentId) {
     )
     .join("");
 
-  // Generate Parent Group options
+  // Generate Parent Group options (filtered by current semester)
   // Find Parent Name for display if needed, but dropdown handles render
   const parentOptions = availablePrincipaleGroups.length
     ? availablePrincipaleGroups
+        .filter((g) => g.semester === semester)
         .map(
           (g) =>
             `<div class="dropdown-item ${g.id == parentId ? "selected" : ""}" data-value="${g.id}">${g.name}</div>`,
@@ -852,6 +898,10 @@ function editGroup(id, name, semester, type, parentId) {
                     </div>
                 </div>
             </div>
+            <div class="mb-1">
+                <label class="form-label">Nombre d'étudiants</label>
+                <input type="number" id="editGroupCapacity" class="form-input" placeholder="ex: 30" min="1" value="${capacity || 30}" required>
+            </div>
         </div>
     `;
   Modal.showContent("Modifier le groupe", html, () => {
@@ -889,6 +939,31 @@ function editGroup(id, name, semester, type, parentId) {
               .forEach((i) => i.classList.remove("selected"));
           } else {
             parentBtn.disabled = false;
+          }
+        }
+      } else if (e.detail.dropdownId === "editGroupSemester") {
+        const selectedSemester = e.detail.value;
+        const parentBtn = document.querySelector(
+          '[data-dropdown-id="editGroupParent"]',
+        );
+        if (parentBtn) {
+          const filteredParents = availablePrincipaleGroups.filter(
+            (g) => g.semester === selectedSemester,
+          );
+
+          const itemsHtml = filteredParents
+            .map(
+              (g) =>
+                `<div class=\"dropdown-item\" data-value=\"${g.id}\">${g.name}</div>`,
+            )
+            .join("");
+
+          parentBtn.setAttribute("data-value", "");
+          parentBtn.querySelector(".dropdown-text").textContent =
+            "Choisir un parent";
+
+          if (window.customDropdown) {
+            window.customDropdown.updateMenu("editGroupParent", itemsHtml);
           }
         }
       }
@@ -937,6 +1012,19 @@ function editGroup(id, name, semester, type, parentId) {
         ? parentBtn.getAttribute("data-value")
         : null;
 
+      // Validate: if type is TD, parent must be selected
+      if (newType.toLowerCase() === "td" && !newParentId) {
+        Toast.error("Erreur", "Pour un groupe de type TD, vous devez sélectionner un groupe parent.");
+        return;
+      }
+
+      const capacityInput = document.getElementById("editGroupCapacity");
+      const capacity = capacityInput ? parseInt(capacityInput.value) : 0;
+      if (!capacity || isNaN(capacity) || capacity <= 0) {
+        Toast.error("Erreur", "Veuillez entrer un nombre d'étudiants valide (nombre positif).");
+        return;
+      }
+
       // Check if anything changed
       if (
         newName === name &&
@@ -956,6 +1044,7 @@ function editGroup(id, name, semester, type, parentId) {
           semester: newSemester,
           type: newType,
           parent_group_id: newParentId,
+          capacity: capacity,
         },
         saveBtn,
       );

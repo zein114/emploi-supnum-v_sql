@@ -141,7 +141,7 @@ $user = getCurrentUser();
                                             <th>Nom</th>
                                             <th>Semestre</th>
                                             <th>Type</th>
-                                            <th>Parent/Spécialité</th>
+                                            <th>Parent</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>

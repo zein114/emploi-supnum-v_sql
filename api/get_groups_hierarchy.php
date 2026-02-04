@@ -33,22 +33,20 @@ try {
         $type = strtolower($g['type']);
         $isTopLevel = ($type === 'principale' || $type === 'langues && ppp' || $type === 'specialite');
         
-        if ($isTopLevel || !$g['parent_group_id']) {
+        if ($isTopLevel) {
             $g['subgroups'] = [];
             // For specialty and language groups, they act as their own subgroup for assignments
             if ($type !== 'principale') {
                 $g['subgroups'][] = $g;
             }
             $principaleGroups[$g['id']] = $g;
-        } else {
+        } else if ($g['parent_group_id']) {
             // It's a subgroup (TD, etc)
             $parentId = $g['parent_group_id'];
-            if ($parentId) {
-                if (!isset($subGroupsMap[$parentId])) {
-                    $subGroupsMap[$parentId] = [];
-                }
-                $subGroupsMap[$parentId][] = $g;
+            if (!isset($subGroupsMap[$parentId])) {
+                $subGroupsMap[$parentId] = [];
             }
+            $subGroupsMap[$parentId][] = $g;
         }
     }
     

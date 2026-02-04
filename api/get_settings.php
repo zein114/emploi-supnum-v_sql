@@ -50,13 +50,13 @@ if ($tab === 'classrooms' || $tab === 'groups') {
         }
         $response['classrooms'] = $classrooms;
     } else {
-        // Get groups from database
+        // Get groups from database, ordered by numeric semester then by name
         $result = $conn->query("
             SELECT g.id, g.name, s.name as semester, g.type, g.parent_group_id, p.name as parent_name, g.student_count
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             LEFT JOIN `groups` p ON g.parent_group_id = p.id
-            ORDER BY g.id
+            ORDER BY CAST(SUBSTRING(s.name, 2) AS UNSIGNED), g.type, parent_name, g.name, g.id
         ");
         
         $groups = [];

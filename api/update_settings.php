@@ -13,6 +13,7 @@ if (!$input || !isset($input['action'])) {
 $action = $input['action'];
 $success = false;
 $message = '';
+$error = '';
 
 require_once 'DatabaseHandler.php';
 $dbHandler = new DatabaseHandler($conn);
@@ -110,6 +111,23 @@ switch ($action) {
         }
         
         $capacity = isset($input['capacity']) ? intval($input['capacity']) : 0;
+        $parentId = !empty($input['parent_group_id']) ? $input['parent_group_id'] : null;
+
+        // Prevent creating a group with identical name, type, parent group and semester
+        if ($parentId === null) {
+            $stmt = $conn->prepare("SELECT id FROM `groups` WHERE name = ? AND type = ? AND semester_id = ? AND parent_group_id IS NULL LIMIT 1");
+            $stmt->bind_param('ssi', $input['name'], $input['type'], $semesterId);
+        } else {
+            $stmt = $conn->prepare("SELECT id FROM `groups` WHERE name = ? AND type = ? AND semester_id = ? AND parent_group_id = ? LIMIT 1");
+            $stmt->bind_param('ssii', $input['name'], $input['type'], $semesterId, $parentId);
+        }
+        $stmt->execute();
+        $duplicateResult = $stmt->get_result();
+        if ($duplicateResult && $duplicateResult->fetch_assoc()) {
+            $success = false;
+            $error = 'Un groupe avec le même nom, semestre, type et groupe parent existe déjà.';
+            break;
+        }
 
         $stmt = $conn->prepare("INSERT INTO `groups` (name, type, semester_id, parent_group_id, student_count) VALUES (?, ?, ?, ?, ?)");
         $stmt->bind_param('ssiii', $input['name'], $input['type'], $semesterId, $parentId, $capacity);
@@ -131,6 +149,23 @@ switch ($action) {
         }
         
         $capacity = isset($input['capacity']) ? intval($input['capacity']) : 0;
+        $parentId = !empty($input['parent_group_id']) ? $input['parent_group_id'] : null;
+
+        // Prevent editing into a duplicate of another existing group
+        if ($parentId === null) {
+            $stmt = $conn->prepare("SELECT id FROM `groups` WHERE name = ? AND type = ? AND semester_id = ? AND parent_group_id IS NULL AND id <> ? LIMIT 1");
+            $stmt->bind_param('ssii', $input['name'], $input['type'], $semesterId, $input['id']);
+        } else {
+            $stmt = $conn->prepare("SELECT id FROM `groups` WHERE name = ? AND type = ? AND semester_id = ? AND parent_group_id = ? AND id <> ? LIMIT 1");
+            $stmt->bind_param('ssiii', $input['name'], $input['type'], $semesterId, $parentId, $input['id']);
+        }
+        $stmt->execute();
+        $duplicateResult = $stmt->get_result();
+        if ($duplicateResult && $duplicateResult->fetch_assoc()) {
+            $success = false;
+            $error = 'Un groupe avec le même nom, semestre, type et groupe parent existe déjà.';
+            break;
+        }
         
         $stmt = $conn->prepare("UPDATE `groups` SET name = ?, type = ?, semester_id = ?, parent_group_id = ?, student_count = ? WHERE id = ?");
         $stmt->bind_param('ssiiii', $input['name'], $input['type'], $semesterId, $parentId, $capacity, $input['id']);
@@ -165,5 +200,5 @@ switch ($action) {
         break;
 }
 
-echo json_encode(['success' => $success, 'message' => $message]);
+echo json_encode(['success' => $success, 'message' => $message, 'error' => $error]);
 ?>

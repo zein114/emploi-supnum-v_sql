@@ -3,16 +3,13 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 02, 2026 at 01:05 AM
+-- Generation Time: Feb 04, 2026 at 02:19 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
--- Disable foreign key checks to avoid constraint errors during import
-SET FOREIGN_KEY_CHECKS=0;
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -35,7 +32,7 @@ CREATE TABLE `classrooms` (
   `name` varchar(100) DEFAULT NULL,
   `capacity` int DEFAULT '0',
   `type` enum('CM','TP','TD','Unknown') DEFAULT 'Unknown'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `classrooms`
@@ -85,7 +82,7 @@ CREATE TABLE `course_workloads` (
   `cm_online` int DEFAULT '0',
   `td_online` int DEFAULT '0',
   `tp_online` int DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `course_workloads`
@@ -124,7 +121,9 @@ INSERT INTO `course_workloads` (`id`, `subject_id`, `group_id`, `cm_hours`, `tp_
 (52, 40, NULL, 0, 2, 1, 0, 0, 2),
 (53, 42, NULL, 2, 2, 0, 0, 1, 0),
 (54, 42, NULL, 2, 2, 0, 1, 0, 0),
-(58, 42, NULL, 2, 0, 0, 0, 0, 0);
+(58, 42, NULL, 2, 0, 0, 0, 0, 0),
+(60, 42, NULL, 2, 0, 0, 0, 0, 0),
+(61, 47, 18, 0, 0, 0, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -137,7 +136,7 @@ CREATE TABLE `days` (
   `name` varchar(50) NOT NULL,
   `order_index` int NOT NULL DEFAULT '0',
   `is_active` tinyint(1) NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `days`
@@ -165,17 +164,17 @@ CREATE TABLE `groups` (
   `semester_id` int DEFAULT NULL,
   `parent_group_id` int DEFAULT NULL,
   `student_count` int DEFAULT '30'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `groups`
 --
 
 INSERT INTO `groups` (`id`, `name`, `type`, `semester_id`, `parent_group_id`, `student_count`) VALUES
-(1, 'G1-L1', 'principale', 1, NULL, 100),
-(2, 'G2-L1', 'principale', 1, NULL, 100),
-(3, 'G3-L1', 'principale', 1, NULL, 100),
-(4, 'G4-L1', 'principale', 1, NULL, 100),
+(1, 'G1', 'Principale', 1, NULL, 100),
+(2, 'G2', 'Principale', 1, NULL, 100),
+(3, 'G3', 'Principale', 1, NULL, 100),
+(4, 'G4', 'Principale', 1, NULL, 100),
 (5, 'TD1', 'TD', 1, 1, 40),
 (6, 'TD2', 'TD', 1, 1, 40),
 (7, 'TD3', 'TD', 1, 2, 40),
@@ -186,10 +185,10 @@ INSERT INTO `groups` (`id`, `name`, `type`, `semester_id`, `parent_group_id`, `s
 (12, 'TD8', 'TD', 1, 4, 40),
 (13, 'IDS1', 'specialite', 1, NULL, 30),
 (14, 'IDS2', 'specialite', 1, NULL, 30),
-(15, 'DSI1-L2', 'principale', 3, NULL, 100),
-(16, 'DSI2-L2', 'principale', 3, NULL, 100),
-(17, 'RSS-L2', 'principale', 3, NULL, 100),
-(18, 'DWM-L2', 'principale', 3, NULL, 100),
+(15, 'DSI1', 'Principale', 3, NULL, 0),
+(16, 'DSI2', 'Principale', 3, NULL, 0),
+(17, 'RSS', 'Principale', 3, NULL, 0),
+(18, 'DWM', 'Principale', 3, NULL, 0),
 (19, 'TD1', 'TD', 3, 15, 40),
 (20, 'TD2', 'TD', 3, 15, 40),
 (21, 'TD3', 'TD', 3, 16, 40),
@@ -203,7 +202,20 @@ INSERT INTO `groups` (`id`, `name`, `type`, `semester_id`, `parent_group_id`, `s
 (29, 'G3', 'langues && ppp', 3, NULL, 30),
 (30, 'G4', 'langues && ppp', 3, NULL, 30),
 (31, 'G5', 'langues && ppp', 3, NULL, 30),
-(32, 'G6', 'langues && ppp', 3, NULL, 30);
+(32, 'G6', 'langues && ppp', 3, NULL, 30),
+(33, 'DSI', 'principale', 5, NULL, 0),
+(34, 'RSS', 'principale', 5, NULL, 0),
+(35, 'DWM', 'principale', 5, NULL, 0),
+(36, 'TD1', 'TD', 5, 33, 0),
+(37, 'TD2', 'TD', 5, 33, 0),
+(38, 'TD1', 'TD', 5, 34, 0),
+(39, 'TD2', 'TD', 5, 34, 0),
+(40, 'TD1', 'TD', 5, 35, 0),
+(41, 'TD2', 'TD', 5, 35, 0),
+(42, 'G1', 'langues && ppp', 5, NULL, 0),
+(43, 'G2', 'Langues && ppp', 5, NULL, 0),
+(44, 'G3', 'langues && ppp', 5, NULL, 0),
+(45, 'G4', 'langues && ppp', 5, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -214,7 +226,7 @@ INSERT INTO `groups` (`id`, `name`, `type`, `semester_id`, `parent_group_id`, `s
 CREATE TABLE `professors` (
   `id` int NOT NULL,
   `name` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `professors`
@@ -310,7 +322,7 @@ CREATE TABLE `professor_availability` (
   `day_id` int DEFAULT NULL,
   `time_slot_id` int DEFAULT NULL,
   `is_available` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `professor_availability`
@@ -3024,7 +3036,7 @@ CREATE TABLE `semesters` (
   `name` varchar(50) NOT NULL,
   `display_name` varchar(100) NOT NULL,
   `order_index` int NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `semesters`
@@ -3047,7 +3059,7 @@ INSERT INTO `semesters` (`id`, `name`, `display_name`, `order_index`) VALUES
 CREATE TABLE `settings` (
   `setting_key` varchar(100) NOT NULL,
   `setting_value` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `settings`
@@ -3067,7 +3079,7 @@ CREATE TABLE `subjects` (
   `code` varchar(50) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `semester_id` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `subjects`
@@ -3108,7 +3120,7 @@ INSERT INTO `subjects` (`id`, `code`, `name`, `semester_id`) VALUES
 (32, 'PAV310', 'POO JAVA', 3),
 (33, 'PAV312', 'Projet Integrateur', 3),
 (34, 'PAV311', 'SD & Comp.Algo', 3),
-(35, 'DPR313', 'Gestion d''enterprise', 3),
+(35, 'DPR313', 'Gestion d\'enterprise', 3),
 (36, 'DPR310', 'Communication', 3),
 (37, 'DPR311', 'Anglais', 3),
 (38, 'DPR312', 'PPP', 3),
@@ -3175,7 +3187,7 @@ CREATE TABLE `teacher_assignments` (
   `subject_id` int DEFAULT NULL,
   `group_id` int DEFAULT NULL,
   `type` enum('CM','TP','TD') DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `teacher_assignments`
@@ -3225,7 +3237,17 @@ INSERT INTO `teacher_assignments` (`id`, `professor_id`, `subject_id`, `group_id
 (41, 59, 9, 4, 'CM'),
 (42, 60, 10, 4, 'CM'),
 (43, 8, 6, 4, 'TP'),
-(44, 2, 6, 4, 'CM');
+(44, 2, 6, 4, 'CM'),
+(45, 36, 30, 15, 'CM'),
+(46, 1, 31, 16, 'CM'),
+(47, 59, 36, 16, 'CM'),
+(48, 60, 37, 15, 'CM'),
+(51, 27, 47, 18, 'CM'),
+(52, 27, 47, 17, 'CM'),
+(53, 27, 47, 24, 'CM'),
+(54, 27, 47, 13, 'TP'),
+(55, 2, 31, 16, 'TP'),
+(56, 2, 13, 6, 'TP');
 
 -- --------------------------------------------------------
 
@@ -3237,7 +3259,7 @@ CREATE TABLE `time_slots` (
   `id` int NOT NULL,
   `time_range` varchar(50) NOT NULL,
   `is_active` tinyint(1) DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `time_slots`
@@ -3265,89 +3287,89 @@ CREATE TABLE `users` (
   `email` varchar(255) DEFAULT NULL,
   `id_prof` int DEFAULT NULL,
   `remember_token` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `email`, `id_prof`, `remember_token`) VALUES
-(1, 'Kaber', '$2y$10$TTADVulfEtVjuu6UziLQT.mEivdSQoSxtNWIAEVEQo.BlZTGYrvs6', 'admin', '2025-12-15 15:54:55', 'kaber@hi.com', NULL),
-(4, 'Zein El Abidine', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2025-12-19 20:01:57', 'zein.el.abidine@supnum.mr', 71),
-(11, 'Medn', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-03 23:21:15', 'medn@supnum.mr', 72),
-(12, 'Ahmed', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-04 00:44:39', 'ahmed@supnum.mr', 73),
-(13, 'mine', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-04 01:03:47', 'mine@supnum.mr', 74),
-(14, 'minetou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-04 01:21:00', 'minetou@supnum.mr', 75),
-(24, 'Zein', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-08 23:16:51', 'zein@supnum.mr', 76),
-(25, 'Zein Ab', '$2y$10$TTADVulfEtVjuu6UziLQT.mEivdSQoSxtNWIAEVEQo.BlZTGYrvs6', 'admin', '2026-01-08 23:25:48', 'Zein@hi.com', NULL),
-(26, 'Dieynaba', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-22 06:30:05', 'dieynaba@supnum.mr', 59),
-(27, 'Aloun', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-22 10:45:50', 'aloun@supnum.mr', 23),
-(28, 'Cheikh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:50', 'cheikh@supnum.mr', 1),
-(29, 'Habeb', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'habeb@supnum.mr', 2),
-(30, 'Kemal', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'kemal@supnum.mr', 3),
-(31, 'Bekar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'bekar@supnum.mr', 4),
-(32, 'Kaber', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'kaber@supnum.mr', 5),
-(33, 'Souvi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'souvi@supnum.mr', 6),
-(34, 'Yehjebouha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'yehjebouha@supnum.mr', 7),
-(35, 'Meya', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'meya@supnum.mr', 8),
-(36, 'Sidi Mouhamed', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'sidi.mouhamed@supnum.mr', 9),
-(37, 'Med Lemine', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'med.lemine@supnum.mr', 10),
-(38, 'Tourad', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'tourad@supnum.mr', 11),
-(39, 'Sidi Soueina', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'sidi.soueina@supnum.mr', 12),
-(40, 'Hassina', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'hassina@supnum.mr', 13),
-(41, 'Esseyssah', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'esseyssah@supnum.mr', 14),
-(42, 'Moussa', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'moussa@supnum.mr', 15),
-(43, 'Debagh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'debagh@supnum.mr', 16),
-(44, 'Marba', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'marba@supnum.mr', 17),
-(49, 'F.Habot', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'f.habot@supnum.mr', 20),
-(50, 'Meyara', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'meyara@supnum.mr', 21),
-(51, 'Mohamed Said', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mohamed.said@supnum.mr', 22),
-(52, 'El Bennany', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'el.bennany@supnum.mr', 24),
-(53, 'Vatimettou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'vatimettou@supnum.mr', 25),
-(54, 'Havedh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'havedh@supnum.mr', 26),
-(55, 'Cheikhani', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'cheikhani@supnum.mr', 27),
-(56, 'Med Louly', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'med.louly@supnum.mr', 28),
-(57, 'Saw', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'saw@supnum.mr', 29),
-(58, 'Med Harana', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'med.harana@supnum.mr', 30),
-(59, 'Moulaye', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'moulaye@supnum.mr', 31),
-(60, 'Mamadou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mamadou@supnum.mr', 32),
-(61, 'Ebu Talbe', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'ebu.talbe@supnum.mr', 33),
-(62, 'Masra', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'masra@supnum.mr', 34),
-(63, 'Med Salem', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'med.salem@supnum.mr', 35),
-(64, 'Louly', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'louly@supnum.mr', 36),
-(65, 'Hamadi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hamadi@supnum.mr', 37),
-(66, 'Hayati', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hayati@supnum.mr', 38),
-(67, 'Amina', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'amina@supnum.mr', 39),
-(68, 'abderrahmane', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'abderrahmane@supnum.mr', 40),
-(69, 'Hatabi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hatabi@supnum.mr', 41),
-(70, 'Lam', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'lam@supnum.mr', 42),
-(71, 'Tah', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'tah@supnum.mr', 43),
-(72, 'Moctar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'moctar@supnum.mr', 44),
-(73, 'Radhia', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'radhia@supnum.mr', 45),
-(74, 'Brice', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'brice@supnum.mr', 46),
-(75, 'Abou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'abou@supnum.mr', 47),
-(76, 'Hafedh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hafedh@supnum.mr', 48),
-(77, 'Sidi Mahmoud', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.mahmoud@supnum.mr', 49),
-(78, 'Mohamed Abdel Wedoud', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mohamed.abdel.wedoud@supnum.mr', 50),
-(79, 'Oumkelthoum', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'oumkelthoum@supnum.mr', 51),
-(80, 'Sidi Biha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.biha@supnum.mr', 52),
-(81, 'Saghire', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'saghire@supnum.mr', 53),
-(82, 'Moctar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'moctar54@supnum.mr', 54),
-(83, 'Mama', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mama@supnum.mr', 55),
-(84, 'Sidi Biha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.biha56@supnum.mr', 56),
-(85, 'Sidi Biha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.biha57@supnum.mr', 57),
-(86, 'Abdelhamid', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'abdelhamid@supnum.mr', 58),
-(87, 'Blake', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'blake@supnum.mr', 60),
-(88, 'Naji', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'naji@supnum.mr', 61),
-(89, 'Mokhtar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mokhtar@supnum.mr', 62),
-(90, 'kébé', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'kébé@supnum.mr', 63),
-(91, 'Rifaa', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'rifaa@supnum.mr', 64),
-(92, 'EL hacen', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'el.hacen@supnum.mr', 65),
-(93, 'el benani', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'el.benani@supnum.mr', 66),
-(94, 'Encadreur', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'encadreur@supnum.mr', 67),
-(95, 'Zein', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'zein68@supnum.mr', 68),
-(96, 'hi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hi@supnum.mr', 69),
-(97, 'Dyenabe', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'dyenabe@supnum.mr', 70);
+(1, 'Kaber', '$2y$10$TTADVulfEtVjuu6UziLQT.mEivdSQoSxtNWIAEVEQo.BlZTGYrvs6', 'admin', '2025-12-15 15:54:55', 'kaber@hi.com', NULL, NULL),
+(4, 'Zein El Abidine', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2025-12-19 20:01:57', 'zein.el.abidine@supnum.mr', 71, NULL),
+(11, 'Medn', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-03 23:21:15', 'medn@supnum.mr', 72, NULL),
+(12, 'Ahmed', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-04 00:44:39', 'ahmed@supnum.mr', 73, NULL),
+(13, 'mine', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-04 01:03:47', 'mine@supnum.mr', 74, NULL),
+(14, 'minetou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-04 01:21:00', 'minetou@supnum.mr', 75, NULL),
+(24, 'Zein', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-08 23:16:51', 'zein@supnum.mr', 76, NULL),
+(25, 'Zein Ab', '$2y$10$TTADVulfEtVjuu6UziLQT.mEivdSQoSxtNWIAEVEQo.BlZTGYrvs6', 'admin', '2026-01-08 23:25:48', 'Zein@hi.com', NULL, NULL),
+(26, 'Dieynaba', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-22 06:30:05', 'dieynaba@supnum.mr', 59, NULL),
+(27, 'Aloun', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-01-22 10:45:50', 'aloun@supnum.mr', 23, NULL),
+(28, 'Cheikh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:50', 'cheikh@supnum.mr', 1, NULL),
+(29, 'Habeb', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'habeb@supnum.mr', 2, NULL),
+(30, 'Kemal', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'kemal@supnum.mr', 3, NULL),
+(31, 'Bekar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'bekar@supnum.mr', 4, NULL),
+(32, 'Kaber', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'kaber@supnum.mr', 5, NULL),
+(33, 'Souvi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'souvi@supnum.mr', 6, NULL),
+(34, 'Yehjebouha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'yehjebouha@supnum.mr', 7, NULL),
+(35, 'Meya', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'meya@supnum.mr', 8, NULL),
+(36, 'Sidi Mouhamed', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'sidi.mouhamed@supnum.mr', 9, NULL),
+(37, 'Med Lemine', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'med.lemine@supnum.mr', 10, NULL),
+(38, 'Tourad', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'tourad@supnum.mr', 11, NULL),
+(39, 'Sidi Soueina', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'sidi.soueina@supnum.mr', 12, NULL),
+(40, 'Hassina', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'hassina@supnum.mr', 13, NULL),
+(41, 'Esseyssah', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'esseyssah@supnum.mr', 14, NULL),
+(42, 'Moussa', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'moussa@supnum.mr', 15, NULL),
+(43, 'Debagh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'debagh@supnum.mr', 16, NULL),
+(44, 'Marba', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:06:51', 'marba@supnum.mr', 17, NULL),
+(49, 'F.Habot', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'f.habot@supnum.mr', 20, NULL),
+(50, 'Meyara', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'meyara@supnum.mr', 21, NULL),
+(51, 'Mohamed Said', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mohamed.said@supnum.mr', 22, NULL),
+(52, 'El Bennany', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'el.bennany@supnum.mr', 24, NULL),
+(53, 'Vatimettou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'vatimettou@supnum.mr', 25, NULL),
+(54, 'Havedh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'havedh@supnum.mr', 26, NULL),
+(55, 'Cheikhani', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'cheikhani@supnum.mr', 27, NULL),
+(56, 'Med Louly', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'med.louly@supnum.mr', 28, NULL),
+(57, 'Saw', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'saw@supnum.mr', 29, NULL),
+(58, 'Med Harana', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'med.harana@supnum.mr', 30, NULL),
+(59, 'Moulaye', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'moulaye@supnum.mr', 31, NULL),
+(60, 'Mamadou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mamadou@supnum.mr', 32, NULL),
+(61, 'Ebu Talbe', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'ebu.talbe@supnum.mr', 33, NULL),
+(62, 'Masra', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'masra@supnum.mr', 34, NULL),
+(63, 'Med Salem', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'med.salem@supnum.mr', 35, NULL),
+(64, 'Louly', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'louly@supnum.mr', 36, NULL),
+(65, 'Hamadi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hamadi@supnum.mr', 37, NULL),
+(66, 'Hayati', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hayati@supnum.mr', 38, NULL),
+(67, 'Amina', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'amina@supnum.mr', 39, NULL),
+(68, 'abderrahmane', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'abderrahmane@supnum.mr', 40, NULL),
+(69, 'Hatabi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hatabi@supnum.mr', 41, NULL),
+(70, 'Lam', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'lam@supnum.mr', 42, NULL),
+(71, 'Tah', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'tah@supnum.mr', 43, NULL),
+(72, 'Moctar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'moctar@supnum.mr', 44, NULL),
+(73, 'Radhia', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'radhia@supnum.mr', 45, NULL),
+(74, 'Brice', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'brice@supnum.mr', 46, NULL),
+(75, 'Abou', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'abou@supnum.mr', 47, NULL),
+(76, 'Hafedh', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hafedh@supnum.mr', 48, NULL),
+(77, 'Sidi Mahmoud', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.mahmoud@supnum.mr', 49, NULL),
+(78, 'Mohamed Abdel Wedoud', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mohamed.abdel.wedoud@supnum.mr', 50, NULL),
+(79, 'Oumkelthoum', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'oumkelthoum@supnum.mr', 51, NULL),
+(80, 'Sidi Biha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.biha@supnum.mr', 52, NULL),
+(81, 'Saghire', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'saghire@supnum.mr', 53, NULL),
+(82, 'Moctar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'moctar54@supnum.mr', 54, NULL),
+(83, 'Mama', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mama@supnum.mr', 55, NULL),
+(84, 'Sidi Biha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.biha56@supnum.mr', 56, NULL),
+(85, 'Sidi Biha', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'sidi.biha57@supnum.mr', 57, NULL),
+(86, 'Abdelhamid', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'abdelhamid@supnum.mr', 58, NULL),
+(87, 'Blake', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'blake@supnum.mr', 60, NULL),
+(88, 'Naji', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'naji@supnum.mr', 61, NULL),
+(89, 'Mokhtar', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'mokhtar@supnum.mr', 62, NULL),
+(90, 'kébé', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'kébé@supnum.mr', 63, NULL),
+(91, 'Rifaa', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'rifaa@supnum.mr', 64, NULL),
+(92, 'EL hacen', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'el.hacen@supnum.mr', 65, NULL),
+(93, 'el benani', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'el.benani@supnum.mr', 66, NULL),
+(94, 'Encadreur', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'encadreur@supnum.mr', 67, NULL),
+(95, 'Zein', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'zein68@supnum.mr', 68, NULL),
+(96, 'hi', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'hi@supnum.mr', 69, NULL),
+(97, 'Dyenabe', '$2y$10$YkbTW4XdEoeWa0BPSlVFH.qgkExS4QGKgoabhUsChM4sSnp5fPrhW', 'professor', '2026-02-01 13:09:56', 'dyenabe@supnum.mr', 70, NULL);
 
 --
 -- Indexes for dumped tables
@@ -3379,7 +3401,6 @@ ALTER TABLE `days`
 --
 ALTER TABLE `groups`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `code` (`code`),
   ADD KEY `semester_id` (`semester_id`),
   ADD KEY `parent_group_id` (`parent_group_id`);
 
@@ -3455,7 +3476,7 @@ ALTER TABLE `classrooms`
 -- AUTO_INCREMENT for table `course_workloads`
 --
 ALTER TABLE `course_workloads`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT for table `days`
@@ -3467,7 +3488,7 @@ ALTER TABLE `days`
 -- AUTO_INCREMENT for table `groups`
 --
 ALTER TABLE `groups`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT for table `professor_availability`
@@ -3491,7 +3512,7 @@ ALTER TABLE `subjects`
 -- AUTO_INCREMENT for table `teacher_assignments`
 --
 ALTER TABLE `teacher_assignments`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `time_slots`
@@ -3544,9 +3565,6 @@ ALTER TABLE `teacher_assignments`
   ADD CONSTRAINT `teacher_assignments_ibfk_1` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `teacher_assignments_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `teacher_assignments_ibfk_3` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`) ON DELETE CASCADE;
--- Re-enable foreign key checks
-SET FOREIGN_KEY_CHECKS=1;
-
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
