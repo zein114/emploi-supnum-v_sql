@@ -50,11 +50,24 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             break
                     slot_room_assignments[k].append(('CM', g, j, room_found))
                 
-                # CM Online
                 if W[g][j][k].solution_value() > 0.5:
                     slot_room_assignments[k].append(('CM Online', g, j, 'En ligne'))
+                    
+                # 1.5 Identifier les sessions de TD au créneau k (Maintenant Principal)
+                if Z[g][j][k].solution_value() > 0.5:
+                    room_found = "N/A"
+                    for r in All_Rooms:
+                        if r['Type'] in ['TD', 'CM'] and r['Salle'] not in assigned_rooms_at_k:
+                            room_found = r['Salle']
+                            assigned_rooms_at_k.add(room_found)
+                            break
+                    slot_room_assignments[k].append(('TD', g, j, room_found))
+                
+                # TD Online (Maintenant Principal)
+                if U_TD[g][j][k].solution_value() > 0.5:
+                    slot_room_assignments[k].append(('TD Online', g, j, 'En ligne'))
         
-        # 2. Identifier les sessions de TP/TD/OnlineSub au créneau k
+        # 2. Identifier les sessions de TP/OnlineSub au créneau k
         for gt in range(GT):
             for j in range(J):
                 if Y[gt][j][k].solution_value() > 0.5:
@@ -65,23 +78,6 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             assigned_rooms_at_k.add(room_found)
                             break
                     slot_room_assignments[k].append(('TP', gt, j, room_found))
-                
-                if Z[gt][j][k].solution_value() > 0.5:
-                    room_found = "N/A"
-                    for r in All_Rooms:
-                        if r['Type'] in ['TP', 'TD', 'CM'] and r['Salle'] not in assigned_rooms_at_k:
-                            room_found = r['Salle']
-                            assigned_rooms_at_k.add(room_found)
-                            break
-                    slot_room_assignments[k].append(('TD', gt, j, room_found))
-                
-                # TP Online
-                if U_TP[gt][j][k].solution_value() > 0.5:
-                    slot_room_assignments[k].append(('TP Online', gt, j, 'En ligne'))
-                
-                # TD Online
-                if U_TD[gt][j][k].solution_value() > 0.5:
-                    slot_room_assignments[k].append(('TD Online', gt, j, 'En ligne'))
 
     # Création du nom du fichier de sortie
     output_file = "Tous_les_Emplois_du_Temps.xlsx"
@@ -166,6 +162,21 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             code = Matiere_Codes[j]
                             session_str = f"[{code}] {Matieres[j]}\n(CM Online)\nProf: {prof}\nSalle: En ligne"
                             sessions_list.append(session_str)
+                            
+                        # TD (Principal)
+                        if Z[g][j][k].solution_value() > 0.5:
+                            prof = ProTD[j][0] if ProTD[j] else "TD"
+                            code = Matiere_Codes[j]
+                            room = next((r[3] for r in slot_room_assignments[k] if r[0]=='TD' and r[1]==g and r[2]==j), "N/A")
+                            session_str = f"[{code}] {Matieres[j]}\n(TD)\nProf: {prof}\nSalle: {room}"
+                            sessions_list.append(session_str)
+                            
+                        # TD Online (Principal)
+                        if U_TD[g][j][k].solution_value() > 0.5:
+                            prof = ProTD[j][0] if ProTD[j] else "TD Online"
+                            code = Matiere_Codes[j]
+                            session_str = f"[{code}] {Matieres[j]}\n(TD Online)\nProf: {prof}\nSalle: En ligne"
+                            sessions_list.append(session_str)
                     
                     # Sous-groupes (TD, TP, TD Online, TP Online)
                     group_id_val = None
@@ -203,12 +214,11 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                                     sessions_list.append(session_str)
 
                         active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
-                        active_td = [si for si in subgroup_indices if Z[si][j][k].solution_value() > 0.5]
+                        active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
                         active_onl_tp = [si for si in subgroup_indices if U_TP[si][j][k].solution_value() > 0.5]
-                        active_onl_td = [si for si in subgroup_indices if U_TD[si][j][k].solution_value() > 0.5]
                         
                         # Combiner par type pour l'affichage
-                        for sess_type, indices in [("TP", active_tp), ("TD", active_td), ("TP Online", active_onl_tp), ("TD Online", active_onl_td)]:
+                        for sess_type, indices in [("TP", active_tp), ("TP Online", active_onl_tp)]:
                             if indices:
                                 base_type = "TP" if "TP" in sess_type else "TD"
                                 prof_list = ProTP[j] if base_type == "TP" else ProTD[j]

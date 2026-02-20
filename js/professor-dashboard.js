@@ -243,21 +243,44 @@ function renderProfessorTimetable() {
               } else {
                 if (typeStr === "TD" || typeStr === "TP") {
                   // Ensure prefix matches type (e.g. show "TP1 - RSS-L2" even if original was "TD1")
+                  // But ONLY if it looks like a subgroup list (e.g. "1, 2" or "TD1"), not a Principal Group (L1-INFO)
                   const numbers = groupStr.match(/\d+/g);
-                  // Extract major info (everything else after TD/TP prefix/number)
-                  const majorInfo = groupStr
-                    .replace(/(TD|TP)\s*\d*/gi, "")
-                    .replace(/^[\s\-,]*/, "")
-                    .trim();
 
-                  if (numbers) {
+                  // Check if it looks like a Principal Group (has letters that are not TD/TP, or length > 5, or dash/space structure)
+                  // If it is L1-INFO, we want to keep it as L1-INFO, or maybe "TD - L1-INFO"?
+                  // Current logic: "TD1 - L1-INFO".
+                  // If we skip reformat, it will be "TD - L1-INFO" (from logic below)
+
+                  const isPrincipalGroupLike =
+                    groupStr.match(/[A-Z]{2,}/) &&
+                    !groupStr.match(/^(TD|TP)\d/);
+                  // "L1-INFO" matches [A-Z]{2,}
+                  // "TD1" matches [A-Z]{2,} but also matches ^(TD|TP)\d
+
+                  if (numbers && !isPrincipalGroupLike) {
+                    // Extract major info (everything else after TD/TP prefix/number)
+                    const majorInfo = groupStr
+                      .replace(/(TD|TP)\s*\d*/gi, "")
+                      .replace(/^[\s\-,]*/, "")
+                      .trim();
+
                     const groupNames = numbers
                       .map((n) => typeStr + n)
                       .join(", ");
                     groupStr =
                       groupNames + (majorInfo ? " - " + majorInfo : "");
                   } else {
-                    groupStr = typeStr + (majorInfo ? " - " + majorInfo : "");
+                    // Keep as is, but maybe add major info if we stripped it?
+                    // No, finding majorInfo depended on stripping TD/TP.
+                    // If it is "L1-INFO", we just keep "L1-INFO".
+                    // And append to typeStr?
+                    // Logic below: groupStr = typeStr + " - " + groupStr;
+                    // But that is for 'else' block (CM).
+                    // Here we are inside if (TD/TP).
+                    // So we need to set groupStr here.
+                    // If we don't change it, groupStr is "L1-INFO".
+                    // It will be displayed as badge.
+                    // That is fine.
                   }
                 } else {
                   // For CM, just combine them: "CM - RSS-L2"

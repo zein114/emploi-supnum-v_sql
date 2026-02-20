@@ -163,7 +163,7 @@ const addAssignmentsFormHtml = `
     
     <!-- 4. Subgroup Selection (Disabled until needed) -->
     <div class="form-group" id="subgroupContainer">
-        <label class="form-label">Sous-groupe (Obligatoire pour TD/TP)</label>
+        <label class="form-label">Sous-groupe TP (Obligatoire pour TP)</label>
         <input type="hidden" id="subgroup">
         
         <div class="dropdown-container">
@@ -195,6 +195,7 @@ const viewAssignmentsHtml = `
 // Global state for invalidation if needed
 let globalGroupsHierarchy = [];
 let globalModules = [];
+let currentSemesterParity = "impair"; // Default value
 
 // Modal functions
 
@@ -218,15 +219,21 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
       // Listeners for logic
       setupModalListeners();
 
-      // Fetch Groups Data
+      // Fetch Groups and Settings Data
       try {
-        const response = await fetch("../api/get_groups_hierarchy.php");
-        globalGroupsHierarchy = await response.json();
+        const [groupsResponse, settingsResponse] = await Promise.all([
+          fetch("../api/get_groups_hierarchy.php"),
+          fetch("../api/get_settings.php?tab=general"),
+        ]);
+
+        globalGroupsHierarchy = await groupsResponse.json();
+        const settings = await settingsResponse.json();
+        currentSemesterParity = settings.current_semester_type || "impair";
 
         populateGroupDropdown(globalGroupsHierarchy);
       } catch (error) {
-        console.error("Error loading groups:", error);
-        Toast.error("Échec du chargement des groupes.");
+        console.error("Error loading groups or settings:", error);
+        Toast.error("Échec du chargement des données.");
       }
 
       // Fetch Modules Data
@@ -312,7 +319,7 @@ function setupModalListeners() {
       // Always reset subgroup selection first
       resetSubgroupDropdown();
 
-      if (type === "TD" || type === "TP") {
+      if (type === "TP") {
         // Show as mandatory (though it's always visible now, we enable it)
         if (groupId) {
           const selectedGroup = globalGroupsHierarchy.find(
@@ -323,7 +330,7 @@ function setupModalListeners() {
           }
         }
       } else {
-        // CM or others -> Disable Subgroup
+        // CM, TD or others -> Disable Subgroup
         updateSubgroupDropdown([], false); // false = disable
       }
     }
@@ -381,8 +388,21 @@ function populateGroupDropdown(groups) {
 
   let html = "";
   groups.forEach((group) => {
-    // Only Principale groups are returned by API logic effectively
-    html += `<div class="dropdown-item" data-value="${group.id}">${group.name} (${group.semester_name || ""})</div>`;
+    // Interface Filter: Only show groups of the current semester parity
+    // This handles Specialite groups with "Couverture Semestrielle" set to both
+    if (currentSemesterParity && group.semester_name) {
+      const match = group.semester_name.match(/\d+/);
+      if (match) {
+        const semNum = parseInt(match[0]);
+        const isEven = semNum % 2 === 0;
+        if (currentSemesterParity === "pair" && !isEven) return;
+        if (currentSemesterParity === "impair" && isEven) return;
+      }
+    }
+
+    // Show type if it's not "principale" to help distinguish
+    const typeSuffix = group.type !== "principale" ? ` [${group.type}]` : "";
+    html += `<div class="dropdown-item" data-value="${group.id}">${group.name} (${group.semester_name || ""})${typeSuffix}</div>`;
   });
 
   window.customDropdown.updateMenu("groupSelect", html);
@@ -395,7 +415,7 @@ function updateSubgroupDropdown(subgroups, enable) {
 
   if (!enable) {
     subBtn.disabled = true;
-    subText.textContent = "Non applicable pour CM";
+    subText.textContent = "Non applicable pour CM ou TD";
     window.customDropdown.updateMenu("subgroupSelect", "");
     return;
   }
@@ -409,7 +429,9 @@ function updateSubgroupDropdown(subgroups, enable) {
 
   let html = "";
   subgroups.forEach((sg) => {
-    html += `<div class="dropdown-item" data-value="${sg.id}">${sg.name}</div>`;
+    // Replace "TD" with "TP" for display purposes only
+    const displayName = sg.name.replace(/TD/g, "TP");
+    html += `<div class="dropdown-item" data-value="${sg.id}">${displayName}</div>`;
   });
 
   window.customDropdown.updateMenu("subgroupSelect", html);
@@ -505,95 +527,100 @@ async function openProfessorAssignmentsModal(prof_id, btn) {
       assignments.forEach((assignment) => {
         // assignment structure:
         // [module_name, prof_id, assignment_type, group_name, row_index, module_id, group_id]
-        if (assignment[1] == prof_id) {
-          const card = document.createElement("div");
-          card.className = "assignment-card";
+        const card = document.createElement("div");
+        card.className = "assignment-card";
 
-          let badgeClass = "badge-primary";
-          if (assignment[2] === "TP") badgeClass = "badge-success";
-          if (assignment[2] === "TD") badgeClass = "badge-warning";
+        let badgeClass = "badge-primary";
+        if (assignment[2] === "TP") badgeClass = "badge-success";
+        if (assignment[2] === "TD") badgeClass = "badge-warning";
 
-          const rowIndex = assignment[4];
-          const moduleId = assignment[5];
-          const groupId = assignment[6];
+        const rowIndex = assignment[4];
+        const moduleId = assignment[5];
+        const groupId = assignment[6];
+        const assignmentType = assignment[2];
 
-          card.innerHTML = `
+        // For display: replace "TD" with "TP" in group name if assignment is TP
+        const displayGroupName =
+          assignmentType === "TP"
+            ? assignment[3].replace(/TD/g, "TP")
+            : assignment[3];
+
+        card.innerHTML = `
               <div class="assignment-header">
                   <span class="assignment-module">${assignment[0]}</span>
-                  <span class="badge ${badgeClass}">${assignment[2]}</span>
+                  <span class="badge ${badgeClass}">${assignmentType}</span>
               </div>
               <div class="assignment-group">
-                  Groupe : <strong style="color: var(--color-primary-blue-light);">${assignment[3]}</strong>
+                  Groupe : <strong style="color: var(--color-primary-blue-light);">${displayGroupName}</strong>
               </div>
               <div class="assignment-actions" style="margin-top: 0.75rem; display: flex; justify-content: flex-end;">
                   <button type="button" class="btn btn-danger btn-sm assignment-remove-btn">Supprimer</button>
               </div>
           `;
-          listContainer.appendChild(card);
+        listContainer.appendChild(card);
 
-          const removeBtn = card.querySelector(".assignment-remove-btn");
-          if (removeBtn && rowIndex && moduleId && groupId) {
-            removeBtn.addEventListener("click", async () => {
-              const assignmentType = assignment[2];
+        const removeBtn = card.querySelector(".assignment-remove-btn");
+        if (removeBtn && rowIndex && moduleId && groupId) {
+          removeBtn.addEventListener("click", async () => {
+            const assignmentType = assignment[2];
 
-              // Start spinner and lock modal while processing
-              if (typeof Spinner !== "undefined") Spinner.show(removeBtn);
-              if (window.Modal && typeof Modal.setLocked === "function") {
-                Modal.setLocked(true);
-              }
-              removeBtn.disabled = true;
+            // Start spinner and lock modal while processing
+            if (typeof Spinner !== "undefined") Spinner.show(removeBtn);
+            if (window.Modal && typeof Modal.setLocked === "function") {
+              Modal.setLocked(true);
+            }
+            removeBtn.disabled = true;
 
-              try {
-                const response = await fetch(
-                  "../api/delete_professor_assignment.php",
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      row_index: rowIndex,
-                      module_id: moduleId,
-                      prof_id: prof_id,
-                      group_id: groupId,
-                      assignment_type: assignmentType,
-                    }),
+            try {
+              const response = await fetch(
+                "../api/delete_professor_assignment.php",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
                   },
+                  body: JSON.stringify({
+                    row_index: rowIndex,
+                    module_id: moduleId,
+                    prof_id: prof_id,
+                    group_id: groupId,
+                    assignment_type: assignmentType,
+                  }),
+                },
+              );
+
+              const result = await response.json();
+
+              if (result.success) {
+                card.remove();
+                if (!listContainer.querySelector(".assignment-card")) {
+                  listContainer.innerHTML =
+                    '<div class="text-center text-muted col-span-full" style="padding: 2rem; grid-column: 1 / -1;">Aucune attribution trouvée</div>';
+                }
+                loadProfessors();
+                Toast.success("Succès", "Attribution supprimée avec succès.");
+
+                // Close modal automatically on success
+                if (window.Modal && typeof Modal.close === "function") {
+                  Modal.close();
+                }
+              } else {
+                Toast.error(
+                  result.error || "Échec de la suppression de l'attribution.",
                 );
-
-                const result = await response.json();
-
-                if (result.success) {
-                  card.remove();
-                  if (!listContainer.querySelector(".assignment-card")) {
-                    listContainer.innerHTML =
-                      '<div class="text-center text-muted col-span-full" style="padding: 2rem; grid-column: 1 / -1;">Aucune attribution trouvée</div>';
-                  }
-                  loadProfessors();
-                  Toast.success("Succès", "Attribution supprimée avec succès.");
-
-                  // Close modal automatically on success
-                  if (window.Modal && typeof Modal.close === "function") {
-                    Modal.close();
-                  }
-                } else {
-                  Toast.error(
-                    result.error || "Échec de la suppression de l'attribution.",
-                  );
-                  removeBtn.disabled = false;
-                }
-              } catch (error) {
-                console.error("Error removing assignment:", error);
-                Toast.error("Échec de la suppression de l'attribution.");
                 removeBtn.disabled = false;
-              } finally {
-                if (typeof Spinner !== "undefined") Spinner.hide(removeBtn);
-                if (window.Modal && typeof Modal.setLocked === "function") {
-                  Modal.setLocked(false);
-                }
               }
-            });
-          }
+            } catch (error) {
+              console.error("Error removing assignment:", error);
+              Toast.error("Échec de la suppression de l'attribution.");
+              removeBtn.disabled = false;
+            } finally {
+              if (typeof Spinner !== "undefined") Spinner.hide(removeBtn);
+              if (window.Modal && typeof Modal.setLocked === "function") {
+                Modal.setLocked(false);
+              }
+            }
+          });
         }
       });
     });
@@ -627,8 +654,8 @@ async function submitAddAssignments() {
     ? assignmentTypeBtn.getAttribute("data-value")
     : null;
 
-  // Validation: Mandatory Subgroup for TD/TP
-  if (assignmentType === "TD" || assignmentType === "TP") {
+  // Validation: Mandatory Subgroup for TP only
+  if (assignmentType === "TP") {
     if (!subGroupId) {
       Toast.warning(
         "Veuillez sélectionner un sous-groupe pour ce type d'attribution.",
@@ -637,6 +664,7 @@ async function submitAddAssignments() {
     }
     groupId = subGroupId;
   }
+  // For TD, use Principal Group ID (groupId remains as is)
 
   const moduleId = moduleBtn ? moduleBtn.getAttribute("data-value") : null;
 

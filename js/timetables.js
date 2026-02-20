@@ -527,11 +527,41 @@ async function renderTimetable(sheetName, archive = null) {
                 // If it's empty (like CM), use the type.
                 if (!groupStr || groupStr.trim() === "") {
                   groupStr = typeStr;
-                } else if (typeStr === "TD" || typeStr === "TP") {
+                } else if (
+                  (typeStr === "TD" || typeStr === "TP") &&
+                  groupStr !== sheetName
+                ) {
                   // Ensure prefix matches type (e.g. show TP1 for TP session even if group is TD1)
+                  // BUT skip if it is the Principal Group Name (sheetName) to avoid L1 -> TD1 conversion
                   const numbers = groupStr.match(/\d+/g);
-                  if (numbers) {
+                  if (numbers && !groupStr.trim().match(/^[A-Za-z]+[- ]/)) {
+                    // Heuristic: If it has letters and a dash/space (L1-INFO), it's probably a principal group.
+                    // The sheetName check above covers exact matches.
+                    // The extra check covers cases where maybe sheetName isn't exact?
+                    // Let's rely on sheetName check + digit-only heuristic.
+                    // If groupStr is just "1", "2", "TD1"...
                     groupStr = numbers.map((n) => typeStr + n).join(", ");
+                  } else if (numbers && groupStr === sheetName) {
+                    // Should be covered by the strictly outer else-if condition, but just in case
+                    // do nothing
+                  } else if (numbers) {
+                    // If we are here, groupStr != sheetName.
+                    // See if it looks like a list of subgroups?
+                    // If "L1-INFO", numbers=['1']. We don't want TD1.
+                    // So check if it starts with something other than TD/TP/Digits?
+                    // Simplest: If it was L1-INFO, excel_utils would have put it there?
+                    // excel_utils put (TD). API might append sheetname.
+
+                    // Revised logic:
+                    // Only apply formatting if groupStr is short?
+                    // or if we are sure?
+                    if (
+                      groupStr.length < 5 ||
+                      groupStr.startsWith(typeStr) ||
+                      /^\d/.test(groupStr)
+                    ) {
+                      groupStr = numbers.map((n) => typeStr + n).join(", ");
+                    }
                   } else {
                     groupStr = typeStr;
                   }

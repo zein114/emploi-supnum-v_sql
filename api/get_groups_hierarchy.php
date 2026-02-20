@@ -30,8 +30,8 @@ try {
     $subGroupsMap = []; // parent_id => [subgroups]
     
     foreach ($allGroups as $g) {
-        $type = strtolower($g['type']);
-        $isTopLevel = ($type === 'principale' || $type === 'langues && ppp' || $type === 'specialite');
+        $type = strtolower(trim($g['type']));
+        $isTopLevel = in_array($type, ['principale', 'langues && ppp', 'specialite']);
         
         if ($isTopLevel) {
             $g['subgroups'] = [];

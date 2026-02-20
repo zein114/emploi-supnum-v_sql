@@ -102,7 +102,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     # 4. Matrices des Charges (Pcm, Ptp, Ptd)
     Pcm = [[0]*GP for _ in range(J)]
     Ptp = [[0]*GT for _ in range(J)]
-    Ptd = [[0]*GT for _ in range(J)]
+    Ptd = [[0]*GP for _ in range(J)]
 
     # Fetch workloads
     cursor.execute("SELECT * FROM course_workloads")
@@ -131,7 +131,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
 
     # Initialize Pon (Online Main), Son_td (Online TD), Son_tp (Online TP)
     Pon = [[0]*GP for _ in range(J)]
-    Son_td = [[0]*GT for _ in range(J)]
+    Son_td = [[0]*GP for _ in range(J)]
     Son_tp = [[0]*GT for _ in range(J)]
     
     # Fill Online Workloads directly from Map
@@ -148,15 +148,22 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                 if gid in Group_Id_To_Index:
                     Pon[j][Group_Id_To_Index[gid]] = onl_cm
             
-            # 2. Online TD -> Son_td
+            # 2. Online TD -> Son_td (Now on Principal Group)
             onl_td = charges.get('ONL_TD', 0)
             if onl_td > 0:
-                if gid in Sous_Group_Id_To_Index:
-                    Son_td[j][Sous_Group_Id_To_Index[gid]] = onl_td
-                elif gid in Group_Id_To_Index:
-                     for idx, sub_g in enumerate(groups_td):
-                         if sub_g['parent_group_id'] == gid:
-                             Son_td[j][idx] = onl_td
+                if gid in Group_Id_To_Index:
+                    Son_td[j][Group_Id_To_Index[gid]] = onl_td
+                elif gid in Sous_Group_Id_To_Index:
+                     # If assigned to sub, map to parent
+                     # Find parent group
+                     sub_id = groups_td[Sous_Group_Id_To_Index[gid]]['id']
+                     parent_id_str = Sous_Group_Reference_Group.get(str(sub_id).strip())
+                     if parent_id_str:
+                         # Find index of parent
+                         for idx, pg in enumerate(groups_principale):
+                             if str(pg['id']).strip() == parent_id_str:
+                                 Son_td[j][idx] = onl_td
+                                 break
 
             # 3. Online TP -> Son_tp
             onl_tp = charges.get('ONL_TP', 0)
@@ -261,41 +268,50 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                                      if prof_name not in ProTP[j]: ProTP[j].append(prof_name)
 
         if 'TD' in atype:
-             if gid_db in Sous_Group_Id_To_Index:
-                 g = Sous_Group_Id_To_Index[gid_db]
+             # TD is now treated exactly like CM (Principal Group Scope)
+             target_group_idx = None
+             
+             if gid_db in Group_Id_To_Index:
+                 target_group_idx = Group_Id_To_Index[gid_db]
+             elif gid_db in Sous_Group_Id_To_Index:
+                 # Map sub to parent
+                 sub_id = groups_td[Sous_Group_Id_To_Index[gid_db]]['id']
+                 parent_id_str = Sous_Group_Reference_Group.get(str(sub_id).strip())
+                 if parent_id_str:
+                     for idx, pg in enumerate(groups_principale):
+                         if str(pg['id']).strip() == parent_id_str:
+                             target_group_idx = idx
+                             break
+            
+             if target_group_idx is not None:
+                 g = target_group_idx
                  if (j, g) not in Ctd[i]:
                      Ctd[i].append((j, g))
-                     Ptd[j][g] = charges['TD']
+                     # If arriving from sub, we might need to be careful not to overwrite if multiple subs map to same parent 
+                     # but here we assume Ptd is user input on the subject anyway, or calculated from subs? 
+                     # Ptd is usually from Workload_Map. 
+                     # If from Workload_Map (input), we should take the value from the GROUP assigned. 
+                     # If user assigned TD to L1-TD1, we take that charge and put it on L1.
+                     # CAUTION: If user assigned TD to L1-TD1 AND L1-TD2, we might double count or overwrite?
+                     # Standard behavior: Use the charge from the assigned entity.
+                     Ptd[j][g] = charges['TD'] 
+                     
                  if prof_name not in ProTD[j]: ProTD[j].append(prof_name)
 
-             elif gid_db in Group_Id_To_Index:
-                 parent_g_idx = Group_Id_To_Index[gid_db]
-                 target_sub_indices = []
-                 for idx, sub_g in enumerate(groups_td):
-                     if sub_g['parent_group_id'] == gid_db:
-                         target_sub_indices.append(idx)
-                         
-                 for g in target_sub_indices:
-                     if (j, g) not in Ctd[i]:
-                         Ctd[i].append((j, g))
-                     sub_gid = groups_td[g]['id']
-                     sg_charges = w_map.get(sub_gid, charges)
-                     Ptd[j][g] = sg_charges['TD']
-                     if prof_name not in ProTD[j]: ProTD[j].append(prof_name)
-                     
-                 group_name = Groupes_names_principale[parent_g_idx]
-                 if group_name.startswith('L'):
-                     target_sem = Semester_Of_Group.get(parent_g_idx)
-                     for other_g_idx, sem in Semester_Of_Group.items():
-                         if sem == target_sem:
-                             other_gid = groups_principale[other_g_idx]['id']
-                             for idx, sub_g in enumerate(groups_td):
-                                 if sub_g['parent_group_id'] == other_gid:
-                                     if (j, idx) not in Ctd[i]:
-                                         Ctd[i].append((j, idx))
-                                     sg_charges = w_map.get(sub_g['id'], charges)
-                                     Ptd[j][idx] = sg_charges['TD']
-                                     if prof_name not in ProTD[j]: ProTD[j].append(prof_name)
+                 # Propagation for L1 type groups (semester siblings)
+                 group_name = Groupes_names_principale[g]
+                 if group_name.startswith('L') and len(group_name) >= 2:
+                      target_sem = Semester_Of_Group.get(g)
+                      for other_g, sem in Semester_Of_Group.items():
+                          if sem == target_sem and other_g != g:
+                              if (j, other_g) not in Ctd[i]:
+                                  Ctd[i].append((j, other_g))
+                              # For propagation, we also need charge. 
+                              # We need to find the equivalent group or just take what's there?
+                              # Simplified: take default or specific if exists
+                              other_gid = groups_principale[other_g]['id']
+                              other_charges = w_map.get(other_gid, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0}))
+                              Ptd[j][other_g] = other_charges['TD']
 
 
     # 6. Disponibilités (Dik)

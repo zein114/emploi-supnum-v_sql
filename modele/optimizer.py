@@ -37,11 +37,11 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # Création des variables de décision
         X = [[[solver.IntVar(0, 1, 'X'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GP)]  # CM
         Y = [[[solver.IntVar(0, 1, 'Y'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TP
-        Z = [[[solver.IntVar(0, 1, 'Z'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TD
+        Z = [[[solver.IntVar(0, 1, 'Z'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GP)]  # TD (Now Principal)
         
         # Nouvelles variables pour Online
         W = [[[solver.IntVar(0, 1, 'W'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GP)]  # CM Online
-        U_TD = [[[solver.IntVar(0, 1, 'U_TD'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TD Online
+        U_TD = [[[solver.IntVar(0, 1, 'U_TD'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GP)]  # TD Online (Now Principal)
         U_TP = [[[solver.IntVar(0, 1, 'U_TP'+str(g)+'_'+str(j)+'_'+str(k)) for k in range(K)]for j in range(J)] for g in range(GT)]  # TP Online
         
 
@@ -52,29 +52,33 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             for j in range(J):
                 solver.Add(sum(X[g][j][k] for k in range(K)) <= Pcm[j][g]) 
                 solver.Add(sum(W[g][j][k] for k in range(K)) <= Pon[j][g])
-        # TP et TD & Online Sub
+                # TD is now Principal
+                solver.Add(sum(Z[g][j][k] for k in range(K)) <= Ptd[j][g])
+                solver.Add(sum(U_TD[g][j][k] for k in range(K)) <= Son_td[j][g])
+
+        # TP & Online Sub
         for g in range(GT):
             for j in range(J):  
                 solver.Add(sum(Y[g][j][k] for k in range(K)) <= Ptp[j][g])
-                solver.Add(sum(Z[g][j][k] for k in range(K)) <= Ptd[j][g])
-                solver.Add(sum(U_TD[g][j][k] for k in range(K)) <= Son_td[j][g])
                 solver.Add(sum(U_TP[g][j][k] for k in range(K)) <= Son_tp[j][g])
         
         # Contraintes 2: Un groupe ne peut avoir qu'une seule séance dans un créneau précis
         for g in range(GP):
             for k in range(K):
-                solver.Add(sum(X[g][j][k] + W[g][j][k] for j in range(J)) <= 1)
+                # Include TD variables in the Single Session constraint for Principal Groups
+                solver.Add(sum(X[g][j][k] + W[g][j][k] + Z[g][j][k] + U_TD[g][j][k] for j in range(J)) <= 1)
 
         # Contraintes 2b: Un sous-groupe ne peut avoir qu'une seule séance dans un créneau précis
         for g in range(GT):
              for k in range(K):
-                 solver.Add(sum(Y[g][j][k] + Z[g][j][k] + U_TD[g][j][k] + U_TP[g][j][k] for j in range(J)) <= 1)
+                 # TP only now for subgroups
+                 solver.Add(sum(Y[g][j][k] + U_TP[g][j][k] for j in range(J)) <= 1)
 
         # Contraintes 3: Disponibilité du local : le nombre de séances en parallèles ne doit pas dépasser le nombre de salles
         for k in range(K):
             solver.Add(
-                sum(X[g][j][k] for j in range(J) for g in range(GP)) +
-                sum(Y[g][j][k] + Z[g][j][k] for j in range(J) for g in range(GT))
+                sum(X[g][j][k] + Z[g][j][k] for j in range(J) for g in range(GP)) +
+                sum(Y[g][j][k] for j in range(J) for g in range(GT))
                 <= S
             )
 
@@ -104,21 +108,43 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         for g in range(GP):
             for k in range(K):
                 # Variable binaire: Est-ce que le groupe principal 'g' a cours au créneau 'k' ?
-                main_active = sum(X[g][j][k] + W[g][j][k] for j in range(J))
+                # Include TD variables
+                main_active = sum(X[g][j][k] + W[g][j][k] + Z[g][j][k] + U_TD[g][j][k] for j in range(J))
                 
                 # Pour chaque sous-groupe associé
                 for sg in GP_to_SG[g]:
                     # Variable binaire: Est-ce que le sous-groupe 'sg' a cours au créneau 'k' ?
-                    # Include TP/TD and also its CM classes if it's a dual-type group (like Languages)
-                    sub_active_vars = [Y[sg][j][k] + Z[sg][j][k] + U_TD[sg][j][k] + U_TP[sg][j][k] for j in range(J)]
+                    # Only TP variables left for subgroups
+                    sub_active_vars = [Y[sg][j][k] + U_TP[sg][j][k] for j in range(J)]
                     
                     if sg in GT_to_GP_Map:
                         sg_gp_idx = GT_to_GP_Map[sg]
-                        sub_active_vars += [X[sg_gp_idx][j][k] + W[sg_gp_idx][j][k] for j in range(J)]
+                        # If the subgroup refers back to another parent (rare), include that parent's activity?
+                        # Be careful of circular logic. But standard case is just checking upward.
+                        # The original logic included parent variables in sub_active_vars to prevent conflict?
+                        # "if sg in GT_to_GP_Map: sub_active_vars += [X...]"
+                        # This seems to say "Sub is active if Sub is active OR Parent is active".
+                        # But we are establishing exclusion between Parent and Sub.
+                        # If Parent is active, Sub cannot be active.
+                        # Original code:
+                        # sub_active_vars += [X...]
+                        # sub_active = sum(...)
+                        # solver.Add(main_active + sub_active <= 1)
+                        # This says: If Main is active (1), then SubActive must be 0.
+                        # If SubActive includes "Main is active", then equation becomes 1 + (1) <= 1 => False.
+                        # So existing code was ensuring strict exclusion.
+                        
+                        # With TD moved to Main, we should update this.
+                        # sub_active should JUST be the subgroup's specific activity (TP).
+                        # main_active is the Main Group's activity (CM, TD).
+                        
+                        pass # No extra addition needed for standard exclusion logic.
+                        # The old logic might have been trying to handle "If I am a subgroup of G, I obey G".
+                        # But here we are iterating over G.
                     
                     sub_active = sum(sub_active_vars)
                     
-                    # Exclusion mutuelle : Soit le parent, soit le sous-groupe, soit aucun. Pas les deux.
+                    # Exclusion mutuelle : Soit le parent (CM/TD), soit le sous-groupe (TP), soit aucun.
                     solver.Add(main_active + sub_active <= 1)
 
         # Contraintes 6 : La disponibilité de l'enseignant doit être respectée
@@ -175,17 +201,17 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                      k_idx = d_idx * num_slots_per_day + s_idx
                      if k_idx < K:
                          # Forcer toutes les variables à 0 pour ce créneau k
-                         # CM & CM Online
+                         # CM, TD & Online Main
                          for g in range(GP):
                              for j in range(J):
                                  solver.Add(X[g][j][k_idx] == 0)
                                  solver.Add(W[g][j][k_idx] == 0)
-                         # TP/TD & TD/TP Online
+                                 solver.Add(Z[g][j][k_idx] == 0)
+                                 solver.Add(U_TD[g][j][k_idx] == 0)
+                         # TP & TP Online
                          for g in range(GT):
                              for j in range(J):
                                  solver.Add(Y[g][j][k_idx] == 0)
-                                 solver.Add(Z[g][j][k_idx] == 0)
-                                 solver.Add(U_TD[g][j][k_idx] == 0)
                                  solver.Add(U_TP[g][j][k_idx] == 0)
 
 
@@ -195,36 +221,28 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # Maximisation de la charge totale effectuée
         objectif = solver.Objective()
 
-        # CM & Online Main
+        # CM, TD & Online Main
         for g in range(GP):
             for j in range(J):
                 for k in range(K):
                     objectif.SetCoefficient(X[g][j][k],1)
                     objectif.SetCoefficient(W[g][j][k],1)
+                    objectif.SetCoefficient(Z[g][j][k],1)
+                    objectif.SetCoefficient(U_TD[g][j][k],1)
 
-        # TP, TD & Online Sub
+        # TP & Online Sub
         for g in range(GT):
             for j in range(J):
                 for k in range(K):
                     objectif.SetCoefficient(Y[g][j][k],1)
-                    objectif.SetCoefficient(Z[g][j][k],1)
-                    objectif.SetCoefficient(U_TD[g][j][k],1)
                     objectif.SetCoefficient(U_TP[g][j][k],1)
 
         # PARTIE 2.5: PRÉFÉRENCES (SOFT CONSTRAINTS)
         # Favoriser la cohérence des types de sessions pour les sous-groupes d'un même parent
-        # On préfère avoir TD1 + TD2 ou TP1 + TP2 au même créneau plutôt qu'un mélange (ex: TD1 + TP2)
+        # On préfère avoir TP1 + TP2 au même créneau
         for g_idx, sgs in GP_to_SG.items():
             if len(sgs) > 1:
                 for k in range(K):
-                    # Bonus si TOUS les sous-groupes du parent g_idx font du TD au créneau k
-                    all_td_aligned = solver.BoolVar(f'all_td_aligned_g{g_idx}_k{k}')
-                    for sg_idx in sgs:
-                        # all_td_aligned <= sum(Z[sg_idx][j][k] for j in range(J))
-                        # Cela force all_td_aligned à 0 si l'un des sous-groupes n'a pas de TD
-                        solver.Add(all_td_aligned <= sum(Z[sg_idx][j][k] for j in range(J)))
-                    objectif.SetCoefficient(all_td_aligned, 0.1) # Petit bonus pour encourager l'alignement
-                    
                     # Bonus si TOUS les sous-groupes du parent g_idx font du TP au créneau k
                     all_tp_aligned = solver.BoolVar(f'all_tp_aligned_g{g_idx}_k{k}')
                     for sg_idx in sgs:
@@ -313,16 +331,23 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                             'missing_sessions': int(required - scheduled)
                         })
             
-            # Check TD classes
-            for g in range(GT):
+            # Check TD classes (Now Principal)
+            for g in range(GP):
                 for j in range(J):
                     scheduled = sum(Z[g][j][k].solution_value() for k in range(K))
                     required = Ptd[j][g]
                     if required > 0 and scheduled < required:
+                        # Find group id
+                        group_id = None
+                        for gid, idx in Group_Id_Map.items():
+                            if idx == g:
+                                group_id = gid
+                                break
+                                
                         prof = ProTD[j][0] if ProTD[j] else "Non assigné"
                         unscheduled_classes.append({
-                            'group': Sous_Groupes[g],
-                            'group_id': Sous_Group_Index_To_Id.get(g, ''),
+                            'group': Groupes_Principale[g],
+                            'group_id': group_id,
                             'subject': Matieres[j],
                             'subject_code': Matiere_Codes[j],
                             'type': 'TD',
@@ -336,9 +361,14 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     scheduled_onl_td = sum(U_TD[g][j][k].solution_value() for k in range(K))
                     required_onl_td = Son_td[j][g]
                     if required_onl_td > 0 and scheduled_onl_td < required_onl_td:
+                         group_id = None
+                         for gid, idx in Group_Id_Map.items():
+                            if idx == g:
+                                group_id = gid
+                                break
                          unscheduled_classes.append({
-                             'group': Sous_Groupes[g],
-                             'group_id': Sous_Group_Index_To_Id.get(g, ''),
+                             'group': Groupes_Principale[g],
+                             'group_id': group_id,
                              'subject': Matieres[j],
                              'subject_code': Matiere_Codes[j],
                              'type': 'TD Online',
@@ -386,12 +416,18 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                         if X[g][j][k].solution_value() != 0:
                                 Xv.append('X' + '_' + str(g) + '_' + str(j) + '_' + str(k))
 
-            # TP et TD
+            # TP (Sub) et TD (Principal)
+            # TP
             for g in range(GT):
                 for j in range(J):
                     for k in range(K):
                         if Y[g][j][k].solution_value() != 0:
                             Yv.append('Y' + '_' + str(g) + '_' + str(j) + '_' + str(k))
+            
+            # TD
+            for g in range(GP):
+                for j in range(J):
+                    for k in range(K):
                         if Z[g][j][k].solution_value() != 0:
                             Zv.append('Z' + '_' + str(g) + '_' + str(j) + '_' + str(k))
             
