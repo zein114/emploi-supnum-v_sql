@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Load saved semester
+  // Get saved semester or default to 'all'
   const savedSemester =
     localStorage.getItem("weekly_workload_semester") || "all";
   const semesterBtn = document.getElementById("semesterFilterBtn");
@@ -11,19 +11,6 @@ document.addEventListener("DOMContentLoaded", function () {
         : "Semestre " + savedSemester;
     const textSpan = semesterBtn.querySelector(".dropdown-text");
     if (textSpan) textSpan.textContent = text;
-
-    // Update selected class in menu
-    const menu = semesterBtn
-      .closest(".dropdown-container")
-      .querySelector(".dropdown-menu");
-    if (menu) {
-      menu.querySelectorAll(".dropdown-item").forEach((item) => {
-        item.classList.toggle(
-          "selected",
-          item.getAttribute("data-value") === savedSemester,
-        );
-      });
-    }
   }
 
   loadAllData();
@@ -58,32 +45,55 @@ async function loadAllData() {
     '<tr><td colspan="7" class="text-center" style="padding: 2rem;">Chargement des données...</td></tr>';
 
   try {
-    // 1. Load Semesters for the filter
-    const responseSem = await fetch("../api/get_semesters.php?all=true");
+    // 1. Load active Semesters for the filter (API filters by default now)
+    const responseSem = await fetch("../api/get_semesters.php");
     const semesters = await responseSem.json();
-    const menu = document.getElementById("semesterFilterMenu");
-    if (menu) {
+
+    if (window.customDropdown) {
       let html =
         '<div class="dropdown-item" data-value="all">Tous les semestres</div>';
+
       semesters.forEach((sem) => {
-        // Extract number for data-value if possible, otherwise use name
         const numMatch = sem.name.match(/\d+/);
         const val = numMatch ? numMatch[0] : sem.name;
         html += `<div class="dropdown-item" data-value="${val}">${sem.name}</div>`;
       });
-      menu.innerHTML = html;
 
-      // Update selected state
-      const savedSemester =
+      window.customDropdown.updateMenu("semesterFilter", html);
+
+      // Restore selected state UI and validation
+      let savedSemester =
         localStorage.getItem("weekly_workload_semester") || "all";
-      menu.querySelectorAll(".dropdown-item").forEach((item) => {
-        if (item.getAttribute("data-value") === savedSemester) {
-          item.classList.add("selected");
-          const btn = document.getElementById("semesterFilterBtn");
-          if (btn)
-            btn.querySelector(".dropdown-text").textContent = item.textContent;
+
+      // Validation: If saved semester is not 'all' and not in the new active list, reset to 'all'
+      const isValid =
+        savedSemester === "all" ||
+        semesters.some((sem) => {
+          const numMatch = sem.name.match(/\d+/);
+          return (numMatch ? numMatch[0] : sem.name) === savedSemester;
+        });
+
+      if (!isValid) {
+        savedSemester = "all";
+        localStorage.setItem("weekly_workload_semester", "all");
+      }
+
+      const btn = document.getElementById("semesterFilterBtn");
+      if (btn) {
+        const menu = btn
+          .closest(".dropdown-container")
+          .querySelector(".dropdown-menu");
+        const item = menu.querySelector(
+          `.dropdown-item[data-value="${savedSemester}"]`,
+        );
+        if (item) {
+          btn.querySelector(".dropdown-text").textContent = item.textContent;
+          btn.setAttribute("data-value", savedSemester);
+          menu.querySelectorAll(".dropdown-item").forEach((i) => {
+            i.classList.toggle("selected", i === item);
+          });
         }
-      });
+      }
     }
 
     const responseWL = await fetch("../api/get_weekly_workload.php");

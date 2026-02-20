@@ -1,4 +1,5 @@
 <?php
+require_once '../config/db_connect.php';
 require '../vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -22,7 +23,15 @@ $sheetName = $_GET['sheet_name'];
 $reader = IOFactory::createReaderForFile($file);
 $reader->setReadDataOnly(true);
 $reader->setLoadSheetsOnly([$sheetName]);
-$spreadsheet = $reader->load($file);
+$spreadsheet = null;
+
+try {
+    $spreadsheet = $reader->load($file);
+} catch (Exception $e) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([]);
+    exit;
+}
 
 $sheet = $spreadsheet->getSheetByName($sheetName);
 
@@ -35,8 +44,9 @@ if (!$sheet) {
 $highestRow = $sheet->getHighestRow();
 $highestColumn = $sheet->getHighestColumn();
 
-$timesTables = $sheet->rangeToArray('B3:' . $highestColumn . $highestRow, null, true, false);
-
+// The Excel generator (excel_utils.py) already merges 'specialite' and 'langues && ppp' 
+// into the principal group's sheet, so we just return this data.
+$timesTable = $sheet->rangeToArray('B3:' . $highestColumn . $highestRow, null, true, false);
 
 header('Content-Type: application/json; charset=utf-8');
-echo json_encode($timesTables, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+echo json_encode($timesTable, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

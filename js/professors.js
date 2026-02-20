@@ -133,8 +133,13 @@ const addAssignmentsFormHtml = `
                 <span class="dropdown-text">Veuillez d'abord sélectionner un groupe</span>
                 <div class="dropdown-arrow"></div>
             </button>
-            <div class="dropdown-menu" data-dropdown-menu-id="moduleSelect">
-                <!-- Will be populated by JavaScript -->
+            <div class="dropdown-menu" data-dropdown-menu-id="moduleSelect" style="padding-top: 0;">
+                <div class="dropdown-search-container" style="position: sticky; top: 0; background: var(--color-bg-card); z-index: 10; padding: 10px 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 4px;">
+                    <input type="text" class="dropdown-search-input" id="moduleSearchInput" placeholder="Rechercher une matière..." style="width: 100%; padding: 10px 10px; font-size: 0.85rem; background: var(--color-bg-section); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                </div>
+                <div id="moduleDropdownItems" style="padding: 0 8px 8px 8px;">
+                    <!-- Will be populated by JavaScript -->
+                </div>
             </div>
         </div>
     </div>
@@ -323,6 +328,34 @@ function setupModalListeners() {
       }
     }
   });
+
+  // 4. On Module Search Input
+  const searchInput = document.getElementById("moduleSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", function (e) {
+      const searchTerm = e.target.value.toLowerCase().trim();
+      const itemsContainer = document.getElementById("moduleDropdownItems");
+      if (!itemsContainer) return;
+
+      const items = itemsContainer.querySelectorAll(".dropdown-item");
+      items.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+          item.style.display = "";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    });
+
+    searchInput.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+
+    searchInput.addEventListener("mousedown", function (e) {
+      e.stopPropagation();
+    });
+  }
 }
 
 function resetSubgroupDropdown() {
@@ -410,13 +443,36 @@ function filterModulesBySemester(semesterName) {
   if (filtered.length === 0) {
     moduleText.textContent = "Aucune matière pour ce semestre";
     moduleBtn.disabled = true;
-    window.customDropdown.updateMenu("moduleSelect", "");
+    const menu = document.querySelector(
+      '[data-dropdown-menu-id="moduleSelect"]',
+    );
+    if (menu) {
+      const itemsContainer = menu.querySelector("#moduleDropdownItems");
+      if (itemsContainer) itemsContainer.innerHTML = "";
+    }
   } else {
     let html = "";
     filtered.forEach((module) => {
       html += `<div class="dropdown-item" data-value="${module[0]}">${module[0]} - ${module[1]}</div>`;
     });
-    window.customDropdown.updateMenu("moduleSelect", html);
+
+    const menu = document.querySelector(
+      '[data-dropdown-menu-id="moduleSelect"]',
+    );
+    if (menu) {
+      const itemsContainer = menu.querySelector("#moduleDropdownItems");
+      if (itemsContainer) {
+        itemsContainer.innerHTML = html;
+        // Re-attach listeners for new items
+        const newItems = itemsContainer.querySelectorAll(".dropdown-item");
+        newItems.forEach((item) => {
+          item.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.customDropdown.selectItem(moduleBtn, menu, item);
+          });
+        });
+      }
+    }
     moduleText.textContent = "Sélectionner une matière";
     moduleBtn.disabled = false;
   }

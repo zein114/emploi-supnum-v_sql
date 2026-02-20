@@ -91,7 +91,7 @@ function updateAdminSubmitButtonState() {
 document.addEventListener("DOMContentLoaded", async () => {
   // Load Semesters
   try {
-    const response = await fetch("../api/get_semesters.php?all=true");
+    const response = await fetch("../api/get_semesters.php");
     const semesters = await response.json();
 
     const semesterMenu = document.getElementById("adminSemesterOptionsMenu");
@@ -101,6 +101,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         html += `<div class="dropdown-item" data-value="${sem.name}">${sem.name}</div>`;
       });
       window.customDropdown.updateMenu("adminSemesterSelect", html);
+    }
+
+    // Validation for saved semester: If not active, clear it
+    const savedSemester = sessionStorage.getItem("admin_saved_semester");
+    if (savedSemester) {
+      const isValid = semesters.some((s) => s.name === savedSemester);
+      if (!isValid) {
+        sessionStorage.removeItem("admin_saved_semester");
+        sessionStorage.removeItem("admin_saved_group_id");
+        sessionStorage.removeItem("admin_saved_group_name");
+      }
     }
   } catch (e) {
     console.error("Error loading semesters", e);

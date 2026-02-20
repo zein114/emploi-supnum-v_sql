@@ -33,16 +33,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Restore from sessionStorage
-  const savedSemester = sessionStorage.getItem("student_saved_semester");
+  let savedSemester = sessionStorage.getItem("student_saved_semester");
   const savedGroupId = sessionStorage.getItem("student_saved_group_id");
+
+  if (savedSemester) {
+    const isValid = semesters.some((s) => s.name === savedSemester);
+    if (!isValid) {
+      sessionStorage.removeItem("student_saved_semester");
+      sessionStorage.removeItem("student_saved_group_id");
+      sessionStorage.removeItem("student_saved_group_name");
+      savedSemester = null;
+    }
+  }
 
   if (savedSemester) {
     const semBtn = document.querySelector(
       '[data-dropdown-id="semesterSelect"]',
     );
-    // Need to wait for semesters to be loaded into DOM?
-    // Since we just updated innerHTML of menu, we might need a small delay or check
-    // Logic below handles selection if item exists
     const semMenu = document.getElementById("semesterOptionsMenu");
 
     // We can use MutationObserver or simple setTimeout if list is small.

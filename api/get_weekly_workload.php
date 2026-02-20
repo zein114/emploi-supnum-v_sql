@@ -7,12 +7,42 @@ requireRole('admin');
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Fetch current semester setting
+// 1. Fetch current semester setting
 $semesterResult = $conn->query("SELECT setting_value FROM settings WHERE setting_key = 'current_semester_type'");
 $currentSemester = $semesterResult->fetch_assoc()['setting_value'] ?? 'impair';
 
+// 2. Identify active semesters
+$activeSemesterIds = [];
+$semResult = $conn->query("SELECT id, name FROM semesters");
+while($sem = $semResult->fetch_assoc()) {
+    if (preg_match('/(\d+)/', $sem['name'], $matches)) {
+        $num = intval($matches[1]);
+        $isEven = ($num % 2 === 0);
+        if (($currentSemester === 'pair' && $isEven) || ($currentSemester === 'impair' && !$isEven)) {
+            $activeSemesterIds[] = $sem['id'];
+        }
+    } else {
+        // Fallback for non-numbered semesters, treat as active
+        $activeSemesterIds[] = $sem['id'];
+    }
+}
+
+// 3. Force workload to 0 for inactive semesters in the database
+if (!empty($activeSemesterIds)) {
+    $activeList = implode(',', $activeSemesterIds);
+    $conn->query("
+        UPDATE course_workloads cw
+        JOIN subjects s ON cw.subject_id = s.id
+        SET cw.cm_hours = 0, cw.td_hours = 0, cw.tp_hours = 0,
+            cw.cm_online = 0, cw.td_online = 0, cw.tp_online = 0
+        WHERE s.semester_id NOT IN ($activeList)
+    ");
+}
+
 try {
-    // 1. Fetch all subjects joined with semesters and all workloads in ONE query
+    // 4. Fetch only subjects from ACTIVE semesters
+    $activeFilter = !empty($activeSemesterIds) ? "WHERE s.semester_id IN (" . implode(',', $activeSemesterIds) . ")" : "";
+    
     $query = "
         SELECT s.id as subject_id, s.code as subject_code, s.name as subject_name, 
                sem.name as semester_name, sem.order_index,
@@ -37,6 +67,7 @@ try {
         LEFT JOIN semesters sem ON s.semester_id = sem.id
         LEFT JOIN course_workloads cw ON cw.subject_id = s.id
         LEFT JOIN `groups` g ON cw.group_id = g.id
+        $activeFilter
         ORDER BY sem.order_index, s.code, g.id
     ";
     

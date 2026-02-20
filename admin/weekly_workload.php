@@ -51,10 +51,10 @@ $user = getCurrentUser();
                                     <span class="dropdown-text">Tous les semestres</span>
                                     <div class="dropdown-arrow"></div>
                                 </button>
-                                    <div class="dropdown-menu" id="semesterFilterMenu">
-                                        <div class="dropdown-item selected" data-value="all">Tous les semestres</div>
-                                        <!-- Semesters will be populated here -->
-                                    </div>
+                                     <div class="dropdown-menu" id="semesterFilterMenu">
+                                         <div class="dropdown-item selected" data-value="all">Tous les semestres</div>
+                                         <!-- Semesters will be populated here -->
+                                     </div>
                             </div>
                             <input type="text" id="searchInput" placeholder="Rechercher par code ou nom..." class="search-input" style="min-width: 250px;">
                         </div>
