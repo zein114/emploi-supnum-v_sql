@@ -29,7 +29,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # PARTIE 1: IMPORTATION DES DONNÉES 
         # Def table des matiers 
         
-        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp, Sous_Groupes_types, Sous_Groupes_semesters, Groupes_types_principale = load_data(input_file, K, days, time_slots)
+        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp, Sous_Groupes_types, Sous_Groupes_semesters, Groupes_types_principale, specialty_subject_ids, Subj_Id_To_Index = load_data(input_file, K, days, time_slots)
         
         # PARTIE 2: MODELE: IMPLEMENTATION ET RESOLUTION 
         solver = pywraplp.Solver.CreateSolver('CBC')
@@ -96,8 +96,9 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             for gp_id in refs:
                 if gp_id in Group_Id_Map:
                     g = Group_Id_Map[gp_id]
-                    sg = Sous_Group_Id_Map[sg_id]
-                    GP_to_SG[g].append(sg)
+                    if sg_id in Sous_Group_Id_Map:
+                        sg = Sous_Group_Id_Map[sg_id]
+                        GP_to_SG[g].append(sg)
 
         # Reverse mapping: Sub-group (GT index) -> Principal group (GP index)
         GT_to_GP_Map = {}
@@ -148,6 +149,9 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     solver.Add(main_active + sub_active <= 1)
 
         # Contraintes 5b : Synchronisation des groupes de type 'specialite' du même semestre
+        # On définit un créneau comme "créneau de spécialité" pour un semestre donné.
+        # Durant ce créneau, les groupes principaux ne peuvent pas avoir de cours, 
+        # et seuls les groupes de spécialité peuvent en avoir.
         Specialite_By_Semester = {}
         for gp in range(GP):
             if Groupes_types_principale[gp].lower() == 'specialite':
@@ -157,13 +161,22 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                 Specialite_By_Semester[sem].append(gp)
 
         for sem, gps in Specialite_By_Semester.items():
-            if len(gps) > 1:
+            if len(gps) > 0:
+                # Trouver tous les groupes de type 'principale' du même semestre
+                semester_principal_groups = [pg for pg in range(GP) if Groupes_types_principale[pg].lower() == 'principale' and Semester_Of_Group.get(pg) == sem]
+                
                 for k in range(K):
-                    first_gp = gps[0]
-                    first_active = sum(X[first_gp][j][k] + Z[first_gp][j][k] for j in range(J))
-                    for other_gp in gps[1:]:
-                        other_active = sum(X[other_gp][j][k] + Z[other_gp][j][k] for j in range(J))
-                        solver.Add(first_active == other_active)
+                    # Variable binaire indiquant si c'est un créneau de spécialité pour ce semestre
+                    is_specialty_time = solver.BoolVar(f'is_specialty_time_sem{sem}_k{k}')
+                    
+                    # 1. Si un groupe de spécialité a cours, c'est un créneau de spécialité
+                    for gp_idx in gps:
+                        solver.Add(sum(X[gp_idx][j][k] + Z[gp_idx][j][k] for j in range(J)) <= is_specialty_time)
+                    
+                    # 2. Si c'est un créneau de spécialité, aucun groupe principal du semestre ne peut avoir de cours
+                    for pg_idx in semester_principal_groups:
+                        solver.Add(sum(X[pg_idx][j][k] + W[pg_idx][j][k] + Z[pg_idx][j][k] + U_TD[pg_idx][j][k] for j in range(J)) + is_specialty_time <= 1)
+
 
         # Contraintes 6 : La disponibilité de l'enseignant doit être respectée
         for i in range(I):
@@ -319,51 +332,78 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
             # Track unscheduled classes
             unscheduled_classes = []
             
-            # Check CM classes
+            # Check CM/TD classes
+            # Create a reverse mapping for Subject Index to ID
+            Index_To_Subj_Id = {v: k for k, v in Subj_Id_To_Index.items()}
+
             for g in range(GP):
+                g_type = Groupes_types_principale[g].lower()
                 for j in range(J):
+                    subj_id = Index_To_Subj_Id.get(j)
+                    # Skip reporting specialty subjects for principal groups
+                    if g_type == 'principale' and subj_id in specialty_subject_ids:
+                        continue
+
+                    # CM
                     scheduled = sum(X[g][j][k].solution_value() for k in range(K))
                     required = Pcm[j][g]
                     if required > 0 and scheduled < required:
-                        # Find group id
                         group_id = None
                         for gid, idx in Group_Id_Map.items():
-                            if idx == g:
-                                group_id = gid
-                                break
+                            if idx == g: group_id = gid; break
                         
                         prof = ProCM[j].get(g, "Non assigné") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "Non assigné")
                         unscheduled_classes.append({
-                            'group': Groupes_Principale[g],
-                            'group_id': group_id,
-                            'subject': Matieres[j],
-                            'subject_code': Matiere_Codes[j],
-                            'type': 'CM',
-                            'professor': prof,
-                            'required_sessions': int(required),
-                            'scheduled_sessions': int(scheduled),
+                            'group': Groupes_Principale[g], 'group_id': group_id, 'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j], 'type': 'CM', 'professor': prof,
+                            'required_sessions': int(required), 'scheduled_sessions': int(scheduled),
                             'missing_sessions': int(required - scheduled)
                         })
 
-                    # Check Online Main
+                    # CM Online
                     scheduled_onl = sum(W[g][j][k].solution_value() for k in range(K))
                     required_onl = Pon[j][g]
                     if required_onl > 0 and scheduled_onl < required_onl:
                          group_id = None
                          for gid, idx in Group_Id_Map.items():
-                            if idx == g:
-                                group_id = gid
-                                break
+                            if idx == g: group_id = gid; break
                          unscheduled_classes.append({
-                            'group': Groupes_Principale[g],
-                            'group_id': group_id,
-                            'subject': Matieres[j],
-                            'subject_code': Matiere_Codes[j],
-                            'type': 'CM Online',
+                            'group': Groupes_Principale[g], 'group_id': group_id, 'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j], 'type': 'CM Online',
                             'professor': ProCM[j].get(g, "En ligne") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "En ligne"),
-                            'required_sessions': int(required_onl),
-                            'scheduled_sessions': int(scheduled_onl),
+                            'required_sessions': int(required_onl), 'scheduled_sessions': int(scheduled_onl),
                             'missing_sessions': int(required_onl - scheduled_onl)
+                         })
+
+                    # TD
+                    scheduled_td = sum(Z[g][j][k].solution_value() for k in range(K))
+                    required_td = Ptd[j][g]
+                    if required_td > 0 and scheduled_td < required_td:
+                        group_id = None
+                        for gid, idx in Group_Id_Map.items():
+                            if idx == g: group_id = gid; break
+                        
+                        prof = ProTD[j].get(g, "Non assigné") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "Non assigné")
+                        unscheduled_classes.append({
+                            'group': Groupes_Principale[g], 'group_id': group_id, 'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j], 'type': 'TD', 'professor': prof,
+                            'required_sessions': int(required_td), 'scheduled_sessions': int(scheduled_td),
+                            'missing_sessions': int(required_td - scheduled_td)
+                        })
+
+                    # TD Online
+                    scheduled_onl_td = sum(U_TD[g][j][k].solution_value() for k in range(K))
+                    required_onl_td = Son_td[j][g]
+                    if required_onl_td > 0 and scheduled_onl_td < required_onl_td:
+                         group_id = None
+                         for gid, idx in Group_Id_Map.items():
+                            if idx == g: group_id = gid; break
+                         unscheduled_classes.append({
+                            'group': Groupes_Principale[g], 'group_id': group_id, 'subject': Matieres[j],
+                            'subject_code': Matiere_Codes[j], 'type': 'TD Online',
+                            'professor': ProTD[j].get(g, "En ligne") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "En ligne"),
+                            'required_sessions': int(required_onl_td), 'scheduled_sessions': int(scheduled_onl_td),
+                            'missing_sessions': int(required_onl_td - scheduled_onl_td)
                          })
             
             # Aggregator for TP classes
@@ -424,53 +464,6 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     'missing_sessions': data['req'] - data['sch']
                 })
             
-            # Check TD classes (Now Principal)
-            for g in range(GP):
-                for j in range(J):
-                    scheduled = sum(Z[g][j][k].solution_value() for k in range(K))
-                    required = Ptd[j][g]
-                    if required > 0 and scheduled < required:
-                        # Find group id
-                        group_id = None
-                        for gid, idx in Group_Id_Map.items():
-                            if idx == g:
-                                group_id = gid
-                                break
-                                
-                        prof = ProTD[j].get(g, "Non assigné") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "Non assigné")
-                        unscheduled_classes.append({
-                            'group': Groupes_Principale[g],
-                            'group_id': group_id,
-                            'subject': Matieres[j],
-                            'subject_code': Matiere_Codes[j],
-                            'type': 'TD',
-                            'professor': prof,
-                            'required_sessions': int(required),
-                            'scheduled_sessions': int(scheduled),
-                            'missing_sessions': int(required - scheduled)
-                        })
-                    
-                    # Check Online TD
-                    scheduled_onl_td = sum(U_TD[g][j][k].solution_value() for k in range(K))
-                    required_onl_td = Son_td[j][g]
-                    if required_onl_td > 0 and scheduled_onl_td < required_onl_td:
-                         group_id = None
-                         for gid, idx in Group_Id_Map.items():
-                            if idx == g:
-                                group_id = gid
-                                break
-                         unscheduled_classes.append({
-                             'group': Groupes_Principale[g],
-                             'group_id': group_id,
-                             'subject': Matieres[j],
-                             'subject_code': Matiere_Codes[j],
-                             'type': 'TD Online',
-                             'professor': ProTD[j].get(g, "En ligne") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "En ligne"),
-                             'required_sessions': int(required_onl_td),
-                             'scheduled_sessions': int(scheduled_onl_td),
-                             'missing_sessions': int(required_onl_td - scheduled_onl_td)
-                         })
-            
             # Save unscheduled classes to JSON file
             import json
             unscheduled_file = os.path.join(output_dir, 'unscheduled_classes.json')
@@ -522,7 +515,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
     except Exception as e:
         import traceback
         print(f"Erreur lors de l'optimisation: {e}")
-        traceback.print_exc()
+        open('err_trace.txt','w').write(traceback.format_exc())
         return False
 
 
@@ -577,7 +570,7 @@ def run_optimization_process(input_file, output_dir):
     except Exception as e:
         import traceback
         print(f"Erreur lors du processus d'optimisation: {e}")
-        traceback.print_exc()
+        open('err_trace.txt','w').write(traceback.format_exc())
         return False
     
 if __name__ == "__main__":

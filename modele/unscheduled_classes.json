@@ -11,39 +11,6 @@
     "missing_sessions": 2
   },
   {
-    "group": "G1",
-    "group_id": "1",
-    "subject": "Systeme de getion de BD",
-    "subject_code": "DSI210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G1",
-    "group_id": "1",
-    "subject": "Services Reseaux",
-    "subject_code": "RSS210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G1",
-    "group_id": "1",
-    "subject": "CMS et PAO",
-    "subject_code": "CNM210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
     "group": "G2",
     "group_id": "2",
     "subject": "Programmation Python",
@@ -55,39 +22,6 @@
     "missing_sessions": 1
   },
   {
-    "group": "G2",
-    "group_id": "2",
-    "subject": "Systeme de getion de BD",
-    "subject_code": "DSI210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G2",
-    "group_id": "2",
-    "subject": "Services Reseaux",
-    "subject_code": "RSS210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G2",
-    "group_id": "2",
-    "subject": "CMS et PAO",
-    "subject_code": "CNM210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
     "group": "G3",
     "group_id": "3",
     "subject": "Programmation Python",
@@ -96,39 +30,6 @@
     "professor": "Moussa",
     "required_sessions": 4,
     "scheduled_sessions": 3,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G3",
-    "group_id": "3",
-    "subject": "Systeme de getion de BD",
-    "subject_code": "DSI210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G3",
-    "group_id": "3",
-    "subject": "Services Reseaux",
-    "subject_code": "RSS210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G3",
-    "group_id": "3",
-    "subject": "CMS et PAO",
-    "subject_code": "CNM210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
     "missing_sessions": 1
   },
   {
@@ -143,39 +44,6 @@
     "missing_sessions": 1
   },
   {
-    "group": "G4",
-    "group_id": "4",
-    "subject": "Systeme de getion de BD",
-    "subject_code": "DSI210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G4",
-    "group_id": "4",
-    "subject": "Services Reseaux",
-    "subject_code": "RSS210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G4",
-    "group_id": "4",
-    "subject": "CMS et PAO",
-    "subject_code": "CNM210",
-    "type": "CM",
-    "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
     "group": "DSI1",
     "group_id": "46",
     "subject": "Programmation Python",
@@ -281,17 +149,6 @@
     "subject_code": "SYR211",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "DSI1",
-    "group_id": "46",
-    "subject": "Systeme de getion de BD",
-    "subject_code": "DSI210",
-    "type": "CM",
-    "professor": "Med Lemine",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -446,17 +303,6 @@
     "subject_code": "DSI210",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "RSS",
-    "group_id": "49",
-    "subject": "Services Reseaux",
-    "subject_code": "RSS210",
-    "type": "CM",
-    "professor": "Souvi",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -772,17 +618,6 @@
   {
     "group": "DWM",
     "group_id": "53",
-    "subject": "CMS et PAO",
-    "subject_code": "CNM210",
-    "type": "CM",
-    "professor": "Cheikhani",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "DWM",
-    "group_id": "53",
     "subject": "PI 1",
     "subject_code": "SPEC211",
     "type": "CM",
@@ -897,17 +732,6 @@
     "subject_code": "SYR211",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "DSI2",
-    "group_id": "54",
-    "subject": "Systeme de getion de BD",
-    "subject_code": "DSI210",
-    "type": "CM",
-    "professor": "Med Lemine",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1

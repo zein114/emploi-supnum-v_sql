@@ -74,6 +74,16 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
             parent_id_str = id_to_id_str[g['parent_group_id']]
             Sous_Group_Reference_Group[sub_id_str] = parent_id_str
 
+    # 2.5 Link Specialite groups to Principale groups of the same semester for merging
+    for g in groups_principale:
+        if g['type'].lower() == 'specialite':
+            sp_id_str = str(g['id']).strip()
+            sem_id = g['semester_id']
+            # Link to all principale groups in same semester
+            parent_ids = [str(pg['id']).strip() for pg in groups_principale if pg['type'] == 'principale' and pg['semester_id'] == sem_id]
+            if parent_ids:
+                Sous_Group_Reference_Group[sp_id_str] = ",".join(parent_ids)
+
     GP = len(groups_principale)
     GT = len(groups_td)
 
@@ -110,6 +120,16 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     # Fetch workloads
     cursor.execute("SELECT * FROM course_workloads")
     workloads = cursor.fetchall()
+    
+    # NEW: Identify specialty subjects (those assigned specifically to a 'specialite' group)
+    # This helps avoid applying their DEFAULT workload to principal groups.
+    cursor.execute("""
+        SELECT DISTINCT subject_id 
+        FROM teacher_assignments ta 
+        JOIN `groups` g ON ta.group_id = g.id 
+        WHERE g.type = 'specialite'
+    """)
+    specialty_subject_ids = {row['subject_id'] for row in cursor.fetchall()}
 
     # Pre-process workloads into a lookup: subject_id -> {group_id -> {cm, tp, td}}
     # handle group_id=None as 'DEFAULT'
@@ -148,6 +168,11 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
             
             # CM, TD, Online CM/TD for Principal Groups
             for g in range(GP):
+                g_type = Groupes_types_principale[g].lower()
+                # Skip default workload for specialty subjects on NON-specialty groups
+                if sid in specialty_subject_ids and g_type == 'principale':
+                    continue
+
                 # Only apply if semesters match or subject has no semester assigned
                 if s_sem is None or groups_principale[g]['semester_id'] == s_sem:
                     Pcm[j][g] = d.get('CM', 0)
@@ -446,4 +471,4 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     
     conn.close()
     print("Données chargées depuis BDD avec succès.")
-    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp, Sous_Groupes_types, Sous_Groupes_semesters, Groupes_types_principale
+    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp, Sous_Groupes_types, Sous_Groupes_semesters, Groupes_types_principale, specialty_subject_ids, Subj_Id_To_Index

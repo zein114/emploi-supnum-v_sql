@@ -185,34 +185,60 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             group_id_val = gid_val
                             break
                     
-                    subgroups_of_g = []
-                    for sub_id, ref_val in Sous_Group_Reference_Group.items():
-                        refs = [r.strip() for r in str(ref_val).split(',')]
-                        if group_id_val in refs:
-                            subgroups_of_g.append(sub_id)
+                    merge_from_ids = [sid for sid, refs in Sous_Group_Reference_Group.items() if group_id_val in [r.strip() for r in str(refs).split(',')]]
                     
+                    subgroups_of_g = []
+                    for sid, pref in Sous_Group_Reference_Group.items():
+                        # Case 1: Subgroup of the principal group itself
+                        if pref == group_id_val:
+                            subgroups_of_g.append(sid)
+                        # Case 2: Subgroup of a group that merges into this principal group
+                        elif pref in merge_from_ids:
+                            subgroups_of_g.append(sid)
+
                     subgroup_indices = [Sous_Group_Id_Map[si] for si in subgroups_of_g if si in Sous_Group_Id_Map]
                     
+                    # 'merge_from_ids' contains the IDs of the specialty/languages groups (from groups_principale)
+                    linked_gp_indices = [Group_Id_Map[si] for si in merge_from_ids if si in Group_Id_Map and Group_Id_Map[si] != g]
+                    
                     for j in range(J):
-                        # CM sessions of subgroups that are also principal groups
-                        for idx_sg in subgroup_indices:
-                            if idx_sg in GT_to_GP_Map:
-                                sg_gp_idx = GT_to_GP_Map[idx_sg]
-                                if X[sg_gp_idx][j][k].solution_value() > 0.5:
-                                    prof = ProCM[j].get(sg_gp_idx, "CM") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM")
-                                    code = Matiere_Codes[j]
-                                    room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==sg_gp_idx and r[2]==j), "N/A")
-                                    sg_name = Sous_Groupes[idx_sg]
-                                    session_str = f"[{code}] {Matieres[j]}\n(CM) - {sg_name}\nProf: {prof}\nSalle: {room}"
-                                    sessions_list.append(session_str)
+                        # Sessions of linked principal groups (e.g., Specialty groups)
+                        for lgp in linked_gp_indices:
+                            # CM
+                            if X[lgp][j][k].solution_value() > 0.5:
+                                prof = ProCM[j].get(lgp, "CM") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM")
+                                code = Matiere_Codes[j]
+                                room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==lgp and r[2]==j), "N/A")
+                                name = Groupes_Principale[lgp]
+                                session_str = f"[{code}] {Matieres[j]}\n(CM) - {name}\nProf: {prof}\nSalle: {room}"
+                                sessions_list.append(session_str)
+                            
+                            # CM Online
+                            if W[lgp][j][k].solution_value() > 0.5:
+                                prof = ProCM[j].get(lgp, "CM Online") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM Online")
+                                code = Matiere_Codes[j]
+                                name = Groupes_Principale[lgp]
+                                session_str = f"[{code}] {Matieres[j]}\n(CM Online) - {name}\nProf: {prof}\nSalle: En ligne"
+                                sessions_list.append(session_str)
                                 
-                                if W[sg_gp_idx][j][k].solution_value() > 0.5:
-                                    prof = ProCM[j].get(sg_gp_idx, "CM Online") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM Online")
-                                    code = Matiere_Codes[j]
-                                    sg_name = Sous_Groupes[idx_sg]
-                                    session_str = f"[{code}] {Matieres[j]}\n(CM Online) - {sg_name}\nProf: {prof}\nSalle: En ligne"
-                                    sessions_list.append(session_str)
+                            # TD
+                            if Z[lgp][j][k].solution_value() > 0.5:
+                                prof = ProTD[j].get(lgp, "TD") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "TD")
+                                code = Matiere_Codes[j]
+                                room = next((r[3] for r in slot_room_assignments[k] if r[0]=='TD' and r[1]==lgp and r[2]==j), "N/A")
+                                name = Groupes_Principale[lgp]
+                                session_str = f"[{code}] {Matieres[j]}\n(TD) - {name}\nProf: {prof}\nSalle: {room}"
+                                sessions_list.append(session_str)
+                                
+                            # TD Online
+                            if U_TD[lgp][j][k].solution_value() > 0.5:
+                                prof = ProTD[j].get(lgp, "TD Online") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "TD Online")
+                                code = Matiere_Codes[j]
+                                name = Groupes_Principale[lgp]
+                                session_str = f"[{code}] {Matieres[j]}\n(TD Online) - {name}\nProf: {prof}\nSalle: En ligne"
+                                sessions_list.append(session_str)
 
+                        # Check for TP sessions in subgroups (Standard subgroups)
                         active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
                         active_onl_tp = [si for si in subgroup_indices if U_TP[si][j][k].solution_value() > 0.5]
                         
@@ -251,6 +277,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                                 
                                 session_str = f"[{code}] {Matieres[j]}\n({sess_type}) - {sg_detail}\nProf: {prof}\nSalle: {room_str}"
                                 sessions_list.append(session_str)
+
 
                     if sessions_list:
                         # Trier les sessions pour s'assurer que TD1/TP1 apparaissent avant TD2/TP2
