@@ -731,10 +731,15 @@ async function renderUnscheduledClasses(sheetName) {
     const response = await fetch("../api/get_unscheduled_classes.php");
     const allUnscheduled = await response.json();
 
-    // Filter for the current group
-    const groupUnscheduled = allUnscheduled.filter(
-      (item) => item.group === sheetName,
-    );
+    // Filter for the current group:
+    // - Exact match (CM, TD): item.group === sheetName
+    // - Subgroup match (TP): item.group starts with "sheetName (" e.g. "RSS (TD1/TD2)"
+    const groupUnscheduled = allUnscheduled.filter((item) => {
+      if (item.group === sheetName) return true;
+      // TP subgroup format: "ParentName (TP1/TP2)" — match the parent portion
+      if (item.group.startsWith(sheetName + " (")) return true;
+      return false;
+    });
 
     if (groupUnscheduled.length === 0) {
       unscheduledSection.style.display = "none";
@@ -747,6 +752,12 @@ async function renderUnscheduledClasses(sheetName) {
     groupUnscheduled.forEach((item) => {
       let typeColor = "var(--text-muted)";
       let typeLabelColor = "var(--text-secondary)";
+
+      // Handle displaying TD as TP for subgroups in the interface
+      let displayGroup = item.group;
+      if (item.type.includes("TP")) {
+        displayGroup = displayGroup.replace(/TD/g, "TP");
+      }
 
       if (item.type === "CM") {
         typeColor = "#3b82f6";
@@ -778,7 +789,7 @@ async function renderUnscheduledClasses(sheetName) {
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                   </svg>
-                  ${item.group}
+                  ${displayGroup}
                 </span>
               </div>
             </div>

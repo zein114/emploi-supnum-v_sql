@@ -232,28 +232,52 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                                  solver.Add(Y[g][j][k_idx] == 0)
                                  solver.Add(U_TP[g][j][k_idx] == 0)
 
+        # Contraintes 9 : Empêcher la planification des séances sans enseignant affecté
+        Assigned_CM = set(h for i in range(I) for h in Ccm[i])
+        Assigned_TP = set(h for i in range(I) for h in Ctp[i])
+        Assigned_TD = set(h for i in range(I) for h in Ctd[i])
+        
+        for g in range(GP):
+            for j in range(J):
+                if (j, g) not in Assigned_CM:
+                    for k in range(K):
+                        solver.Add(X[g][j][k] == 0)
+                        solver.Add(W[g][j][k] == 0)
+                if (j, g) not in Assigned_TD:
+                    for k in range(K):
+                        solver.Add(Z[g][j][k] == 0)
+                        solver.Add(U_TD[g][j][k] == 0)
+                        
+        for g in range(GT):
+            for j in range(J):
+                if (j, g) not in Assigned_TP:
+                    for k in range(K):
+                        solver.Add(Y[g][j][k] == 0)
+                        solver.Add(U_TP[g][j][k] == 0)
+
 
 
 
         # Fonction objectif :
-        # Maximisation de la charge totale effectuée
+        # Maximisation de la charge totale effectuée avec priorités :
+        # CM (1.5) > TD (1.2) > TP (1.0)
         objectif = solver.Objective()
 
         # CM, TD & Online Main
         for g in range(GP):
             for j in range(J):
                 for k in range(K):
-                    objectif.SetCoefficient(X[g][j][k],1)
-                    objectif.SetCoefficient(W[g][j][k],1)
-                    objectif.SetCoefficient(Z[g][j][k],1)
-                    objectif.SetCoefficient(U_TD[g][j][k],1)
+                    objectif.SetCoefficient(X[g][j][k], 1.5)      # CM
+                    objectif.SetCoefficient(W[g][j][k], 1.5)      # CM Online
+                    objectif.SetCoefficient(Z[g][j][k], 1.2)      # TD
+                    objectif.SetCoefficient(U_TD[g][j][k], 1.2)   # TD Online
 
         # TP & Online Sub
         for g in range(GT):
             for j in range(J):
                 for k in range(K):
-                    objectif.SetCoefficient(Y[g][j][k],1)
-                    objectif.SetCoefficient(U_TP[g][j][k],1)
+                    objectif.SetCoefficient(Y[g][j][k], 1.0)      # TP
+                    objectif.SetCoefficient(U_TP[g][j][k], 1.0)   # TP Online
 
         # PARTIE 2.5: PRÉFÉRENCES (SOFT CONSTRAINTS)
         # Favoriser la cohérence des types de sessions pour les sous-groupes d'un même parent
@@ -342,24 +366,63 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                             'missing_sessions': int(required_onl - scheduled_onl)
                          })
             
-            # Check TP classes
+            # Aggregator for TP classes
+            # (subj_code, parent_id, is_online) -> { 'sub_suffixes': [], 'req': R, 'sch': S, 'profs': set(), 'parent_name': '' }
+            tp_groups = {}
+            
             for g in range(GT):
+                sub_id_str = Sous_Group_Index_To_Id.get(g, '')
+                parent_id_str = Sous_Group_Reference_Group.get(sub_id_str, sub_id_str)
+                # If multiple parents, take first for naming
+                pid_key = parent_id_str.split(',')[0].strip()
+                parent_idx = Group_Id_Map.get(pid_key)
+                parent_name = Groupes_Principale[parent_idx] if parent_idx is not None else Sous_Groupes[g]
+                
+                # Extract suffix (e.g. from "RSS-TD1" -> "TD1")
+                sub_name = Sous_Groupes[g]
+                suffix = sub_name.split('-')[-1] if '-' in sub_name else sub_name
+
                 for j in range(J):
-                    scheduled = sum(Y[g][j][k].solution_value() for k in range(K))
-                    required = Ptp[j][g]
-                    if required > 0 and scheduled < required:
-                        prof = ProTP[j].get(g, "Non assigné") if isinstance(ProTP[j], dict) else (ProTP[j][0] if ProTP[j] else "Non assigné")
-                        unscheduled_classes.append({
-                            'group': Sous_Groupes[g],
-                            'group_id': Sous_Group_Index_To_Id.get(g, ''),
-                            'subject': Matieres[j],
-                            'subject_code': Matiere_Codes[j],
-                            'type': 'TP',
-                            'professor': prof,
-                            'required_sessions': int(required),
-                            'scheduled_sessions': int(scheduled),
-                            'missing_sessions': int(required - scheduled)
-                        })
+                    for is_onl in [False, True]:
+                        if not is_onl:
+                            req = Ptp[j][g]
+                            sch = sum(Y[g][j][k].solution_value() for k in range(K))
+                            ptype = 'TP'
+                            prof = ProTP[j].get(g, "Non assigné") if isinstance(ProTP[j], dict) else (ProTP[j][0] if ProTP[j] else "Non assigné")
+                        else:
+                            req = Son_tp[j][g]
+                            sch = sum(U_TP[g][j][k].solution_value() for k in range(K))
+                            ptype = 'TP Online'
+                            prof = ProTP[j].get(g, "En ligne") if isinstance(ProTP[j], dict) else (ProTP[j][0] if ProTP[j] else "En ligne")
+                        
+                        if req > 0 and sch < req:
+                            key = (Matiere_Codes[j], pid_key, is_onl)
+                            if key not in tp_groups:
+                                tp_groups[key] = {
+                                    'sub_suffixes': [], 'req': 0, 'sch': 0, 'profs': set(), 
+                                    'parent_name': parent_name, 'subj_name': Matieres[j],
+                                    'subj_code': Matiere_Codes[j], 'type': ptype
+                                }
+                            tp_groups[key]['sub_suffixes'].append(suffix)
+                            tp_groups[key]['req'] += int(req)
+                            tp_groups[key]['sch'] += int(sch)
+                            tp_groups[key]['profs'].add(prof)
+
+            for key, data in tp_groups.items():
+                group_display = f"{data['parent_name']} ({'/'.join(sorted(data['sub_suffixes']))})"
+                prof_display = "/".join(sorted(list(data['profs'])))
+                
+                unscheduled_classes.append({
+                    'group': group_display,
+                    'group_id': key[1],
+                    'subject': data['subj_name'],
+                    'subject_code': data['subj_code'],
+                    'type': data['type'],
+                    'professor': prof_display,
+                    'required_sessions': data['req'],
+                    'scheduled_sessions': data['sch'],
+                    'missing_sessions': data['req'] - data['sch']
+                })
             
             # Check TD classes (Now Principal)
             for g in range(GP):
@@ -406,22 +469,6 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                              'required_sessions': int(required_onl_td),
                              'scheduled_sessions': int(scheduled_onl_td),
                              'missing_sessions': int(required_onl_td - scheduled_onl_td)
-                         })
-                    
-                    # Check Online TP
-                    scheduled_onl_tp = sum(U_TP[g][j][k].solution_value() for k in range(K))
-                    required_onl_tp = Son_tp[j][g]
-                    if required_onl_tp > 0 and scheduled_onl_tp < required_onl_tp:
-                         unscheduled_classes.append({
-                             'group': Sous_Groupes[g],
-                             'group_id': Sous_Group_Index_To_Id.get(g, ''),
-                             'subject': Matieres[j],
-                             'subject_code': Matiere_Codes[j],
-                             'type': 'TP Online',
-                             'professor': ProTP[j].get(g, "En ligne") if isinstance(ProTP[j], dict) else (ProTP[j][0] if ProTP[j] else "En ligne"),
-                             'required_sessions': int(required_onl_tp),
-                             'scheduled_sessions': int(scheduled_onl_tp),
-                             'missing_sessions': int(required_onl_tp - scheduled_onl_tp)
                          })
             
             # Save unscheduled classes to JSON file

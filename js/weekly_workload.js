@@ -153,7 +153,13 @@ function renderTable(data) {
   const shownModules = new Set();
   generalRows.forEach((row) => {
     if (shownModules.has(row.code)) return;
+    shownModules.has(row.code); // This was missing in viewed but let's keep it safe
     shownModules.add(row.code);
+
+    // Check if there are any specific group entries for this subject (exclusions)
+    const hasExclusions = data.some(
+      (d) => d.code === row.code && d.group_id && d.group_id !== "",
+    );
 
     // Find index in originalData
     const dataIndex = data.findIndex(
@@ -168,7 +174,10 @@ function renderTable(data) {
 
     tr.innerHTML = `
         <td class="code-col">
-          <strong>${row.code} - ${row.nom}</strong>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <strong>${row.code} - ${row.nom}</strong>
+            ${hasExclusions ? '<span class="badge-specified" title="Paramètres personnalisés par groupe">Spécifié</span>' : ""}
+          </div>
           ${isUnassigned ? '<span class="unassigned-note">Ce module n\'a pas encore été affecté</span>' : ""}
         </td>
         <td class="workload-col">
@@ -395,10 +404,15 @@ function addExclusionRow(data = null, assignedGroupIds = "") {
   });
 
   div.innerHTML = `
-        <div class="exclusion-header" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+        <div class="exclusion-header" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; position: relative;">
              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600;">Choix du Groupe</label>
-                <div class="dropdown-container" style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="margin-bottom: 0; font-weight: 600;">Choix du Groupe</label>
+                    <button type="button" class="remove-exclusion" onclick="this.closest('.exclusion-item').remove()" style="background: none; border: none; font-size: 1.5rem; color: #666; cursor: pointer; line-height: 1; padding: 0;">
+                        &times;
+                    </button>
+                </div>
+                <div class="dropdown-container" style="width: 100%; margin-top: 20px;">
                     <button type="button" class="dropdown-button" data-dropdown-id="${rowId}" data-value="${selectedGroupValue}" style="width: 100%; text-align: left; justify-content: space-between;">
                         <span class="dropdown-text">${selectedGroupName}</span>
                         <div class="dropdown-arrow"></div>
@@ -408,9 +422,6 @@ function addExclusionRow(data = null, assignedGroupIds = "") {
                     </div>
                 </div>
             </div>
-            <button type="button" class="remove-exclusion" onclick="this.closest('.exclusion-item').remove()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5rem; color: #666; cursor: pointer;">
-                &times;
-            </button>
         </div>
 
         <div class="exclusion-inputs-grid" style="display: flex; flex-direction: column; gap: 10px;">
