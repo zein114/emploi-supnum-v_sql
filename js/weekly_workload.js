@@ -102,7 +102,7 @@ async function loadAllData() {
       throw new Error(resultWL.error || "Échec chargement charges");
     originalData = resultWL.data;
 
-    const responseGR = await fetch("../api/get_groups.php");
+    const responseGR = await fetch("../api/get_groups.php?all=1");
     const resultGR = await responseGR.json();
     if (!responseGR.ok)
       throw new Error(resultGR.error || "Échec chargement groupes");

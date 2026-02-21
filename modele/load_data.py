@@ -37,15 +37,18 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     cursor.execute("SELECT * FROM `groups` ORDER BY id")
     all_groups = cursor.fetchall()
     
-    groups_principale = [g for g in all_groups if g['type'] in ('principale', 'langues && ppp')]
+    groups_principale = [g for g in all_groups if g['type'] in ('principale', 'langues && ppp', 'specialite')]
     Groupes_names_principale = [g['name'] for g in groups_principale]
+    Groupes_types_principale = [g['type'] for g in groups_principale]
     Group_Id_Map = {str(g['id']).strip(): idx for idx, g in enumerate(groups_principale)}
     Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_principale)}
     
-    # Sous-Groupes (TD, Specialite, Languages)
+    # Sous-Groupes (TD, Languages)
     # Note: Languages are in both to support CM (as main) and TD/TP (as sub)
-    groups_td = [g for g in all_groups if g['type'] in ('TD', 'specialite', 'langues && ppp')]
+    groups_td = [g for g in all_groups if g['type'] in ('TD', 'langues && ppp')]
     Sous_Groupes_names = [g['name'] for g in groups_td]
+    Sous_Groupes_types = [g['type'] for g in groups_td]
+    Sous_Groupes_semesters = [g['semester_id'] for g in groups_td]
     Sous_Group_Id_Map = {str(g['id']).strip(): idx for idx, g in enumerate(groups_td)}
     Sous_Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_td)}
     
@@ -59,7 +62,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
         sem_id = g['semester_id']
         g_type = g['type']
         
-        if g_type in ('specialite', 'langues && ppp'):
+        if g_type in ('langues && ppp',):
             # These groups spread across all students of the semester
             # We ONLY link them to groups of type 'principale', not other 'langues && ppp'
             parent_ids = [str(pg['id']).strip() for pg in groups_principale if pg['type'] == 'principale' and pg['semester_id'] == sem_id]
@@ -181,9 +184,9 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     Ctd = [[] for _ in range(I)]
     
     # ProCM, ProTP, ProTD lists for export
-    ProCM = [[] for _ in range(J)]
-    ProTP = [[] for _ in range(J)]
-    ProTD = [[] for _ in range(J)]
+    ProCM = [{} for _ in range(J)]
+    ProTP = [{} for _ in range(J)]
+    ProTD = [{} for _ in range(J)]
 
     cursor.execute("SELECT * FROM teacher_assignments")
     assignments = cursor.fetchall()
@@ -214,7 +217,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                      Ccm[i].append((j, g))
                      Pcm[j][g] = charges['CM']
                      
-                if prof_name not in ProCM[j]: ProCM[j].append(prof_name)
+                ProCM[j][g] = prof_name
                 
                 # OPTIONAL: Propagation logic for 'L1', 'L2' etc.
                 group_name = Groupes_names_principale[g]
@@ -229,6 +232,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                              other_gid = groups_principale[other_g]['id']
                              other_charges = w_map.get(other_gid, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0}))
                              Pcm[j][other_g] = other_charges['CM']
+                             ProCM[j][other_g] = prof_name
 
         if 'TP' in atype:
              if gid_db in Sous_Group_Id_To_Index:
@@ -236,7 +240,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                  if (j, g) not in Ctp[i]:
                      Ctp[i].append((j, g))
                      Ptp[j][g] = charges['TP']
-                 if prof_name not in ProTP[j]: ProTP[j].append(prof_name)
+                 ProTP[j][g] = prof_name
 
              elif gid_db in Group_Id_To_Index:
                  parent_g_idx = Group_Id_To_Index[gid_db]
@@ -251,7 +255,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                      sub_gid = groups_td[g]['id']
                      sg_charges = w_map.get(sub_gid, charges)
                      Ptp[j][g] = sg_charges['TP']
-                     if prof_name not in ProTP[j]: ProTP[j].append(prof_name)
+                     ProTP[j][g] = prof_name
 
                  group_name = Groupes_names_principale[parent_g_idx]
                  if group_name.startswith('L'):
@@ -265,7 +269,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                                          Ctp[i].append((j, idx))
                                      sg_charges = w_map.get(sub_g['id'], charges)
                                      Ptp[j][idx] = sg_charges['TP']
-                                     if prof_name not in ProTP[j]: ProTP[j].append(prof_name)
+                                     ProTP[j][idx] = prof_name
 
         if 'TD' in atype:
              # TD is now treated exactly like CM (Principal Group Scope)
@@ -296,7 +300,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                      # Standard behavior: Use the charge from the assigned entity.
                      Ptd[j][g] = charges['TD'] 
                      
-                 if prof_name not in ProTD[j]: ProTD[j].append(prof_name)
+                 ProTD[j][g] = prof_name
 
                  # Propagation for L1 type groups (semester siblings)
                  group_name = Groupes_names_principale[g]
@@ -312,6 +316,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                               other_gid = groups_principale[other_g]['id']
                               other_charges = w_map.get(other_gid, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0}))
                               Ptd[j][other_g] = other_charges['TD']
+                              ProTD[j][other_g] = prof_name
 
 
     # 6. Disponibilités (Dik)
@@ -365,4 +370,4 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     
     conn.close()
     print("Données chargées depuis BDD avec succès.")
-    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp
+    return J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_names_principale, Sous_Groupes_names, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres_names, ProCM, ProTP, ProTD, S_CM, S_TP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp, Sous_Groupes_types, Sous_Groupes_semesters, Groupes_types_principale

@@ -151,21 +151,21 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                     # CM et CM Online
                     for j in range(J):
                         if X[g][j][k].solution_value() > 0.5:
-                            prof = ProCM[j][0] if ProCM[j] else "CM"
+                            prof = ProCM[j].get(g, "CM") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM")
                             code = Matiere_Codes[j]
                             room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==g and r[2]==j), "N/A")
                             session_str = f"[{code}] {Matieres[j]}\n(CM)\nProf: {prof}\nSalle: {room}"
                             sessions_list.append(session_str)
                             
                         if W[g][j][k].solution_value() > 0.5:
-                            prof = ProCM[j][0] if ProCM[j] else "CM Online"
+                            prof = ProCM[j].get(g, "CM Online") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM Online")
                             code = Matiere_Codes[j]
                             session_str = f"[{code}] {Matieres[j]}\n(CM Online)\nProf: {prof}\nSalle: En ligne"
                             sessions_list.append(session_str)
                             
                         # TD (Principal)
                         if Z[g][j][k].solution_value() > 0.5:
-                            prof = ProTD[j][0] if ProTD[j] else "TD"
+                            prof = ProTD[j].get(g, "TD") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "TD")
                             code = Matiere_Codes[j]
                             room = next((r[3] for r in slot_room_assignments[k] if r[0]=='TD' and r[1]==g and r[2]==j), "N/A")
                             session_str = f"[{code}] {Matieres[j]}\n(TD)\nProf: {prof}\nSalle: {room}"
@@ -173,7 +173,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             
                         # TD Online (Principal)
                         if U_TD[g][j][k].solution_value() > 0.5:
-                            prof = ProTD[j][0] if ProTD[j] else "TD Online"
+                            prof = ProTD[j].get(g, "TD Online") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "TD Online")
                             code = Matiere_Codes[j]
                             session_str = f"[{code}] {Matieres[j]}\n(TD Online)\nProf: {prof}\nSalle: En ligne"
                             sessions_list.append(session_str)
@@ -199,7 +199,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                             if idx_sg in GT_to_GP_Map:
                                 sg_gp_idx = GT_to_GP_Map[idx_sg]
                                 if X[sg_gp_idx][j][k].solution_value() > 0.5:
-                                    prof = ProCM[j][0] if ProCM[j] else "CM"
+                                    prof = ProCM[j].get(sg_gp_idx, "CM") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM")
                                     code = Matiere_Codes[j]
                                     room = next((r[3] for r in slot_room_assignments[k] if r[0]=='CM' and r[1]==sg_gp_idx and r[2]==j), "N/A")
                                     sg_name = Sous_Groupes[idx_sg]
@@ -207,32 +207,41 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                                     sessions_list.append(session_str)
                                 
                                 if W[sg_gp_idx][j][k].solution_value() > 0.5:
-                                    prof = ProCM[j][0] if ProCM[j] else "CM Online"
+                                    prof = ProCM[j].get(sg_gp_idx, "CM Online") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "CM Online")
                                     code = Matiere_Codes[j]
                                     sg_name = Sous_Groupes[idx_sg]
                                     session_str = f"[{code}] {Matieres[j]}\n(CM Online) - {sg_name}\nProf: {prof}\nSalle: En ligne"
                                     sessions_list.append(session_str)
 
                         active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
-                        active_tp = [si for si in subgroup_indices if Y[si][j][k].solution_value() > 0.5]
                         active_onl_tp = [si for si in subgroup_indices if U_TP[si][j][k].solution_value() > 0.5]
                         
                         # Combiner par type pour l'affichage
                         for sess_type, indices in [("TP", active_tp), ("TP Online", active_onl_tp)]:
-                            if indices:
-                                base_type = "TP" if "TP" in sess_type else "TD"
-                                prof_list = ProTP[j] if base_type == "TP" else ProTD[j]
-                                prof = prof_list[0] if prof_list else sess_type
-                                code = Matiere_Codes[j]
+                            if not indices:
+                                continue
+                            
+                            base_type = "TP" if "TP" in sess_type else "TD"
+                            prof_map = ProTP[j] if base_type == "TP" else ProTD[j]
+                            code = Matiere_Codes[j]
+                            
+                            # Grouper les sous-groupes par professeur
+                            prof_groups = {}
+                            for si in indices:
+                                p = prof_map.get(si, sess_type) if isinstance(prof_map, dict) else (prof_map[0] if prof_map else sess_type)
+                                if p not in prof_groups:
+                                    prof_groups[p] = []
+                                prof_groups[p].append(si)
                                 
-                                if len(indices) == len(subgroup_indices) and len(subgroup_indices) > 1:
+                            for prof, prof_indices in prof_groups.items():
+                                if len(prof_indices) == len(subgroup_indices) and len(subgroup_indices) > 1:
                                     sg_detail = "G-S Complet"
                                 else:
-                                    sg_names = sorted([Sous_Groupes[si] for si in indices])
+                                    sg_names = sorted([Sous_Groupes[si] for si in prof_indices])
                                     sg_detail = ", ".join(sg_names)
                                 
                                 rooms = []
-                                for idx_sg in indices:
+                                for idx_sg in prof_indices:
                                     if "Online" in sess_type:
                                         r = "En ligne"
                                     else:

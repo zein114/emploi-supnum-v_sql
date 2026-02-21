@@ -29,7 +29,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
         # PARTIE 1: IMPORTATION DES DONNÉES 
         # Def table des matiers 
         
-        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp = load_data(input_file, K, days, time_slots)
+        J, GT, GP, K, I, Pcm, Ptp, Ptd, Ccm, Ctp, Ctd, Dik, A, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Matieres, ProCM, ProTP, ProTD, S, STP, Group_Id_Map, Matiere_Codes, All_Rooms, Semester_Of_Group, Pon, Son_td, Son_tp, Sous_Groupes_types, Sous_Groupes_semesters, Groupes_types_principale = load_data(input_file, K, days, time_slots)
         
         # PARTIE 2: MODELE: IMPLEMENTATION ET RESOLUTION 
         solver = pywraplp.Solver.CreateSolver('CBC')
@@ -147,6 +147,24 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     # Exclusion mutuelle : Soit le parent (CM/TD), soit le sous-groupe (TP), soit aucun.
                     solver.Add(main_active + sub_active <= 1)
 
+        # Contraintes 5b : Synchronisation des groupes de type 'specialite' du même semestre
+        Specialite_By_Semester = {}
+        for gp in range(GP):
+            if Groupes_types_principale[gp].lower() == 'specialite':
+                sem = Semester_Of_Group.get(gp)
+                if sem not in Specialite_By_Semester:
+                    Specialite_By_Semester[sem] = []
+                Specialite_By_Semester[sem].append(gp)
+
+        for sem, gps in Specialite_By_Semester.items():
+            if len(gps) > 1:
+                for k in range(K):
+                    first_gp = gps[0]
+                    first_active = sum(X[first_gp][j][k] + Z[first_gp][j][k] for j in range(J))
+                    for other_gp in gps[1:]:
+                        other_active = sum(X[other_gp][j][k] + Z[other_gp][j][k] for j in range(J))
+                        solver.Add(first_active == other_active)
+
         # Contraintes 6 : La disponibilité de l'enseignant doit être respectée
         for i in range(I):
             for k in range(K):
@@ -239,15 +257,27 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
 
         # PARTIE 2.5: PRÉFÉRENCES (SOFT CONSTRAINTS)
         # Favoriser la cohérence des types de sessions pour les sous-groupes d'un même parent
-        # On préfère avoir TP1 + TP2 au même créneau
+        # On préfère avoir TP1 + TP2 au même créneau, avec le même sujet
         for g_idx, sgs in GP_to_SG.items():
             if len(sgs) > 1:
-                for k in range(K):
-                    # Bonus si TOUS les sous-groupes du parent g_idx font du TP au créneau k
-                    all_tp_aligned = solver.BoolVar(f'all_tp_aligned_g{g_idx}_k{k}')
-                    for sg_idx in sgs:
-                         solver.Add(all_tp_aligned <= sum(Y[sg_idx][j][k] for j in range(J)))
-                    objectif.SetCoefficient(all_tp_aligned, 0.1)
+                regular_sgs = [sg for sg in sgs if Sous_Groupes_types[sg].lower() == 'td']
+                for idx_1 in range(len(regular_sgs)):
+                    for idx_2 in range(idx_1 + 1, len(regular_sgs)):
+                        sg1 = regular_sgs[idx_1]
+                        sg2 = regular_sgs[idx_2]
+                        for k in range(K):
+                            # Bonus pour être planifié au même créneau (sujet importe peu)
+                            pair_same_time = solver.BoolVar(f'pair_time_g{g_idx}_{sg1}_{sg2}_k{k}')
+                            solver.Add(pair_same_time <= sum(Y[sg1][j][k] + U_TP[sg1][j][k] for j in range(J)))
+                            solver.Add(pair_same_time <= sum(Y[sg2][j][k] + U_TP[sg2][j][k] for j in range(J)))
+                            objectif.SetCoefficient(pair_same_time, 0.1)
+
+                            # Bonus supplémentaire pour avoir EXACTEMENT LE MÊME SUJET au même créneau
+                            for j in range(J):
+                                pair_same_subj = solver.BoolVar(f'pair_subj_g{g_idx}_{sg1}_{sg2}_j{j}_k{k}')
+                                solver.Add(pair_same_subj <= Y[sg1][j][k] + U_TP[sg1][j][k])
+                                solver.Add(pair_same_subj <= Y[sg2][j][k] + U_TP[sg2][j][k])
+                                objectif.SetCoefficient(pair_same_subj, 0.2)
 
         objectif.SetMaximization()
         # Résolution du problème
@@ -278,7 +308,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                                 group_id = gid
                                 break
                         
-                        prof = ProCM[j][0] if ProCM[j] else "Non assigné"
+                        prof = ProCM[j].get(g, "Non assigné") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "Non assigné")
                         unscheduled_classes.append({
                             'group': Groupes_Principale[g],
                             'group_id': group_id,
@@ -306,7 +336,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                             'subject': Matieres[j],
                             'subject_code': Matiere_Codes[j],
                             'type': 'CM Online',
-                            'professor': ProCM[j][0] if ProCM[j] else "En ligne",
+                            'professor': ProCM[j].get(g, "En ligne") if isinstance(ProCM[j], dict) else (ProCM[j][0] if ProCM[j] else "En ligne"),
                             'required_sessions': int(required_onl),
                             'scheduled_sessions': int(scheduled_onl),
                             'missing_sessions': int(required_onl - scheduled_onl)
@@ -318,7 +348,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     scheduled = sum(Y[g][j][k].solution_value() for k in range(K))
                     required = Ptp[j][g]
                     if required > 0 and scheduled < required:
-                        prof = ProTP[j][0] if ProTP[j] else "Non assigné"
+                        prof = ProTP[j].get(g, "Non assigné") if isinstance(ProTP[j], dict) else (ProTP[j][0] if ProTP[j] else "Non assigné")
                         unscheduled_classes.append({
                             'group': Sous_Groupes[g],
                             'group_id': Sous_Group_Index_To_Id.get(g, ''),
@@ -344,7 +374,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                                 group_id = gid
                                 break
                                 
-                        prof = ProTD[j][0] if ProTD[j] else "Non assigné"
+                        prof = ProTD[j].get(g, "Non assigné") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "Non assigné")
                         unscheduled_classes.append({
                             'group': Groupes_Principale[g],
                             'group_id': group_id,
@@ -372,7 +402,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                              'subject': Matieres[j],
                              'subject_code': Matiere_Codes[j],
                              'type': 'TD Online',
-                             'professor': ProTD[j][0] if ProTD[j] else "En ligne",
+                             'professor': ProTD[j].get(g, "En ligne") if isinstance(ProTD[j], dict) else (ProTD[j][0] if ProTD[j] else "En ligne"),
                              'required_sessions': int(required_onl_td),
                              'scheduled_sessions': int(scheduled_onl_td),
                              'missing_sessions': int(required_onl_td - scheduled_onl_td)
@@ -388,7 +418,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                              'subject': Matieres[j],
                              'subject_code': Matiere_Codes[j],
                              'type': 'TP Online',
-                             'professor': ProTP[j][0] if ProTP[j] else "En ligne",
+                             'professor': ProTP[j].get(g, "En ligne") if isinstance(ProTP[j], dict) else (ProTP[j][0] if ProTP[j] else "En ligne"),
                              'required_sessions': int(required_onl_tp),
                              'scheduled_sessions': int(scheduled_onl_tp),
                              'missing_sessions': int(required_onl_tp - scheduled_onl_tp)
