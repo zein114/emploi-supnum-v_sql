@@ -7,6 +7,8 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 import shutil
 from datetime import datetime
+import mysql.connector
+from load_data import DB_CONFIG
 
 def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_Groupes, Sous_Group_Id_Map, Sous_Group_Reference_Group, Group_Id_Map, Matieres, ProCM, ProTP, ProTD, J, GP, GT, Matiere_Codes, All_Rooms, output_dir, days=None, time_slots=None):
     """
@@ -81,6 +83,9 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
 
     # Création du nom du fichier de sortie
     output_file = "Tous_les_Emplois_du_Temps.xlsx"
+    
+    # Records collected for database insertion
+    db_records = []
     
     # Création d'un nouveau classeur
     wb = Workbook()
@@ -302,6 +307,12 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                 cell.value = session_info if session_info else ""
                 cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
                 
+                # Enregistrer dans la base de données
+                if cell.value and cell.value != "x":
+                    day_name = day_info['name'] if isinstance(day_info, dict) else day_info
+                    slot_range_db = time_slot.get('time_range', str(time_slot)) if isinstance(time_slot, dict) else time_slot
+                    db_records.append((group_name, day_name, slot_range_db, cell.value))
+                
                 # Colorer la cellule selon le type de session
                 if cell.value:
                     if "(CM)" in cell.value:
@@ -340,4 +351,18 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
     # Enregistrer le nouveau classeur
     wb.save(output_dir + output_file)
     print(f"Tous les emplois du temps ont été exportés vers {output_dir + output_file}")
+    
+    # Enregistrer dans la base de données
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute("TRUNCATE TABLE `timetables`")
+        if db_records:
+            insert_query = "INSERT INTO `timetables` (`group_name`, `day`, `time_slot`, `session_info`) VALUES (%s, %s, %s, %s)"
+            cursor.executemany(insert_query, db_records)
+            conn.commit()
+        conn.close()
+        print("Les emplois du temps ont été sauvegardés dans la base de données avec succès.")
+    except Exception as e:
+        print(f"Erreur lors de la sauvegarde dans la base de données: {e}")
 

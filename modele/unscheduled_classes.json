@@ -1,27 +1,5 @@
 [
   {
-    "group": "G1",
-    "group_id": "1",
-    "subject": "Programmation Python",
-    "subject_code": "DEV210",
-    "type": "CM",
-    "professor": "Sidi Mouhamed",
-    "required_sessions": 4,
-    "scheduled_sessions": 2,
-    "missing_sessions": 2
-  },
-  {
-    "group": "G2",
-    "group_id": "2",
-    "subject": "Programmation Python",
-    "subject_code": "DEV210",
-    "type": "CM",
-    "professor": "Sidi Mouhamed",
-    "required_sessions": 4,
-    "scheduled_sessions": 3,
-    "missing_sessions": 1
-  },
-  {
     "group": "G3",
     "group_id": "3",
     "subject": "Programmation Python",
@@ -41,6 +19,17 @@
     "professor": "Moussa",
     "required_sessions": 4,
     "scheduled_sessions": 3,
+    "missing_sessions": 1
+  },
+  {
+    "group": "G4",
+    "group_id": "4",
+    "subject": "Langages Web",
+    "subject_code": "DEV211",
+    "type": "CM",
+    "professor": "Sidi Mouhamed",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
     "missing_sessions": 1
   },
   {
@@ -957,23 +946,23 @@
     "missing_sessions": 1
   },
   {
-    "group": "G3 (TD6)",
-    "group_id": "3",
-    "subject": "Systèmes d’exploitation",
-    "subject_code": "SYR211",
-    "type": "TP",
-    "professor": "Debagh",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
     "group": "G4 (TD7)",
     "group_id": "4",
     "subject": "Programmation Python",
     "subject_code": "DEV210",
     "type": "TP",
     "professor": "Moussa",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "G4 (TD8)",
+    "group_id": "4",
+    "subject": "Systèmes d’exploitation",
+    "subject_code": "SYR211",
+    "type": "TP",
+    "professor": "Debagh",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1

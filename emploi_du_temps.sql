@@ -3487,3 +3487,5 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+C R E A T E   T A B L E   \ 	 i m e t a b l e s \   (   \ i d \   i n t   N O T   N U L L   A U T O _ I N C R E M E N T ,   \ g r o u p _ n a m e \   v a r c h a r ( 2 5 5 )   N O T   N U L L ,   \ d a y \   v a r c h a r ( 5 0 )   N O T   N U L L ,   \ 	 i m e _ s l o t \   v a r c h a r ( 5 0 )   N O T   N U L L ,   \ s e s s i o n _ i n f o \   t e x t ,   P R I M A R Y   K E Y   ( \ i d \ ) ,   U N I Q U E   K E Y   \ g r o u p _ d a y _ s l o t \   ( \ g r o u p _ n a m e \ , \ d a y \ , \ 	 i m e _ s l o t \ )   )   E N G I N E = I n n o D B   D E F A U L T   C H A R S E T = u t f 8 m b 4   C O L L A T E = u t f 8 m b 4 _ 0 9 0 0 _ a i _ c i ;  
+ 
