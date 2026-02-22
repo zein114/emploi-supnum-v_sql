@@ -1,47 +1,14 @@
 [
   {
-    "group": "G3",
-    "group_id": "3",
-    "subject": "Programmation Python",
-    "subject_code": "DEV210",
-    "type": "CM",
-    "professor": "Moussa",
-    "required_sessions": 4,
-    "scheduled_sessions": 3,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G4",
-    "group_id": "4",
-    "subject": "Programmation Python",
-    "subject_code": "DEV210",
-    "type": "CM",
-    "professor": "Moussa",
-    "required_sessions": 4,
-    "scheduled_sessions": 3,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G4",
-    "group_id": "4",
-    "subject": "Langages Web",
-    "subject_code": "DEV211",
-    "type": "CM",
-    "professor": "Sidi Mouhamed",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
     "group": "DSI1",
     "group_id": "46",
     "subject": "Programmation Python",
     "subject_code": "DEV210",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 4,
+    "required_sessions": 3,
     "scheduled_sessions": 0,
-    "missing_sessions": 4
+    "missing_sessions": 3
   },
   {
     "group": "DSI1",
@@ -156,10 +123,32 @@
   {
     "group": "DSI1",
     "group_id": "46",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TD Online",
+    "professor": "En ligne",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DSI1",
+    "group_id": "46",
     "subject": "CMS et PAO",
     "subject_code": "CNM210",
     "type": "CM",
     "professor": "Non assigné",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DSI1",
+    "group_id": "46",
+    "subject": "CMS et PAO",
+    "subject_code": "CNM210",
+    "type": "TD Online",
+    "professor": "En ligne",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -182,9 +171,9 @@
     "subject_code": "DEV210",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 4,
+    "required_sessions": 3,
     "scheduled_sessions": 0,
-    "missing_sessions": 4
+    "missing_sessions": 3
   },
   {
     "group": "RSS",
@@ -299,10 +288,32 @@
   {
     "group": "RSS",
     "group_id": "49",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TD Online",
+    "professor": "En ligne",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "RSS",
+    "group_id": "49",
     "subject": "CMS et PAO",
     "subject_code": "CNM210",
     "type": "CM",
     "professor": "Non assigné",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "RSS",
+    "group_id": "49",
+    "subject": "CMS et PAO",
+    "subject_code": "CNM210",
+    "type": "TD Online",
+    "professor": "En ligne",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -325,9 +336,9 @@
     "subject_code": "DEV210",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 4,
+    "required_sessions": 3,
     "scheduled_sessions": 0,
-    "missing_sessions": 4
+    "missing_sessions": 3
   },
   {
     "group": "IDS",
@@ -453,10 +464,32 @@
   {
     "group": "IDS",
     "group_id": "52",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TD Online",
+    "professor": "En ligne",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "IDS",
+    "group_id": "52",
     "subject": "CMS et PAO",
     "subject_code": "CNM210",
     "type": "CM",
     "professor": "Non assigné",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "IDS",
+    "group_id": "52",
+    "subject": "CMS et PAO",
+    "subject_code": "CNM210",
+    "type": "TD Online",
+    "professor": "En ligne",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -479,9 +512,9 @@
     "subject_code": "DEV210",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 4,
+    "required_sessions": 3,
     "scheduled_sessions": 0,
-    "missing_sessions": 4
+    "missing_sessions": 3
   },
   {
     "group": "DWM",
@@ -607,6 +640,17 @@
   {
     "group": "DWM",
     "group_id": "53",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TD Online",
+    "professor": "En ligne",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DWM",
+    "group_id": "53",
     "subject": "PI 1",
     "subject_code": "SPEC211",
     "type": "CM",
@@ -622,9 +666,9 @@
     "subject_code": "DEV210",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 4,
+    "required_sessions": 3,
     "scheduled_sessions": 0,
-    "missing_sessions": 4
+    "missing_sessions": 3
   },
   {
     "group": "DSI2",
@@ -739,10 +783,32 @@
   {
     "group": "DSI2",
     "group_id": "54",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TD Online",
+    "professor": "En ligne",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DSI2",
+    "group_id": "54",
     "subject": "CMS et PAO",
     "subject_code": "CNM210",
     "type": "CM",
     "professor": "Non assigné",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DSI2",
+    "group_id": "54",
+    "subject": "CMS et PAO",
+    "subject_code": "CNM210",
+    "type": "TD Online",
+    "professor": "En ligne",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -765,9 +831,9 @@
     "subject_code": "DEV210",
     "type": "CM",
     "professor": "Non assigné",
-    "required_sessions": 4,
+    "required_sessions": 3,
     "scheduled_sessions": 0,
-    "missing_sessions": 4
+    "missing_sessions": 3
   },
   {
     "group": "AOT",
@@ -893,10 +959,32 @@
   {
     "group": "AOT",
     "group_id": "63",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TD Online",
+    "professor": "En ligne",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "AOT",
+    "group_id": "63",
     "subject": "CMS et PAO",
     "subject_code": "CNM210",
     "type": "CM",
     "professor": "Non assigné",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "AOT",
+    "group_id": "63",
+    "subject": "CMS et PAO",
+    "subject_code": "CNM210",
+    "type": "TD Online",
+    "professor": "En ligne",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -913,15 +1001,26 @@
     "missing_sessions": 1
   },
   {
-    "group": "G1 (TD1)",
+    "group": "G1 (TD1/TD2)",
     "group_id": "1",
-    "subject": "Programmation Python",
-    "subject_code": "DEV210",
+    "subject": "Systeme de getion de BD",
+    "subject_code": "DSI210",
     "type": "TP",
-    "professor": "Sidi Mouhamed",
-    "required_sessions": 1,
+    "professor": "Non assigné",
+    "required_sessions": 2,
     "scheduled_sessions": 0,
-    "missing_sessions": 1
+    "missing_sessions": 2
+  },
+  {
+    "group": "G1 (TD1/TD2)",
+    "group_id": "1",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
   },
   {
     "group": "G2 (TD3)",
@@ -930,6 +1029,39 @@
     "subject_code": "DEV210",
     "type": "TP",
     "professor": "Sidi Mouhamed",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "G2 (TD3/TD4)",
+    "group_id": "2",
+    "subject": "Systeme de getion de BD",
+    "subject_code": "DSI210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G2 (TD3/TD4)",
+    "group_id": "2",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G2 (TD4)",
+    "group_id": "2",
+    "subject": "Systèmes d’exploitation",
+    "subject_code": "SYR211",
+    "type": "TP",
+    "professor": "Debagh",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -946,6 +1078,28 @@
     "missing_sessions": 1
   },
   {
+    "group": "G3 (TD5/TD6)",
+    "group_id": "3",
+    "subject": "Systeme de getion de BD",
+    "subject_code": "DSI210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G3 (TD5/TD6)",
+    "group_id": "3",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
     "group": "G4 (TD7)",
     "group_id": "4",
     "subject": "Programmation Python",
@@ -957,15 +1111,26 @@
     "missing_sessions": 1
   },
   {
-    "group": "G4 (TD8)",
+    "group": "G4 (TD7/TD8)",
     "group_id": "4",
-    "subject": "Systèmes d’exploitation",
-    "subject_code": "SYR211",
+    "subject": "Systeme de getion de BD",
+    "subject_code": "DSI210",
     "type": "TP",
-    "professor": "Debagh",
-    "required_sessions": 1,
+    "professor": "Non assigné",
+    "required_sessions": 2,
     "scheduled_sessions": 0,
-    "missing_sessions": 1
+    "missing_sessions": 2
+  },
+  {
+    "group": "G4 (TD7/TD8)",
+    "group_id": "4",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
   },
   {
     "group": "DSI1 (TD1/TD2)",
@@ -994,6 +1159,17 @@
     "group_id": "46",
     "subject": "Systèmes d’exploitation",
     "subject_code": "SYR211",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "DSI1 (TD1/TD2)",
+    "group_id": "46",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
     "type": "TP",
     "professor": "Non assigné",
     "required_sessions": 2,
@@ -1034,6 +1210,17 @@
     "missing_sessions": 2
   },
   {
+    "group": "DSI2 (TD1/TD2)",
+    "group_id": "54",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
     "group": "RSS (TD1/TD2)",
     "group_id": "49",
     "subject": "Programmation Python",
@@ -1067,6 +1254,17 @@
     "missing_sessions": 2
   },
   {
+    "group": "RSS (TD1/TD2)",
+    "group_id": "49",
+    "subject": "Systeme de getion de BD",
+    "subject_code": "DSI210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
     "group": "DWM (TD1)",
     "group_id": "53",
     "subject": "Programmation Python",
@@ -1093,6 +1291,28 @@
     "group_id": "53",
     "subject": "Systèmes d’exploitation",
     "subject_code": "SYR211",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DWM (TD1)",
+    "group_id": "53",
+    "subject": "Systeme de getion de BD",
+    "subject_code": "DSI210",
+    "type": "TP",
+    "professor": "Non assigné",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DWM (TD1)",
+    "group_id": "53",
+    "subject": "Services Reseaux",
+    "subject_code": "RSS210",
     "type": "TP",
     "professor": "Non assigné",
     "required_sessions": 1,

@@ -148,34 +148,48 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='modele
                     # Exclusion mutuelle : Soit le parent (CM/TD), soit le sous-groupe (TP), soit aucun.
                     solver.Add(main_active + sub_active <= 1)
 
-        # Contraintes 5b : Synchronisation des groupes de type 'specialite' du même semestre
-        # On définit un créneau comme "créneau de spécialité" pour un semestre donné.
-        # Durant ce créneau, les groupes principaux ne peuvent pas avoir de cours, 
-        # et seuls les groupes de spécialité peuvent en avoir.
-        Specialite_By_Semester = {}
-        for gp in range(GP):
-            if Groupes_types_principale[gp].lower() == 'specialite':
-                sem = Semester_Of_Group.get(gp)
-                if sem not in Specialite_By_Semester:
-                    Specialite_By_Semester[sem] = []
-                Specialite_By_Semester[sem].append(gp)
+        # Contraintes 5b : Synchronisation GLOBALE des groupes de type 'specialite'
+        # Un créneau est soit réservé aux spécialités (max 5), soit aux groupes réguliers.
+        specialty_gp = [gp for gp, t in enumerate(Groupes_types_principale) if t.lower() == 'specialite']
+        regular_gp = [gp for gp in range(GP) if gp not in specialty_gp]
+        
+        # Identifier les sous-groupes de parents spécialités
+        GT_to_GP_Parent = {}
+        for sub_id, gt_idx in Sous_Group_Id_Map.items():
+            if sub_id in Sous_Group_Reference_Group:
+                p_ref = Sous_Group_Reference_Group[sub_id].split(',')[0].strip()
+                if p_ref in Group_Id_Map:
+                    GT_to_GP_Parent[gt_idx] = Group_Id_Map[p_ref]
+        
+        specialty_gt = [gt for gt, p_idx in GT_to_GP_Parent.items() if Groupes_types_principale[p_idx].lower() == 'specialite']
+        regular_gt = [gt for gt in range(GT) if gt not in specialty_gt]
 
-        for sem, gps in Specialite_By_Semester.items():
-            if len(gps) > 0:
-                # Trouver tous les groupes de type 'principale' du même semestre
-                semester_principal_groups = [pg for pg in range(GP) if Groupes_types_principale[pg].lower() == 'principale' and Semester_Of_Group.get(pg) == sem]
-                
-                for k in range(K):
-                    # Variable binaire indiquant si c'est un créneau de spécialité pour ce semestre
-                    is_specialty_time = solver.BoolVar(f'is_specialty_time_sem{sem}_k{k}')
-                    
-                    # 1. Si un groupe de spécialité a cours, c'est un créneau de spécialité
-                    for gp_idx in gps:
-                        solver.Add(sum(X[gp_idx][j][k] + Z[gp_idx][j][k] for j in range(J)) <= is_specialty_time)
-                    
-                    # 2. Si c'est un créneau de spécialité, aucun groupe principal du semestre ne peut avoir de cours
-                    for pg_idx in semester_principal_groups:
-                        solver.Add(sum(X[pg_idx][j][k] + W[pg_idx][j][k] + Z[pg_idx][j][k] + U_TD[pg_idx][j][k] for j in range(J)) + is_specialty_time <= 1)
+        for k in range(K):
+            is_specialty_k = solver.BoolVar(f'is_specialty_k_global_{k}')
+            
+            # Expressions d'activité de spécialité (Somme des séances par groupe)
+            spec_activity_k = []
+            for gp in specialty_gp:
+                spec_activity_k.append(sum(X[gp][j][k] + Z[gp][j][k] + W[gp][j][k] + U_TD[gp][j][k] for j in range(J)))
+            for gt in specialty_gt:
+                spec_activity_k.append(sum(Y[gt][j][k] + U_TP[gt][j][k] for j in range(J)))
+            
+            # Expressions d'activité régulière
+            reg_activity_k = []
+            for gp in regular_gp:
+                reg_activity_k.append(sum(X[gp][j][k] + Z[gp][j][k] + W[gp][j][k] + U_TD[gp][j][k] for j in range(J)))
+            for gt in regular_gt:
+                reg_activity_k.append(sum(Y[gt][j][k] + U_TP[gt][j][k] for j in range(J)))
+            
+            # 1. Exclusion Mutuelle
+            # Si is_specialty_k=1 (créneau spécialité), aucune activité régulière n'est permise
+            M_reg = len(reg_activity_k) if reg_activity_k else 1
+            solver.Add(sum(reg_activity_k) <= M_reg * (1 - is_specialty_k))
+            
+            # 2. Limitation à 5 pour les spécialités + Activation de l'indicateur
+            # Si is_specialty_k=0, sum(spec) <= 0 => aucune spécialité permise
+            # Si is_specialty_k=1, sum(spec) <= 5 => max 5 spécialités en parallèle
+            solver.Add(sum(spec_activity_k) <= 5 * is_specialty_k)
 
 
         # Contraintes 6 : La disponibilité de l'enseignant doit être respectée
