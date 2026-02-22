@@ -510,27 +510,41 @@ async function renderTimetable(sheetName, archive = null) {
               // Clean group name logic
               if (!groupStr || groupStr.trim() === "") {
                 groupStr = typeStr;
-              } else if (
-                (typeStr === "TD" || typeStr === "TP") &&
-                groupStr !== sheetName
-              ) {
-                const numbers = groupStr.match(/\d+/g);
-                if (numbers && !groupStr.trim().match(/^[A-Za-z]+[- ]/)) {
-                  groupStr = numbers.map((n) => typeStr + n).join(", ");
-                } else if (numbers) {
+              } else {
+                if (typeStr === "TD" || typeStr === "TP") {
                   if (
-                    groupStr.length < 5 ||
-                    groupStr.startsWith(typeStr) ||
-                    /^\d/.test(groupStr)
+                    groupStr.includes("-") &&
+                    groupStr.match(/[A-Za-z]+\d*-(TD|TP)\d*/i)
                   ) {
-                    groupStr = numbers.map((n) => typeStr + n).join(", ");
+                    // E.g. DSI1-TD1, DSI1-TD2 => DSI1-TP1/DSI1-TP2
+                    let parts = groupStr.split(",").map((p) => p.trim());
+                    parts = parts.map((p) => p.replace(/TD/g, "TP"));
+                    groupStr = parts.join("/");
+                  } else {
+                    const numbers = groupStr.match(/\d+/g);
+                    const isPrincipalGroupLike =
+                      groupStr.match(/[A-Za-z]{2,}/) &&
+                      !groupStr.match(/^(TD|TP)\d/i);
+
+                    if (numbers && !isPrincipalGroupLike) {
+                      groupStr = numbers.map((n) => typeStr + n).join(", ");
+                    } else if (isPrincipalGroupLike && groupStr !== typeStr) {
+                      // It's a specialite main group like DSI2 or RSS
+                      groupStr = groupStr + "(" + typeStr + ")";
+                    }
                   }
                 } else {
-                  groupStr = typeStr;
+                  // For CM, if it has a linked group name
+                  if (groupStr.match(/[A-Za-z]{2,}/) && groupStr !== typeStr) {
+                    groupStr = groupStr + "(" + typeStr + ")";
+                  }
                 }
               }
 
-              groupStr = groupStr.replace(/\s+(TD|TP)$/i, "");
+              groupStr = groupStr
+                .replace(/\s+(TD|TP)$/i, "")
+                .replace(/\(\s*\)/g, "")
+                .trim();
               types.push(typeStr);
               groups.push(groupStr);
             } else {
@@ -689,18 +703,10 @@ async function renderUnscheduledClasses(sheetName) {
   if (!unscheduledSection || !unscheduledList) return;
 
   try {
-    const response = await fetch("../api/get_unscheduled_classes.php");
-    const allUnscheduled = await response.json();
-
-    // Filter for the current group:
-    // - Exact match (CM, TD): item.group === sheetName
-    // - Subgroup match (TP): item.group starts with "sheetName (" e.g. "RSS (TD1/TD2)"
-    const groupUnscheduled = allUnscheduled.filter((item) => {
-      if (item.group === sheetName) return true;
-      // TP subgroup format: "ParentName (TP1/TP2)" — match the parent portion
-      if (item.group.startsWith(sheetName + " (")) return true;
-      return false;
-    });
+    const response = await fetch(
+      `../api/get_unscheduled_classes.php?group=${encodeURIComponent(sheetName)}`,
+    );
+    const groupUnscheduled = await response.json();
 
     if (groupUnscheduled.length === 0) {
       unscheduledSection.style.display = "none";
