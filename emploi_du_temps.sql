@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 21, 2026 at 01:41 AM
+-- Generation Time: Feb 22, 2026 at 10:10 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -139,7 +139,13 @@ INSERT INTO `course_workloads` (`id`, `subject_id`, `group_id`, `cm_hours`, `tp_
 (75, 22, NULL, 1, 0, 0, 0, 0, 0),
 (76, 23, NULL, 1, 1, 0, 0, 0, 0),
 (77, 22, 4, 0, 0, 1, 1, 0, 0),
-(78, 24, 54, 0, 0, 0, 1, 0, 0);
+(79, 14, NULL, 4, 1, 1, 0, 0, 0),
+(80, 21, NULL, 1, 0, 0, 0, 0, 0),
+(81, 14, NULL, 4, 1, 0, 0, 0, 0),
+(84, 28, NULL, 1, 0, 0, 0, 1, 0),
+(85, 14, NULL, 3, 1, 0, 0, 0, 0),
+(86, 24, NULL, 1, 1, 0, 0, 0, 0),
+(87, 27, NULL, 1, 1, 0, 0, 1, 0);
 
 -- --------------------------------------------------------
 
@@ -637,8 +643,8 @@ INSERT INTO `professor_availability` (`id`, `professor_id`, `day_id`, `time_slot
 (283, 9, 1, 3, 1),
 (284, 9, 1, 4, 0),
 (285, 9, 1, 5, 0),
-(286, 9, 2, 1, 0),
-(287, 9, 2, 2, 0),
+(286, 9, 2, 1, 1),
+(287, 9, 2, 2, 1),
 (288, 9, 2, 3, 0),
 (289, 9, 2, 4, 0),
 (290, 9, 2, 5, 0),
@@ -658,8 +664,8 @@ INSERT INTO `professor_availability` (`id`, `professor_id`, `day_id`, `time_slot
 (304, 9, 5, 4, 0),
 (305, 9, 5, 5, 1),
 (306, 9, 6, 1, 0),
-(307, 9, 6, 2, 0),
-(308, 9, 6, 3, 0),
+(307, 9, 6, 2, 1),
+(308, 9, 6, 3, 1),
 (309, 9, 6, 4, 0),
 (310, 9, 6, 5, 0),
 (311, 9, 7, 1, 0),
@@ -3164,7 +3170,133 @@ INSERT INTO `teacher_assignments` (`id`, `professor_id`, `subject_id`, `group_id
 (103, 67, 29, 1, 'CM'),
 (104, 67, 29, 2, 'CM'),
 (105, 67, 29, 3, 'CM'),
-(106, 67, 29, 4, 'CM');
+(106, 67, 29, 4, 'CM'),
+(107, 8, 21, 1, 'TD'),
+(108, 8, 21, 2, 'TD'),
+(109, 13, 21, 3, 'TD'),
+(110, 13, 21, 4, 'TD'),
+(111, 9, 15, 3, 'CM'),
+(112, 9, 15, 4, 'CM');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `timetables`
+--
+
+CREATE TABLE `timetables` (
+  `id` int NOT NULL,
+  `group_name` varchar(255) NOT NULL,
+  `day` varchar(50) NOT NULL,
+  `time_slot` varchar(50) NOT NULL,
+  `session_info` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `timetables`
+--
+
+INSERT INTO `timetables` (`id`, `group_name`, `day`, `time_slot`, `session_info`) VALUES
+(1, 'G1', 'Lundi', '08:00-09:30', '[MAI210] Algèbre II\n(CM)\nProf: Tah\nSalle: 101'),
+(2, 'G1', 'Mardi', '08:00-09:30', '[DEV210] Programmation Python\n(TP) - TD1\nProf: Sidi Mouhamed\nSalle: 102 /// [DEV210] Programmation Python\n(TP) - TD2\nProf: Esseyssah\nSalle: 103'),
+(3, 'G1', 'Mercredi', '08:00-09:30', '[DEV210] Programmation Python\n(CM)\nProf: Sidi Mouhamed\nSalle: 101'),
+(4, 'G1', 'Jeudi', '08:00-09:30', '[SPEC211] PI 1\n(CM)\nProf: Encadreur\nSalle: 101'),
+(5, 'G1', 'Lundi', '09:45-11:15', '[DSI210] Systeme de getion de BD\n(CM) - DSI2\nProf: Med Lemine\nSalle: 201 /// [RSS210] Services Reseaux\n(CM) - RSS\nProf: Souvi\nSalle: 101'),
+(6, 'G1', 'Mardi', '09:45-11:15', '[DEV210] Programmation Python\n(CM)\nProf: Sidi Mouhamed\nSalle: 101'),
+(7, 'G1', 'Jeudi', '09:45-11:15', '[DEV211] Langages Web\n(TP) - TD1\nProf: Debagh\nSalle: 102 /// [DEV211] Langages Web\n(TP) - TD2\nProf: Aicha\nSalle: 103'),
+(8, 'G1', 'Vendredi', '09:45-11:15', '[MAI210] Algèbre II\n(CM)\nProf: Tah\nSalle: 101'),
+(9, 'G1', 'Lundi', '11:30-13:00', '[DPR212] Projet Personnel et Professionnel II\n(CM)\nProf: Sidi Soueina\nSalle: 101'),
+(10, 'G1', 'Mardi', '11:30-13:00', '[DPR211] Anglais II\n(CM)\nProf: Hayati\nSalle: 101'),
+(11, 'G1', 'Mercredi', '11:30-13:00', '[MAI212] Préparation à la certification PIX 2\n(CM)\nProf: Hassina\nSalle: 101'),
+(12, 'G1', 'Jeudi', '11:30-13:00', '[DPR211] Anglais II\n(CM)\nProf: Hayati\nSalle: 101'),
+(13, 'G1', 'Vendredi', '11:30-13:00', '[DPR210] Communication II\n(CM)\nProf: Dyenabe\nSalle: 101'),
+(14, 'G1', 'Samedi', '11:30-13:00', '[DEV210] Programmation Python\n(CM)\nProf: Sidi Mouhamed\nSalle: 101'),
+(15, 'G1', 'Mercredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI1-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI1-TD2\nProf: Esseyssah\nSalle: 103 /// [CNM210] CMS et PAO\n(TD Online) - DWM\nProf: Cheikhani\nSalle: En ligne'),
+(16, 'G1', 'Jeudi', '15:00-16:30', '[DEV211] Langages Web\n(CM)\nProf: Debagh\nSalle: 101'),
+(17, 'G1', 'Vendredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(CM) - DSI1\nProf: Med Lemine\nSalle: 101 /// [CNM210] CMS et PAO\n(CM) - DWM\nProf: Cheikhani\nSalle: 201 /// [RSS210] Services Reseaux\n(TP) - RSS-TD1\nProf: Souvi\nSalle: 102 /// [RSS210] Services Reseaux\n(TP) - RSS-TD2\nProf: Saw\nSalle: 103'),
+(18, 'G1', 'Samedi', '15:00-16:30', '[SYR211] Systèmes d’exploitation\n(TP) - TD1\nProf: Kaber\nSalle: 102 /// [SYR211] Systèmes d’exploitation\n(TP) - TD2\nProf: Debagh\nSalle: 103'),
+(19, 'G1', 'Lundi', '17:00-18:30', '[SYR211] Systèmes d’exploitation\n(CM)\nProf: Kaber\nSalle: 101'),
+(20, 'G1', 'Mercredi', '17:00-18:30', '[MAI211] Probabilités et Statistiques\n(CM)\nProf: Bekar\nSalle: 101'),
+(21, 'G1', 'Jeudi', '17:00-18:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI2-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI2-TD2\nProf: Esseyssah\nSalle: 103'),
+(22, 'G1', 'Vendredi', '17:00-18:30', '[SYR210] Systèmes Logiques\n(CM)\nProf: Yehjebouha\nSalle: 101'),
+(23, 'G1', 'Samedi', '17:00-18:30', '[DPR210] Communication II\n(CM)\nProf: Dyenabe\nSalle: 101'),
+(24, 'G2', 'Mardi', '08:00-09:30', '[MAI210] Algèbre II\n(CM)\nProf: Tah\nSalle: 101'),
+(25, 'G2', 'Mercredi', '08:00-09:30', '[MAI210] Algèbre II\n(CM)\nProf: Tah\nSalle: 201'),
+(26, 'G2', 'Jeudi', '08:00-09:30', '[SYR210] Systèmes Logiques\n(CM)\nProf: Yehjebouha\nSalle: 201'),
+(27, 'G2', 'Vendredi', '08:00-09:30', '[DPR210] Communication II\n(CM)\nProf: Dyenabe\nSalle: 101'),
+(28, 'G2', 'Lundi', '09:45-11:15', '[DSI210] Systeme de getion de BD\n(CM) - DSI2\nProf: Med Lemine\nSalle: 201 /// [RSS210] Services Reseaux\n(CM) - RSS\nProf: Souvi\nSalle: 101'),
+(29, 'G2', 'Mardi', '09:45-11:15', '[DPR211] Anglais II\n(CM)\nProf: Hayati\nSalle: 201'),
+(30, 'G2', 'Mercredi', '09:45-11:15', '[DPR212] Projet Personnel et Professionnel II\n(CM)\nProf: Sidi Soueina\nSalle: 101'),
+(31, 'G2', 'Jeudi', '09:45-11:15', '[DPR211] Anglais II\n(CM)\nProf: Hayati\nSalle: 101'),
+(32, 'G2', 'Vendredi', '09:45-11:15', '[MAI212] Préparation à la certification PIX 2\n(CM)\nProf: Hassina\nSalle: 201'),
+(33, 'G2', 'Samedi', '09:45-11:15', '[DEV211] Langages Web\n(CM)\nProf: Debagh\nSalle: 101'),
+(34, 'G2', 'Lundi', '11:30-13:00', '[DEV210] Programmation Python\n(CM)\nProf: Sidi Mouhamed\nSalle: 201'),
+(35, 'G2', 'Mercredi', '11:30-13:00', '[SYR211] Systèmes d’exploitation\n(TP) - TD3\nProf: Kaber\nSalle: 102 /// [DEV210] Programmation Python\n(TP) - TD4\nProf: Esseyssah\nSalle: 103'),
+(36, 'G2', 'Jeudi', '11:30-13:00', '[MAI211] Probabilités et Statistiques\n(CM)\nProf: Bekar\nSalle: 201'),
+(37, 'G2', 'Lundi', '15:00-16:30', '[SYR211] Systèmes d’exploitation\n(CM)\nProf: Kaber\nSalle: 101'),
+(38, 'G2', 'Mardi', '15:00-16:30', '[DPR210] Communication II\n(CM)\nProf: Dyenabe\nSalle: 101'),
+(39, 'G2', 'Mercredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI1-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI1-TD2\nProf: Esseyssah\nSalle: 103 /// [CNM210] CMS et PAO\n(TD Online) - DWM\nProf: Cheikhani\nSalle: En ligne'),
+(40, 'G2', 'Vendredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(CM) - DSI1\nProf: Med Lemine\nSalle: 101 /// [CNM210] CMS et PAO\n(CM) - DWM\nProf: Cheikhani\nSalle: 201 /// [RSS210] Services Reseaux\n(TP) - RSS-TD1\nProf: Souvi\nSalle: 102 /// [RSS210] Services Reseaux\n(TP) - RSS-TD2\nProf: Saw\nSalle: 103'),
+(41, 'G2', 'Samedi', '15:00-16:30', '[SPEC211] PI 1\n(CM)\nProf: Encadreur\nSalle: 101'),
+(42, 'G2', 'Lundi', '17:00-18:30', '[DEV211] Langages Web\n(TP) - TD3\nProf: Debagh\nSalle: 102 /// [DEV211] Langages Web\n(TP) - TD4\nProf: Aicha\nSalle: 103'),
+(43, 'G2', 'Mercredi', '17:00-18:30', '[DEV210] Programmation Python\n(CM)\nProf: Sidi Mouhamed\nSalle: 201'),
+(44, 'G2', 'Jeudi', '17:00-18:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI2-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI2-TD2\nProf: Esseyssah\nSalle: 103'),
+(45, 'G2', 'Vendredi', '17:00-18:30', '[DEV210] Programmation Python\n(CM)\nProf: Sidi Mouhamed\nSalle: 201'),
+(46, 'G3', 'Lundi', '08:00-09:30', '[DPR212] Projet Personnel et Professionnel II\n(CM)\nProf: Yehjebouha\nSalle: 201'),
+(47, 'G3', 'Mardi', '08:00-09:30', '[DEV211] Langages Web\n(TP) - TD5\nProf: Meya\nSalle: 104 /// [DEV211] Langages Web\n(TP) - TD6\nProf: Aicha\nSalle: 204'),
+(48, 'G3', 'Mercredi', '08:00-09:30', '[SYR211] Systèmes d’exploitation\n(TP) - TD5\nProf: Kaber\nSalle: 102 /// [SYR211] Systèmes d’exploitation\n(TP) - TD6\nProf: Debagh\nSalle: 103'),
+(49, 'G3', 'Jeudi', '08:00-09:30', '[DPR211] Anglais II\n(CM)\nProf: Hatabi\nSalle: 202'),
+(50, 'G3', 'Vendredi', '08:00-09:30', '[SYR211] Systèmes d’exploitation\n(CM)\nProf: Kaber\nSalle: 201'),
+(51, 'G3', 'Samedi', '08:00-09:30', '[DEV210] Programmation Python\n(CM)\nProf: Moussa\nSalle: 101'),
+(52, 'G3', 'Lundi', '09:45-11:15', '[DSI210] Systeme de getion de BD\n(CM) - DSI2\nProf: Med Lemine\nSalle: 201 /// [RSS210] Services Reseaux\n(CM) - RSS\nProf: Souvi\nSalle: 101'),
+(53, 'G3', 'Mercredi', '09:45-11:15', '[DEV210] Programmation Python\n(CM)\nProf: Moussa\nSalle: 201'),
+(54, 'G3', 'Jeudi', '09:45-11:15', '[MAI212] Préparation à la certification PIX 2\n(CM)\nProf: Meya\nSalle: 201'),
+(55, 'G3', 'Samedi', '09:45-11:15', '[DEV211] Langages Web\n(CM)\nProf: Sidi Mouhamed\nSalle: 201'),
+(56, 'G3', 'Mercredi', '11:30-13:00', '[MAI211] Probabilités et Statistiques\n(CM)\nProf: Cheiba\nSalle: 201'),
+(57, 'G3', 'Jeudi', '11:30-13:00', '[MAI210] Algèbre II\n(CM)\nProf: Habeb\nSalle: 202'),
+(58, 'G3', 'Samedi', '11:30-13:00', '[DPR210] Communication II\n(CM)\nProf: Lam\nSalle: 201'),
+(59, 'G3', 'Lundi', '15:00-16:30', '[MAI210] Algèbre II\n(CM)\nProf: Habeb\nSalle: 201'),
+(60, 'G3', 'Mardi', '15:00-16:30', '[DPR211] Anglais II\n(CM)\nProf: Hatabi\nSalle: 201'),
+(61, 'G3', 'Mercredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI1-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI1-TD2\nProf: Esseyssah\nSalle: 103 /// [CNM210] CMS et PAO\n(TD Online) - DWM\nProf: Cheikhani\nSalle: En ligne'),
+(62, 'G3', 'Jeudi', '15:00-16:30', '[DEV210] Programmation Python\n(TP) - TD6\nProf: Mahfoudh\nSalle: 102'),
+(63, 'G3', 'Vendredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(CM) - DSI1\nProf: Med Lemine\nSalle: 101 /// [CNM210] CMS et PAO\n(CM) - DWM\nProf: Cheikhani\nSalle: 201 /// [RSS210] Services Reseaux\n(TP) - RSS-TD1\nProf: Souvi\nSalle: 102 /// [RSS210] Services Reseaux\n(TP) - RSS-TD2\nProf: Saw\nSalle: 103'),
+(64, 'G3', 'Samedi', '15:00-16:30', '[DEV210] Programmation Python\n(CM)\nProf: Moussa\nSalle: 201'),
+(65, 'G3', 'Lundi', '17:00-18:30', '[DPR210] Communication II\n(CM)\nProf: Lam\nSalle: 201'),
+(66, 'G3', 'Jeudi', '17:00-18:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI2-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI2-TD2\nProf: Esseyssah\nSalle: 103'),
+(67, 'G3', 'Vendredi', '17:00-18:30', '[SYR210] Systèmes Logiques\n(CM)\nProf: Marba\nSalle: 202'),
+(68, 'G3', 'Samedi', '17:00-18:30', '[SPEC211] PI 1\n(CM)\nProf: Encadreur\nSalle: 201'),
+(69, 'G4', 'Lundi', '08:00-09:30', '[DEV210] Programmation Python\n(CM)\nProf: Moussa\nSalle: 202'),
+(70, 'G4', 'Mardi', '08:00-09:30', '[SYR210] Systèmes Logiques\n(CM Online)\nProf: Marba\nSalle: En ligne'),
+(71, 'G4', 'Mercredi', '08:00-09:30', '[DPR212] Projet Personnel et Professionnel II\n(CM)\nProf: Yehjebouha\nSalle: 202'),
+(72, 'G4', 'Jeudi', '08:00-09:30', '[SYR211] Systèmes d’exploitation\n(TP) - TD7\nProf: Kaber\nSalle: 102 /// [SYR211] Systèmes d’exploitation\n(TP) - TD8\nProf: Debagh\nSalle: 103'),
+(73, 'G4', 'Vendredi', '08:00-09:30', '[MAI210] Algèbre II\n(CM)\nProf: Habeb\nSalle: 202'),
+(74, 'G4', 'Samedi', '08:00-09:30', '[DPR210] Communication II\n(CM)\nProf: Lam\nSalle: 201'),
+(75, 'G4', 'Lundi', '09:45-11:15', '[DSI210] Systeme de getion de BD\n(CM) - DSI2\nProf: Med Lemine\nSalle: 201 /// [RSS210] Services Reseaux\n(CM) - RSS\nProf: Souvi\nSalle: 101'),
+(76, 'G4', 'Mardi', '09:45-11:15', '[DPR211] Anglais II\n(CM)\nProf: Hatabi\nSalle: 202'),
+(77, 'G4', 'Mercredi', '09:45-11:15', '[DEV211] Langages Web\n(CM)\nProf: Sidi Mouhamed\nSalle: 202'),
+(78, 'G4', 'Jeudi', '09:45-11:15', '[MAI211] Probabilités et Statistiques\n(CM)\nProf: Cheiba\nSalle: 202'),
+(79, 'G4', 'Vendredi', '09:45-11:15', '[DPR211] Anglais II\n(CM)\nProf: Hatabi\nSalle: 202'),
+(80, 'G4', 'Lundi', '11:30-13:00', '[DEV210] Programmation Python\n(TP) - TD8\nProf: Mahfoudh\nSalle: 102'),
+(81, 'G4', 'Mardi', '11:30-13:00', '[SPEC211] PI 1\n(CM)\nProf: Encadreur\nSalle: 201'),
+(82, 'G4', 'Jeudi', '11:30-13:00', '[SYR211] Systèmes d’exploitation\n(CM)\nProf: Kaber\nSalle: 203'),
+(83, 'G4', 'Samedi', '11:30-13:00', '[DEV210] Programmation Python\n(CM)\nProf: Moussa\nSalle: 202'),
+(84, 'G4', 'Mardi', '15:00-16:30', '[DEV211] Langages Web\n(TP) - TD7\nProf: Meya\nSalle: 102 /// [DEV211] Langages Web\n(TP) - TD8\nProf: Aicha\nSalle: 103'),
+(85, 'G4', 'Mercredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI1-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI1-TD2\nProf: Esseyssah\nSalle: 103 /// [CNM210] CMS et PAO\n(TD Online) - DWM\nProf: Cheikhani\nSalle: En ligne'),
+(86, 'G4', 'Jeudi', '15:00-16:30', '[DEV210] Programmation Python\n(CM)\nProf: Moussa\nSalle: 201'),
+(87, 'G4', 'Vendredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(CM) - DSI1\nProf: Med Lemine\nSalle: 101 /// [CNM210] CMS et PAO\n(CM) - DWM\nProf: Cheikhani\nSalle: 201 /// [RSS210] Services Reseaux\n(TP) - RSS-TD1\nProf: Souvi\nSalle: 102 /// [RSS210] Services Reseaux\n(TP) - RSS-TD2\nProf: Saw\nSalle: 103'),
+(88, 'G4', 'Samedi', '15:00-16:30', '[MAI210] Algèbre II\n(CM)\nProf: Habeb\nSalle: 202'),
+(89, 'G4', 'Lundi', '17:00-18:30', '[SYR210] Systèmes Logiques\n(TD)\nProf: Marba\nSalle: 202'),
+(90, 'G4', 'Mercredi', '17:00-18:30', '[DPR210] Communication II\n(CM)\nProf: Lam\nSalle: 202'),
+(91, 'G4', 'Jeudi', '17:00-18:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI2-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI2-TD2\nProf: Esseyssah\nSalle: 103'),
+(92, 'G4', 'Samedi', '17:00-18:30', '[MAI212] Préparation à la certification PIX 2\n(CM)\nProf: Meya\nSalle: 202'),
+(93, 'DSI1', 'Mercredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI1-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI1-TD2\nProf: Esseyssah\nSalle: 103'),
+(94, 'DSI1', 'Vendredi', '15:00-16:30', '[DSI210] Systeme de getion de BD\n(CM)\nProf: Med Lemine\nSalle: 101'),
+(95, 'RSS', 'Lundi', '09:45-11:15', '[RSS210] Services Reseaux\n(CM)\nProf: Souvi\nSalle: 101'),
+(96, 'RSS', 'Vendredi', '15:00-16:30', '[RSS210] Services Reseaux\n(TP) - RSS-TD1\nProf: Souvi\nSalle: 102 /// [RSS210] Services Reseaux\n(TP) - RSS-TD2\nProf: Saw\nSalle: 103'),
+(97, 'DWM', 'Mercredi', '15:00-16:30', '[CNM210] CMS et PAO\n(TD Online)\nProf: Cheikhani\nSalle: En ligne'),
+(98, 'DWM', 'Vendredi', '15:00-16:30', '[CNM210] CMS et PAO\n(CM)\nProf: Cheikhani\nSalle: 201'),
+(99, 'DSI2', 'Lundi', '09:45-11:15', '[DSI210] Systeme de getion de BD\n(CM)\nProf: Med Lemine\nSalle: 201'),
+(100, 'DSI2', 'Jeudi', '17:00-18:30', '[DSI210] Systeme de getion de BD\n(TP) - DSI2-TD1\nProf: Med Lemine\nSalle: 102 /// [DSI210] Systeme de getion de BD\n(TP) - DSI2-TD2\nProf: Esseyssah\nSalle: 103');
 
 -- --------------------------------------------------------
 
@@ -3367,6 +3499,13 @@ ALTER TABLE `teacher_assignments`
   ADD KEY `group_id` (`group_id`);
 
 --
+-- Indexes for table `timetables`
+--
+ALTER TABLE `timetables`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `group_day_slot` (`group_name`,`day`,`time_slot`);
+
+--
 -- Indexes for table `time_slots`
 --
 ALTER TABLE `time_slots`
@@ -3393,7 +3532,7 @@ ALTER TABLE `classrooms`
 -- AUTO_INCREMENT for table `course_workloads`
 --
 ALTER TABLE `course_workloads`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- AUTO_INCREMENT for table `days`
@@ -3411,7 +3550,7 @@ ALTER TABLE `groups`
 -- AUTO_INCREMENT for table `professor_availability`
 --
 ALTER TABLE `professor_availability`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2796;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2802;
 
 --
 -- AUTO_INCREMENT for table `semesters`
@@ -3429,7 +3568,13 @@ ALTER TABLE `subjects`
 -- AUTO_INCREMENT for table `teacher_assignments`
 --
 ALTER TABLE `teacher_assignments`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=107;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=113;
+
+--
+-- AUTO_INCREMENT for table `timetables`
+--
+ALTER TABLE `timetables`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
 
 --
 -- AUTO_INCREMENT for table `time_slots`
@@ -3487,5 +3632,3 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-C R E A T E   T A B L E   \ 	 i m e t a b l e s \   (   \ i d \   i n t   N O T   N U L L   A U T O _ I N C R E M E N T ,   \ g r o u p _ n a m e \   v a r c h a r ( 2 5 5 )   N O T   N U L L ,   \ d a y \   v a r c h a r ( 5 0 )   N O T   N U L L ,   \ 	 i m e _ s l o t \   v a r c h a r ( 5 0 )   N O T   N U L L ,   \ s e s s i o n _ i n f o \   t e x t ,   P R I M A R Y   K E Y   ( \ i d \ ) ,   U N I Q U E   K E Y   \ g r o u p _ d a y _ s l o t \   ( \ g r o u p _ n a m e \ , \ d a y \ , \ 	 i m e _ s l o t \ )   )   E N G I N E = I n n o D B   D E F A U L T   C H A R S E T = u t f 8 m b 4   C O L L A T E = u t f 8 m b 4 _ 0 9 0 0 _ a i _ c i ;  
- 

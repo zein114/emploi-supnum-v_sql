@@ -703,10 +703,18 @@ async function renderUnscheduledClasses(sheetName) {
   if (!unscheduledSection || !unscheduledList) return;
 
   try {
-    const response = await fetch(
-      `../api/get_unscheduled_classes.php?group=${encodeURIComponent(sheetName)}`,
-    );
-    const groupUnscheduled = await response.json();
+    const response = await fetch("../api/get_unscheduled_classes.php");
+    const allUnscheduled = await response.json();
+
+    // Filter for the current group:
+    // - Exact match (CM, TD): item.group === sheetName
+    // - Subgroup match (TP): item.group starts with "sheetName (" e.g. "RSS (TD1/TD2)"
+    const groupUnscheduled = allUnscheduled.filter((item) => {
+      if (item.group === sheetName) return true;
+      // TP subgroup format: "ParentName (TP1/TP2)" — match the parent portion
+      if (item.group.startsWith(sheetName + " (")) return true;
+      return false;
+    });
 
     if (groupUnscheduled.length === 0) {
       unscheduledSection.style.display = "none";

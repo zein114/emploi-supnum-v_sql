@@ -225,20 +225,38 @@ function renderProfessorTimetable() {
               groupStr = typeStr;
             } else {
               if (typeStr === "TD" || typeStr === "TP") {
-                const numbers = groupStr.match(/\d+/g);
-                const isPrincipalGroupLike =
-                  groupStr.match(/[A-Z]{2,}/) && !groupStr.match(/^(TD|TP)\d/);
+                if (
+                  groupStr.includes("-") &&
+                  groupStr.match(/[A-Za-z]+\d*-(TD|TP)\d*/i)
+                ) {
+                  // E.g. DSI1-TD1, DSI1-TD2 => DSI1-TP1/DSI1-TP2
+                  let parts = groupStr.split(",").map((p) => p.trim());
+                  parts = parts.map((p) => p.replace(/TD/g, "TP"));
+                  groupStr = parts.join("/");
+                } else {
+                  const numbers = groupStr.match(/\d+/g);
+                  const isPrincipalGroupLike =
+                    groupStr.match(/[A-Z]{2,}/i) &&
+                    !groupStr.match(/^(TD|TP)\d/i);
 
-                if (numbers && !isPrincipalGroupLike) {
-                  const majorInfo = groupStr
-                    .replace(/(TD|TP)\s*\d*/gi, "")
-                    .replace(/^[\s\-,]*/, "")
-                    .trim();
-                  const groupNames = numbers.map((n) => typeStr + n).join(", ");
-                  groupStr = groupNames + (majorInfo ? " - " + majorInfo : "");
+                  if (numbers && !isPrincipalGroupLike) {
+                    const majorInfo = groupStr
+                      .replace(/(TD|TP)\s*\d*/gi, "")
+                      .replace(/^[\s\-,]*/, "")
+                      .trim();
+                    const groupNames = numbers
+                      .map((n) => typeStr + n)
+                      .join(", ");
+                    groupStr =
+                      groupNames + (majorInfo ? " - " + majorInfo : "");
+                  } else if (isPrincipalGroupLike && groupStr !== typeStr) {
+                    groupStr = groupStr + "(" + typeStr + ")";
+                  }
                 }
               } else {
-                groupStr = typeStr + " - " + groupStr;
+                if (groupStr.match(/[A-Za-z]{2,}/) && groupStr !== typeStr) {
+                  groupStr = groupStr + "(" + typeStr + ")";
+                }
               }
             }
 
