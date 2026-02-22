@@ -185,172 +185,134 @@ function renderProfessorTimetable() {
         const events = rawText.split(" /// ");
         let cellHtml = `<div class="timetable-cell active-cell">`;
 
-        // Group events by Subject Header (Line 0: [CODE] Subject) to merge them
-        const groupedEvents = {};
+        // Merge all events in the cell (regardless of subject) and use slashes to separate
+        const subjects = [];
+        const types = [];
+        const groups = [];
+        const profs = [];
+        const rooms = [];
 
         events.forEach((eventStr) => {
           const lines = eventStr.split("\n");
           if (lines.length === 0) return;
 
-          // Normalize subject line to use as key
-          const uniqueKey = lines[0].trim();
-
-          if (!groupedEvents[uniqueKey]) {
-            groupedEvents[uniqueKey] = [];
-          }
-          groupedEvents[uniqueKey].push(lines);
-        });
-
-        Object.values(groupedEvents).forEach((groupLinesArray) => {
-          // Base info from the first event in the group
-          const firstEventLines = groupLinesArray[0];
-
-          let code = "",
-            subject = "";
-          const line1Match = firstEventLines[0].match(/^\[(.*?)\]\s*(.*)$/);
+          // Parse Subject and optional Code (Line 0)
+          let subject = "";
+          const line1Match = lines[0].match(/^\[(.*?)\]\s*(.*)$/);
           if (line1Match) {
-            code = line1Match[1];
             subject = line1Match[2];
           } else {
-            subject = firstEventLines[0];
+            subject = lines[0];
           }
+          if (subject) subjects.push(subject.trim());
 
-          // Collect and merge details
-          const types = [];
-          const groups = [];
-          const profs = []; // usually just the current prof, but logic supports multiple
-          const rooms = [];
+          // Parse Type & Group (Line 1)
+          if (lines.length > 1) {
+            let typeStr = lines[1];
+            let groupStr = "";
 
-          groupLinesArray.forEach((lines) => {
-            // Parse Type & Group (Line 1)
-            if (lines.length > 1) {
-              let typeStr = lines[1];
-              let groupStr = "";
+            const line2Match = typeStr.match(/^\((.*?)\)\s*-\s*(.*)$/);
+            if (line2Match) {
+              typeStr = line2Match[1];
+              groupStr = line2Match[2];
+            } else {
+              // Fallback: remove parens if present (e.g., "(CM)")
+              typeStr = typeStr.replace(/^\(|\)$/g, "");
+            }
 
-              const line2Match = typeStr.match(/^\((.*?)\)\s*-\s*(.*)$/);
-              if (line2Match) {
-                typeStr = line2Match[1];
-                groupStr = line2Match[2];
-              } else {
-                // Fallback: remove parens if present (e.g., "(CM)")
-                typeStr = typeStr.replace(/^\(|\)$/g, "");
-              }
+            // Clean group name logic for professors:
+            if (!groupStr || groupStr.trim() === "") {
+              groupStr = typeStr;
+            } else {
+              if (typeStr === "TD" || typeStr === "TP") {
+                const numbers = groupStr.match(/\d+/g);
+                const isPrincipalGroupLike =
+                  groupStr.match(/[A-Z]{2,}/) && !groupStr.match(/^(TD|TP)\d/);
 
-              // Clean group name logic for professors:
-              // Combine type and major info into one clean string
-              if (!groupStr || groupStr.trim() === "") {
-                groupStr = typeStr;
-              } else {
-                if (typeStr === "TD" || typeStr === "TP") {
-                  // Ensure prefix matches type (e.g. show "TP1 - RSS-L2" even if original was "TD1")
-                  // But ONLY if it looks like a subgroup list (e.g. "1, 2" or "TD1"), not a Principal Group (L1-INFO)
-                  const numbers = groupStr.match(/\d+/g);
-
-                  // Check if it looks like a Principal Group (has letters that are not TD/TP, or length > 5, or dash/space structure)
-                  // If it is L1-INFO, we want to keep it as L1-INFO, or maybe "TD - L1-INFO"?
-                  // Current logic: "TD1 - L1-INFO".
-                  // If we skip reformat, it will be "TD - L1-INFO" (from logic below)
-
-                  const isPrincipalGroupLike =
-                    groupStr.match(/[A-Z]{2,}/) &&
-                    !groupStr.match(/^(TD|TP)\d/);
-                  // "L1-INFO" matches [A-Z]{2,}
-                  // "TD1" matches [A-Z]{2,} but also matches ^(TD|TP)\d
-
-                  if (numbers && !isPrincipalGroupLike) {
-                    // Extract major info (everything else after TD/TP prefix/number)
-                    const majorInfo = groupStr
-                      .replace(/(TD|TP)\s*\d*/gi, "")
-                      .replace(/^[\s\-,]*/, "")
-                      .trim();
-
-                    const groupNames = numbers
-                      .map((n) => typeStr + n)
-                      .join(", ");
-                    groupStr =
-                      groupNames + (majorInfo ? " - " + majorInfo : "");
-                  } else {
-                    // Keep as is, but maybe add major info if we stripped it?
-                    // No, finding majorInfo depended on stripping TD/TP.
-                    // If it is "L1-INFO", we just keep "L1-INFO".
-                    // And append to typeStr?
-                    // Logic below: groupStr = typeStr + " - " + groupStr;
-                    // But that is for 'else' block (CM).
-                    // Here we are inside if (TD/TP).
-                    // So we need to set groupStr here.
-                    // If we don't change it, groupStr is "L1-INFO".
-                    // It will be displayed as badge.
-                    // That is fine.
-                  }
-                } else {
-                  // For CM, just combine them: "CM - RSS-L2"
-                  groupStr = typeStr + " - " + groupStr;
+                if (numbers && !isPrincipalGroupLike) {
+                  const majorInfo = groupStr
+                    .replace(/(TD|TP)\s*\d*/gi, "")
+                    .replace(/^[\s\-,]*/, "")
+                    .trim();
+                  const groupNames = numbers.map((n) => typeStr + n).join(", ");
+                  groupStr = groupNames + (majorInfo ? " - " + majorInfo : "");
                 }
+              } else {
+                groupStr = typeStr + " - " + groupStr;
               }
-
-              // Final cleanup: remove trailing " TD" or " TP" if present
-              groupStr = groupStr
-                .replace(/\s+(TD|TP)$/i, "")
-                .replace(/\(\s*\)/g, "")
-                .trim();
-
-              types.push(typeStr);
-              groups.push(groupStr);
-            } else {
-              types.push("?");
-              groups.push("?");
             }
 
-            // Parse Prof (Line 2)
-            if (lines.length > 2) {
-              profs.push(lines[2].replace("Prof: ", ""));
-            } else {
-              profs.push("?");
-            }
+            groupStr = groupStr
+              .replace(/\s+(TD|TP)$/i, "")
+              .replace(/\(\s*\)/g, "")
+              .trim();
 
-            // Parse Room (Line 3)
-            if (lines.length > 3) {
-              rooms.push(lines[3].replace("Salle: ", ""));
-            } else {
-              rooms.push("?");
-            }
-          });
-
-          // formatting for display: join with " / "
-          const mergedGroups = [...new Set(groups)].join(" / ");
-          const mergedProfs = [...new Set(profs)].join(" / "); // Dedupe prof if it's just 'Me'
-          const mergedRooms = rooms.join(" / ");
-
-          // Determine styling class
-          let typeClass = "mixed";
-          if (new Set(types).size === 1) {
-            typeClass = types[0]
-              .toLowerCase()
-              .replace(")", "")
-              .replace("(", "");
+            types.push(typeStr);
+            groups.push(groupStr);
+          } else {
+            types.push("?");
+            groups.push("?");
           }
 
-          cellHtml += `
-                  <div class="event-card type-${typeClass}">
-                      <div class="event-header">
-                          <span class="event-subject" title="${subject}">${subject}</span>
-                      </div>
-                      <div class="event-meta">
-                          <div class="event-row">
-                              <span class="event-badge type-badge" style="background:none; color: var(--text-secondary); border: 1px solid var(--border-color);">${mergedGroups}</span>
-                          </div>
-                          <div class="event-row">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                              <span class="event-prof">${mergedProfs}</span>
-                          </div>
-                          <div class="event-row">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                              <span class="event-room">${mergedRooms}</span>
-                          </div>
-                      </div>
-                  </div>
-              `;
+          // Parse Professor (Line 2)
+          if (lines.length > 2) {
+            profs.push(lines[2].replace("Prof: ", "").trim());
+          } else {
+            profs.push("?");
+          }
+
+          // Parse Room (Line 3)
+          if (lines.length > 3) {
+            rooms.push(lines[3].replace("Salle: ", "").trim());
+          } else {
+            rooms.push("?");
+          }
         });
+
+        // Formatting for merged display
+        const mergedSubjects = [...new Set(subjects)].join(" / ");
+        const mergedGroups = [...new Set(groups)].join(" / ");
+        const mergedProfs = [...new Set(profs)].join(" / ");
+        const mergedRooms = [...new Set(rooms)].join(" / ");
+
+        // Determine styling class with priority: TP > TD > CM
+        let typeClass = "mixed";
+        const normalizedTypes = types.map((t) => t.toLowerCase().trim());
+        const uniqueTypes = [...new Set(normalizedTypes)];
+
+        if (uniqueTypes.length > 0) {
+          if (normalizedTypes.some((t) => t.includes("tp"))) {
+            typeClass = "tp";
+          } else if (normalizedTypes.some((t) => t.includes("td"))) {
+            typeClass = "td";
+          } else if (normalizedTypes.some((t) => t.includes("cm"))) {
+            typeClass = "cm";
+          } else {
+            // Fallback to the first type if no standard type matches
+            typeClass = uniqueTypes[0].replace(/[\(\)\s]/g, "-");
+          }
+        }
+
+        cellHtml += `
+                <div class="event-card type-${typeClass}">
+                    <div class="event-header">
+                        <span class="event-subject" title="${mergedSubjects}">${mergedSubjects}</span>
+                    </div>
+                    <div class="event-meta">
+                        <div class="event-row">
+                            <span class="event-badge type-badge" style="background:none; color: var(--text-secondary); border: 1px solid var(--border-color);">${mergedGroups}</span>
+                        </div>
+                        <div class="event-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <span class="event-prof">${mergedProfs}</span>
+                        </div>
+                        <div class="event-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                            <span class="event-room">${mergedRooms}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
 
         cellHtml += `</div>`;
         html += cellHtml;

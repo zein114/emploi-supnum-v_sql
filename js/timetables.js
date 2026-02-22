@@ -472,179 +472,140 @@ async function renderTimetable(sheetName, archive = null) {
           const events = rawText.split(" /// ");
           let cellHtml = `<div class="timetable-cell active-cell">`;
 
-          // Group events by Subject Header (Line 0: [CODE] Subject) to merge them
-          const groupedEvents = {};
+          // Merge all events in the cell (regardless of subject) and use slashes to separate
+          const subjects = [];
+          const types = [];
+          const groups = [];
+          const profs = [];
+          const rooms = [];
 
           events.forEach((eventStr) => {
             const lines = eventStr.split("\n");
             if (lines.length === 0) return;
 
-            // Normalize subject line to use as key
-            const uniqueKey = lines[0].trim();
-
-            if (!groupedEvents[uniqueKey]) {
-              groupedEvents[uniqueKey] = [];
-            }
-            groupedEvents[uniqueKey].push(lines);
-          });
-
-          Object.values(groupedEvents).forEach((groupLinesArray) => {
-            // Base info from the first event in the group
-            const firstEventLines = groupLinesArray[0];
-
-            let code = "",
-              subject = "";
-            const line1Match = firstEventLines[0].match(/^\[(.*?)\]\s*(.*)$/);
+            // Parse Subject and optional Code (Line 0)
+            let subject = "";
+            const line1Match = lines[0].match(/^\[(.*?)\]\s*(.*)$/);
             if (line1Match) {
-              code = line1Match[1];
               subject = line1Match[2];
             } else {
-              subject = firstEventLines[0];
+              subject = lines[0];
             }
+            if (subject) subjects.push(subject.trim());
 
-            // Collect and merge details
-            const types = [];
-            const groups = [];
-            const profs = [];
-            const rooms = [];
+            // Parse Type & Group (Line 1)
+            if (lines.length > 1) {
+              let typeStr = lines[1];
+              let groupStr = "";
 
-            groupLinesArray.forEach((lines) => {
-              // Parse Type & Group (Line 1)
-              if (lines.length > 1) {
-                let typeStr = lines[1];
-                let groupStr = "";
+              const line2Match = typeStr.match(/^\((.*?)\)\s*-\s*(.*)$/);
+              if (line2Match) {
+                typeStr = line2Match[1];
+                groupStr = line2Match[2];
+              } else {
+                typeStr = typeStr.replace(/^\(|\)$/g, "");
+              }
+              typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "");
 
-                const line2Match = typeStr.match(/^\((.*?)\)\s*-\s*(.*)$/);
-                if (line2Match) {
-                  typeStr = line2Match[1];
-                  groupStr = line2Match[2];
-                } else {
-                  typeStr = typeStr.replace(/^\(|\)$/g, "");
-                }
-                typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "");
-
-                // Clean group name:
-                // If it's empty (like CM), use the type.
-                if (!groupStr || groupStr.trim() === "") {
-                  groupStr = typeStr;
-                } else if (
-                  (typeStr === "TD" || typeStr === "TP") &&
-                  groupStr !== sheetName
-                ) {
-                  // Ensure prefix matches type (e.g. show TP1 for TP session even if group is TD1)
-                  // BUT skip if it is the Principal Group Name (sheetName) to avoid L1 -> TD1 conversion
-                  const numbers = groupStr.match(/\d+/g);
-                  if (numbers && !groupStr.trim().match(/^[A-Za-z]+[- ]/)) {
-                    // Heuristic: If it has letters and a dash/space (L1-INFO), it's probably a principal group.
-                    // The sheetName check above covers exact matches.
-                    // The extra check covers cases where maybe sheetName isn't exact?
-                    // Let's rely on sheetName check + digit-only heuristic.
-                    // If groupStr is just "1", "2", "TD1"...
+              // Clean group name logic
+              if (!groupStr || groupStr.trim() === "") {
+                groupStr = typeStr;
+              } else if (
+                (typeStr === "TD" || typeStr === "TP") &&
+                groupStr !== sheetName
+              ) {
+                const numbers = groupStr.match(/\d+/g);
+                if (numbers && !groupStr.trim().match(/^[A-Za-z]+[- ]/)) {
+                  groupStr = numbers.map((n) => typeStr + n).join(", ");
+                } else if (numbers) {
+                  if (
+                    groupStr.length < 5 ||
+                    groupStr.startsWith(typeStr) ||
+                    /^\d/.test(groupStr)
+                  ) {
                     groupStr = numbers.map((n) => typeStr + n).join(", ");
-                  } else if (numbers && groupStr === sheetName) {
-                    // Should be covered by the strictly outer else-if condition, but just in case
-                    // do nothing
-                  } else if (numbers) {
-                    // If we are here, groupStr != sheetName.
-                    // See if it looks like a list of subgroups?
-                    // If "L1-INFO", numbers=['1']. We don't want TD1.
-                    // So check if it starts with something other than TD/TP/Digits?
-                    // Simplest: If it was L1-INFO, excel_utils would have put it there?
-                    // excel_utils put (TD). API might append sheetname.
-
-                    // Revised logic:
-                    // Only apply formatting if groupStr is short?
-                    // or if we are sure?
-                    if (
-                      groupStr.length < 5 ||
-                      groupStr.startsWith(typeStr) ||
-                      /^\d/.test(groupStr)
-                    ) {
-                      groupStr = numbers.map((n) => typeStr + n).join(", ");
-                    }
-                  } else {
-                    groupStr = typeStr;
                   }
+                } else {
+                  groupStr = typeStr;
                 }
-
-                // Final cleanup: remove trailing " TD" or " TP" if present
-                groupStr = groupStr.replace(/\s+(TD|TP)$/i, "");
-
-                types.push(typeStr);
-                groups.push(groupStr);
-              } else {
-                types.push("?");
-                groups.push("?");
               }
 
-              // Parse Prof (Line 2)
-              if (lines.length > 2) {
-                profs.push(lines[2].replace("Prof: ", ""));
-              } else {
-                profs.push("?");
-              }
-
-              // Parse Room (Line 3)
-              if (lines.length > 3) {
-                rooms.push(lines[3].replace("Salle: ", ""));
-              } else {
-                rooms.push("?");
-              }
-            });
-
-            // formatting for display: join with " / "
-            const mergedGroups = [...new Set(groups)].join(" / ");
-            const mergedProfs = profs.join(" / ");
-            const mergedRooms = rooms.join(" / ");
-
-            let roomDisplayHtml = "";
-            if (mergedRooms === "En ligne") {
-              roomDisplayHtml = `<span class="event-room" style="font-weight: 500;">En ligne</span>`;
+              groupStr = groupStr.replace(/\s+(TD|TP)$/i, "");
+              types.push(typeStr);
+              groups.push(groupStr);
             } else {
-              roomDisplayHtml = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    <span class="event-room">${mergedRooms}</span>
-                 `;
+              types.push("?");
+              groups.push("?");
             }
 
-            // Determine styling class
-            let typeClass = "mixed";
-            if (new Set(types).size === 1) {
-              const t = types[0].toLowerCase();
-              if (t.includes("cm")) {
-                typeClass = "cm";
-              } else if (t.includes("tp")) {
-                typeClass = "tp";
-              } else if (t.includes("td")) {
-                typeClass = "td";
-              } else {
-                typeClass = t
-                  .replace(")", "")
-                  .replace("(", "")
-                  .replace(/\s+/g, "-");
-              }
+            // Parse Professor (Line 2)
+            if (lines.length > 2) {
+              profs.push(lines[2].replace("Prof: ", "").trim());
+            } else {
+              profs.push("?");
             }
 
-            cellHtml += `
-                  <div class="event-card type-${typeClass}">
-                      <div class="event-header">
-                          <span class="event-subject" title="${subject}">${subject}</span>
-                      </div>
-                      <div class="event-meta">
-                          <div class="event-row">
-                              <span class="event-badge type-badge" style="background:none; color: var(--text-secondary); border: 1px solid var(--border-color);">${mergedGroups}</span>
-                          </div>
-                          <div class="event-row">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                              <span class="event-prof">${mergedProfs}</span>
-                          </div>
-                          <div class="event-row">
-                              ${roomDisplayHtml}
-                          </div>
-                      </div>
-                  </div>
-              `;
+            // Parse Room (Line 3)
+            if (lines.length > 3) {
+              rooms.push(lines[3].replace("Salle: ", "").trim());
+            } else {
+              rooms.push("?");
+            }
           });
+
+          // Formatting for merged display
+          const mergedSubjects = [...new Set(subjects)].join(" / ");
+          const mergedGroups = [...new Set(groups)].join(" / ");
+          const mergedProfs = [...new Set(profs)].join(" / ");
+          const mergedRooms = [...new Set(rooms)].join(" / ");
+
+          let roomDisplayHtml = "";
+          if (mergedRooms === "En ligne") {
+            roomDisplayHtml = `<span class="event-room" style="font-weight: 500;">En ligne</span>`;
+          } else {
+            roomDisplayHtml = `
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                  <span class="event-room">${mergedRooms}</span>
+               `;
+          }
+
+          // Determine styling class with priority: TP > TD > CM
+          let typeClass = "mixed";
+          const normalizedTypes = types.map((t) => t.toLowerCase().trim());
+          const uniqueTypes = [...new Set(normalizedTypes)];
+
+          if (uniqueTypes.length > 0) {
+            if (normalizedTypes.some((t) => t.includes("tp"))) {
+              typeClass = "tp";
+            } else if (normalizedTypes.some((t) => t.includes("td"))) {
+              typeClass = "td";
+            } else if (normalizedTypes.some((t) => t.includes("cm"))) {
+              typeClass = "cm";
+            } else {
+              // Fallback to the first type if no standard type matches
+              typeClass = uniqueTypes[0].replace(/[\(\)\s]/g, "-");
+            }
+          }
+
+          cellHtml += `
+                <div class="event-card type-${typeClass}">
+                    <div class="event-header">
+                        <span class="event-subject" title="${mergedSubjects}">${mergedSubjects}</span>
+                    </div>
+                    <div class="event-meta">
+                        <div class="event-row">
+                            <span class="event-badge type-badge" style="background:none; color: var(--text-secondary); border: 1px solid var(--border-color);">${mergedGroups}</span>
+                        </div>
+                        <div class="event-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <span class="event-prof">${mergedProfs}</span>
+                        </div>
+                        <div class="event-row">
+                            ${roomDisplayHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
 
           cellHtml += `</div>`;
           html += cellHtml;
