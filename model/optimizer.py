@@ -8,7 +8,7 @@ from excel_utils import  export_timetables_to_single_excel
 from load_data import load_data
 
 
-def execute_original_optimization(input_file='Données.xlsx', output_dir='modele/', K=35, days=None, time_slots=None):
+def execute_original_optimization(input_file='Données.xlsx', output_dir='model/', K=35, days=None, time_slots=None):
     """
     Exécute l'algorithme d'optimisation original sur les données d'entrée
     Args:
@@ -595,7 +595,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         output_dir = sys.argv[1]
     else:
-        output_dir = "modele/"
+        output_dir = "model/"
         
     input_filename = 'Données_final.xlsx'
     

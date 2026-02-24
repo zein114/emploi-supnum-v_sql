@@ -38,11 +38,11 @@ try {
         ];
         
         // Write config file
-        file_put_contents("../modele/generation_config.json", json_encode($config));
+        file_put_contents("../model/generation_config.json", json_encode($config));
 
-        $output_dir = "../modele/";
+        $output_dir = "../model/";
         // Invoke optimizer - it will read the config file
-        exec("python ../modele/optimizer.py \"$output_dir\"", $output, $status);
+        exec("python ../model/optimizer.py \"$output_dir\"", $output, $status);
 
     $output = json_encode($output);
     if ($status !== 0) {

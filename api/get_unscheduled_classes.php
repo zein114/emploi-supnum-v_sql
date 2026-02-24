@@ -6,7 +6,7 @@ requireRole('admin');
 header('Content-Type: application/json');
 
 try {
-    $unscheduled_file = '../modele/unscheduled_classes.json';
+    $unscheduled_file = '../model/unscheduled_classes.json';
     
     // Check if file exists
     if (!file_exists($unscheduled_file)) {

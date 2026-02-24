@@ -1,5 +1,5 @@
 <?php
-$config_file = __DIR__ . "/../modele/generation_config.json";
+$config_file = __DIR__ . "/../model/generation_config.json";
 if (file_exists($config_file)) {
     header('Content-Type: application/json; charset=utf-8');
     echo file_get_contents($config_file);

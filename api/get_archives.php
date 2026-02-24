@@ -2,7 +2,7 @@
 require_once '../includes/session.php';
 requireRole('admin');
 
-$archiveDir = '../modele/archives_timetables/';
+$archiveDir = '../model/archives_timetables/';
 $archives = [];
 
 if (is_dir($archiveDir)) {

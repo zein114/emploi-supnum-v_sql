@@ -16,7 +16,7 @@ if ($archive) {
     // -------------------------------------------------------------
     // ARCHIVE LOGIC: Fetch from historical Excel files
     // -------------------------------------------------------------
-    $file = "../modele/archives_timetables/" . basename($archive);
+    $file = "../model/archives_timetables/" . basename($archive);
     
     if (!file_exists($file)) {
         header('Content-Type: application/json; charset=utf-8');

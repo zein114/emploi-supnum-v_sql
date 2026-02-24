@@ -335,9 +335,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       let downloadUrl = "";
       if (sourceValue === "live") {
-        downloadUrl = "../modele/Tous_les_Emplois_du_Temps.xlsx";
+        downloadUrl = "../model/Tous_les_Emplois_du_Temps.xlsx";
       } else {
-        downloadUrl = "../modele/archives_timetables/" + sourceValue;
+        downloadUrl = "../model/archives_timetables/" + sourceValue;
       }
 
       // Create a temporary link to trigger download
