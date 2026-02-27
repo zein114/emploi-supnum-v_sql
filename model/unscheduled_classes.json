@@ -1,22 +1,11 @@
 [
   {
-    "group": "G1 (TD1)",
-    "group_id": "1",
+    "group": "G2 (TD3)",
+    "group_id": "2",
     "subject": "Programmation Python",
     "subject_code": "DEV210",
     "type": "TP",
     "professor": "Sidi Mouhamed",
-    "required_sessions": 1,
-    "scheduled_sessions": 0,
-    "missing_sessions": 1
-  },
-  {
-    "group": "G1 (TD2)",
-    "group_id": "1",
-    "subject": "Systèmes d’exploitation",
-    "subject_code": "SYR211",
-    "type": "TP",
-    "professor": "Debagh",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1
@@ -28,6 +17,17 @@
     "subject_code": "DEV210",
     "type": "TP",
     "professor": "Moussa",
+    "required_sessions": 1,
+    "scheduled_sessions": 0,
+    "missing_sessions": 1
+  },
+  {
+    "group": "G3 (TD6)",
+    "group_id": "3",
+    "subject": "Systèmes d’exploitation",
+    "subject_code": "SYR211",
+    "type": "TP",
+    "professor": "Debagh",
     "required_sessions": 1,
     "scheduled_sessions": 0,
     "missing_sessions": 1

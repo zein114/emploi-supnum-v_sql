@@ -520,12 +520,17 @@ async function renderTimetable(sheetName, archive = null) {
                     groupStr.includes("-") &&
                     groupStr.match(/[A-Za-z]+\d*-(TD|TP)\d*/i)
                   ) {
-                    // E.g. DSI1-TD1, DSI1-TD2 => DSI1-TP1/DSI1-TP2
+                    // E.g. RSS-TD1, RSS-TD2 => RSS(TP1) / RSS(TP2)
                     let parts = groupStr.split(",").map((p) => p.trim());
-                    if (isTP) {
-                      parts = parts.map((p) => p.replace(/TD/g, "TP"));
-                    }
-                    groupStr = parts.join("/");
+                    parts = parts.map((p) => {
+                      const m = p.match(/^(.+?)-(TD|TP)(\d*)$/i);
+                      if (m) {
+                        const label = isTP ? "TP" : m[2].toUpperCase();
+                        return `${m[1]}(${label}${m[3]})`;
+                      }
+                      return isTP ? p.replace(/TD/g, "TP") : p;
+                    });
+                    groupStr = parts.join(" / ");
                   } else {
                     const numbers = groupStr.match(/\d+/g);
                     const isPrincipalGroupLike =

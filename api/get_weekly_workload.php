@@ -135,31 +135,20 @@ try {
         if ($data['general_entry']) {
             $finalData[] = $data['general_entry'];
         } else {
-            // No general entry in database, synthesize one
-            // Use MAX of group entries if they exist, otherwise 0
-            $maxCm = 0; $maxTd = 0; $maxTp = 0;
-            $maxOnlCm = 0; $maxOnlTd = 0; $maxOnlTp = 0;
-            
-            foreach ($data['group_entries'] as $ge) {
-                $maxCm = max($maxCm, $ge['cm']);
-                $maxTd = max($maxTd, $ge['td']);
-                $maxTp = max($maxTp, $ge['tp']);
-                $maxOnlCm = max($maxOnlCm, $ge['online_cm']);
-                $maxOnlTd = max($maxOnlTd, $ge['online_td']);
-                $maxOnlTp = max($maxOnlTp, $ge['online_tp']);
-            }
-            
+            // No general entry in database (only group-specific entries exist).
+            // Show zeros so the admin does NOT accidentally overwrite the
+            // general DEFAULT with the max of specific group values when saving.
             $finalData[] = [
                 'code' => $data['info']['code'],
                 'group_id' => '',
                 'nom' => $data['info']['nom'],
                 'semester' => $data['info']['semester'],
-                'cm' => $maxCm,
-                'td' => $maxTd,
-                'tp' => $maxTp,
-                'online_cm' => $maxOnlCm,
-                'online_td' => $maxOnlTd,
-                'online_tp' => $maxOnlTp,
+                'cm' => 0,
+                'td' => 0,
+                'tp' => 0,
+                'online_cm' => 0,
+                'online_td' => 0,
+                'online_tp' => 0,
                 'assigned_group_count' => $data['assigned_group_count'],
                 'assigned_group_ids' => $data['assigned_group_ids']
             ];

@@ -244,7 +244,9 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                     Ptp[j][g] = d.get('TP', 0)
                     Son_tp[j][g] = d.get('ONL_TP', 0)
 
-    # Fill Specific and Online/Offline Workloads directly from Map
+    # Fill Specific Workloads directly from Map.
+    # A group-specific entry COMPLETELY REPLACES the DEFAULT workload for that group
+    # (including zeroing out physical sessions when only online is specified, etc.)
     for sid, groups_map in Workload_Map.items():
         if sid not in Subj_Id_To_Index: continue
         j = Subj_Id_To_Index[sid]
@@ -252,85 +254,83 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
         for gid, charges in groups_map.items():
             if gid == 'DEFAULT': continue
             
-            # 1. CM & Online CM
-            cm_hrs = charges.get('CM', 0)
-            onl_cm = charges.get('ONL_CM', 0)
-            if cm_hrs > 0 or onl_cm > 0:
-                if gid in Group_Id_To_Index:
-                    g_idx = Group_Id_To_Index[gid]
-                    if cm_hrs > 0: Pcm[j][g_idx] = cm_hrs
-                    if onl_cm > 0: Pon[j][g_idx] = onl_cm
-                    
-                    # Propagation for L1 type groups (semester siblings)
-                    group_name = Groupes_names_principale[g_idx]
-                    if group_name.startswith('L') and len(group_name) >= 2:
-                         target_sem = Semester_Of_Group.get(g_idx)
-                         for other_g, sem in Semester_Of_Group.items():
-                             if sem == target_sem and other_g != g_idx:
-                                 other_gid = groups_principale[other_g]['id']
-                                 other_charges = groups_map.get(other_gid, groups_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
-                                 if other_charges.get('CM', 0) > 0: Pcm[j][other_g] = other_charges.get('CM', 0)
-                                 if other_charges.get('ONL_CM', 0) > 0: Pon[j][other_g] = other_charges.get('ONL_CM', 0)
+            cm_hrs  = charges.get('CM', 0)
+            onl_cm  = charges.get('ONL_CM', 0)
+            td_hrs  = charges.get('TD', 0)
+            onl_td  = charges.get('ONL_TD', 0)
+            tp_hrs  = charges.get('TP', 0)
+            onl_tp  = charges.get('ONL_TP', 0)
             
-            # 2. TD & Online TD
-            td_hrs = charges.get('TD', 0)
-            onl_td = charges.get('ONL_TD', 0)
-            if td_hrs > 0 or onl_td > 0:
-                target_g_idx = None
-                if gid in Group_Id_To_Index:
-                    target_g_idx = Group_Id_To_Index[gid]
-                elif gid in Sous_Group_Id_To_Index:
-                     # If assigned to sub, map to parent
-                     sub_id = groups_td[Sous_Group_Id_To_Index[gid]]['id']
-                     parent_id_str = Sous_Group_Reference_Group.get(str(sub_id).strip())
-                     if parent_id_str:
-                         for idx, pg in enumerate(groups_principale):
-                             if str(pg['id']).strip() == parent_id_str:
-                                 target_g_idx = idx
-                                 break
+            # 1. CM & Online CM — always write both values to override DEFAULT
+            if gid in Group_Id_To_Index:
+                g_idx = Group_Id_To_Index[gid]
+                Pcm[j][g_idx] = cm_hrs   # even if 0, clears DEFAULT physical CM
+                Pon[j][g_idx] = onl_cm   # even if 0, clears DEFAULT online CM
                 
-                if target_g_idx is not None:
-                    if td_hrs > 0: Ptd[j][target_g_idx] = td_hrs
-                    if onl_td > 0: Son_td[j][target_g_idx] = onl_td
-                    
-                    # Propagation for L1
-                    group_name = Groupes_names_principale[target_g_idx]
-                    if group_name.startswith('L') and len(group_name) >= 2:
-                         target_sem = Semester_Of_Group.get(target_g_idx)
-                         for other_g, sem in Semester_Of_Group.items():
-                             if sem == target_sem and other_g != target_g_idx:
-                                 other_gid = groups_principale[other_g]['id']
-                                 other_charges = groups_map.get(other_gid, groups_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
-                                 if other_charges.get('TD', 0) > 0: Ptd[j][other_g] = other_charges.get('TD', 0)
-                                 if other_charges.get('ONL_TD', 0) > 0: Son_td[j][other_g] = other_charges.get('ONL_TD', 0)
+                # Propagation for L1 type groups (semester siblings)
+                group_name = Groupes_names_principale[g_idx]
+                if group_name.startswith('L') and len(group_name) >= 2:
+                     target_sem = Semester_Of_Group.get(g_idx)
+                     for other_g, sem in Semester_Of_Group.items():
+                         if sem == target_sem and other_g != g_idx:
+                             other_gid = groups_principale[other_g]['id']
+                             other_charges = groups_map.get(other_gid, groups_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
+                             Pcm[j][other_g] = other_charges.get('CM', 0)
+                             Pon[j][other_g] = other_charges.get('ONL_CM', 0)
+            
+            # 2. TD & Online TD — always write both values to override DEFAULT
+            target_g_idx = None
+            if gid in Group_Id_To_Index:
+                target_g_idx = Group_Id_To_Index[gid]
+            elif gid in Sous_Group_Id_To_Index:
+                 # If assigned to sub, map to parent
+                 sub_id = groups_td[Sous_Group_Id_To_Index[gid]]['id']
+                 parent_id_str = Sous_Group_Reference_Group.get(str(sub_id).strip())
+                 if parent_id_str:
+                     for idx, pg in enumerate(groups_principale):
+                         if str(pg['id']).strip() == parent_id_str:
+                             target_g_idx = idx
+                             break
+            
+            if target_g_idx is not None:
+                Ptd[j][target_g_idx]     = td_hrs   # always write
+                Son_td[j][target_g_idx]  = onl_td   # always write
+                
+                # Propagation for L1
+                group_name = Groupes_names_principale[target_g_idx]
+                if group_name.startswith('L') and len(group_name) >= 2:
+                     target_sem = Semester_Of_Group.get(target_g_idx)
+                     for other_g, sem in Semester_Of_Group.items():
+                         if sem == target_sem and other_g != target_g_idx:
+                             other_gid = groups_principale[other_g]['id']
+                             other_charges = groups_map.get(other_gid, groups_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
+                             Ptd[j][other_g]    = other_charges.get('TD', 0)
+                             Son_td[j][other_g] = other_charges.get('ONL_TD', 0)
 
-            # 3. TP & Online TP
-            tp_hrs = charges.get('TP', 0)
-            onl_tp = charges.get('ONL_TP', 0)
-            if tp_hrs > 0 or onl_tp > 0:
-                if gid in Sous_Group_Id_To_Index:
-                    g_idx = Sous_Group_Id_To_Index[gid]
-                    if tp_hrs > 0: Ptp[j][g_idx] = tp_hrs
-                    if onl_tp > 0: Son_tp[j][g_idx] = onl_tp
-                elif gid in Group_Id_To_Index:
-                     parent_g_idx = Group_Id_To_Index[gid]
-                     for idx, sub_g in enumerate(groups_td):
-                         if sub_g['parent_group_id'] == gid:
-                             if tp_hrs > 0: Ptp[j][idx] = tp_hrs
-                             if onl_tp > 0: Son_tp[j][idx] = onl_tp
-                             
-                     # Propagation for L1
-                     group_name = Groupes_names_principale[parent_g_idx]
-                     if group_name.startswith('L'):
-                         target_sem = Semester_Of_Group.get(parent_g_idx)
-                         for other_g_idx, sem in Semester_Of_Group.items():
-                             if sem == target_sem:
-                                 other_gid = groups_principale[other_g_idx]['id']
-                                 for idx, sub_g in enumerate(groups_td):
-                                     if sub_g['parent_group_id'] == other_gid:
-                                         other_charges = groups_map.get(sub_g['id'], groups_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
-                                         if other_charges.get('TP', 0) > 0: Ptp[j][idx] = other_charges.get('TP', 0)
-                                         if other_charges.get('ONL_TP', 0) > 0: Son_tp[j][idx] = other_charges.get('ONL_TP', 0)
+            # 3. TP & Online TP — always write both values to override DEFAULT
+            if gid in Sous_Group_Id_To_Index:
+                g_idx = Sous_Group_Id_To_Index[gid]
+                Ptp[j][g_idx]     = tp_hrs   # always write
+                Son_tp[j][g_idx]  = onl_tp   # always write
+            elif gid in Group_Id_To_Index:
+                 parent_g_idx = Group_Id_To_Index[gid]
+                 for idx, sub_g in enumerate(groups_td):
+                     if sub_g['parent_group_id'] == gid:
+                         Ptp[j][idx]    = tp_hrs   # always write
+                         Son_tp[j][idx] = onl_tp   # always write
+                         
+                 # Propagation for L1
+                 group_name = Groupes_names_principale[parent_g_idx]
+                 if group_name.startswith('L'):
+                     target_sem = Semester_Of_Group.get(parent_g_idx)
+                     for other_g_idx, sem in Semester_Of_Group.items():
+                         if sem == target_sem:
+                             other_gid = groups_principale[other_g_idx]['id']
+                             for idx, sub_g in enumerate(groups_td):
+                                 if sub_g['parent_group_id'] == other_gid:
+                                     other_charges = groups_map.get(sub_g['id'], groups_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
+                                     Ptp[j][idx]    = other_charges.get('TP', 0)
+                                     Son_tp[j][idx] = other_charges.get('ONL_TP', 0)
 
     # 5b. Processing the assignments into the solver's structure
 
@@ -351,6 +351,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
         # Get charges: check specific subgroup, then specific parent, then default
         w_map = Workload_Map.get(sid_db, {})
         charges = w_map.get(gid_db)
+        charges_from_db = charges is not None  # True if there's a specific entry for this group
         
         if charges is None:
             # Check parent specific workload
@@ -358,11 +359,22 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
             if p_id_str:
                 # Support first parent if multiple
                 first_p = p_id_str.split(',')[0].strip()
-                try: charges = w_map.get(int(first_p))
+                try: 
+                    parent_charges = w_map.get(int(first_p))
+                    if parent_charges is not None:
+                        charges = parent_charges
+                        charges_from_db = True
                 except: pass
         
         if charges is None:
-            charges = w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL':0})
+            if 'DEFAULT' in w_map:
+                charges = w_map['DEFAULT']
+                charges_from_db = True
+            else:
+                # No specific or default entry – use a zero sentinel but mark as NOT from DB
+                # so we don't overwrite workloads set in the specific fill pass
+                charges = {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}
+                charges_from_db = False
         
         # --- LOGIC REPLICATION ---
         
@@ -371,8 +383,10 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                 g = Group_Id_To_Index[gid_db]
                 if (j, g) not in Ccm[i]:
                      Ccm[i].append((j, g))
-                     Pcm[j][g] = charges.get('CM', 0)
-                     Pon[j][g] = charges.get('ONL_CM', 0)
+                     # Only overwrite Pcm/Pon if we have actual DB data for this group's workload
+                     if charges_from_db:
+                         Pcm[j][g] = charges.get('CM', 0)
+                         Pon[j][g] = charges.get('ONL_CM', 0)
                      
                 ProCM[j][g] = prof_name
                 
@@ -395,8 +409,9 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                  g = Sous_Group_Id_To_Index[gid_db]
                  if (j, g) not in Ctp[i]:
                      Ctp[i].append((j, g))
-                     Ptp[j][g] = charges.get('TP', 0)
-                     Son_tp[j][g] = charges.get('ONL_TP', 0)
+                     if charges_from_db:
+                         Ptp[j][g] = charges.get('TP', 0)
+                         Son_tp[j][g] = charges.get('ONL_TP', 0)
                  ProTP[j][g] = prof_name
 
              elif gid_db in Group_Id_To_Index:
@@ -450,8 +465,9 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                  g = target_group_idx
                  if (j, g) not in Ctd[i]:
                      Ctd[i].append((j, g))
-                     Ptd[j][g] = charges.get('TD', 0)
-                     Son_td[j][g] = charges.get('ONL_TD', 0)
+                     if charges_from_db:
+                         Ptd[j][g] = charges.get('TD', 0)
+                         Son_td[j][g] = charges.get('ONL_TD', 0)
                      
                  ProTD[j][g] = prof_name
 

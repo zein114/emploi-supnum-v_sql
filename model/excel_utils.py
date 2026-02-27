@@ -204,7 +204,22 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                     subgroup_indices = [Sous_Group_Id_Map[si] for si in subgroups_of_g if si in Sous_Group_Id_Map]
                     
                     # 'merge_from_ids' contains the IDs of the specialty/languages groups (from groups_principale)
-                    linked_gp_indices = [Group_Id_Map[si] for si in merge_from_ids if si in Group_Id_Map and Group_Id_Map[si] != g]
+                    # However, if the CURRENT group (g) is itself a specialite group, we must NOT
+                    # include other specialite sibling groups here — each specialite has its own
+                    # independent schedule and should not inherit sessions from its siblings.
+                    current_group_name = Groupes_Principale[g]
+                    # Determine if the current group is a specialite by checking if it also
+                    # appears in Sous_Group_Reference_Group (specialite groups are linked there too)
+                    current_is_specialite = group_id_val in Sous_Group_Reference_Group
+                    
+                    linked_gp_indices = []
+                    for si in merge_from_ids:
+                        if si not in Group_Id_Map or Group_Id_Map[si] == g:
+                            continue
+                        # If current group is specialite, skip other specialite siblings
+                        if current_is_specialite and si in Sous_Group_Reference_Group:
+                            continue
+                        linked_gp_indices.append(Group_Id_Map[si])
                     
                     for j in range(J):
                         # Sessions of linked principal groups (e.g., Specialty groups)

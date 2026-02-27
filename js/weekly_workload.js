@@ -184,36 +184,24 @@ function renderTable(data) {
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
                     value="${row.cm}" data-field="cm" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
-                ${
-                  isSingleGroup
-                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_cm || 0}" data-field="online_cm" data-index="${dataIndex}" placeholder="En ligne CM">`
-                    : ""
-                }
+                <input type="number" min="0" step="1" class="workload-input online-input"
+                    value="${row.online_cm || 0}" data-field="online_cm" data-index="${dataIndex}" placeholder="En ligne CM" ${isUnassigned ? "disabled" : ""}>
             </div>
         </td>
         <td class="workload-col">
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
                     value="${row.td}" data-field="td" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
-                ${
-                  isSingleGroup
-                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_td || 0}" data-field="online_td" data-index="${dataIndex}" placeholder="En ligne TD">`
-                    : ""
-                }
+                <input type="number" min="0" step="1" class="workload-input online-input"
+                    value="${row.online_td || 0}" data-field="online_td" data-index="${dataIndex}" placeholder="En ligne TD" ${isUnassigned ? "disabled" : ""}>
             </div>
         </td>
         <td class="workload-col">
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
                     value="${row.tp}" data-field="tp" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
-                ${
-                  isSingleGroup
-                    ? `<input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_tp || 0}" data-field="online_tp" data-index="${dataIndex}" placeholder="En ligne TP">`
-                    : ""
-                }
+                <input type="number" min="0" step="1" class="workload-input online-input"
+                    value="${row.online_tp || 0}" data-field="online_tp" data-index="${dataIndex}" placeholder="En ligne TP" ${isUnassigned ? "disabled" : ""}>
             </div>
         </td>
         <td class="status-col" style="text-align: center; width: 120px;">

@@ -65,9 +65,9 @@ $user = getCurrentUser();
                             <thead>
                                 <tr>
                                 <th class="code-col">Module</th>
-                                <th class="workload-col">CM</th>
-                                <th class="workload-col">TD</th>
-                                <th class="workload-col">TP</th>
+                                <th class="workload-col">CM <br><span style="font-size: 0.7rem; font-weight: normal; opacity: 0.8;">(Prés. / En ligne)</span></th>
+                                <th class="workload-col">TD <br><span style="font-size: 0.7rem; font-weight: normal; opacity: 0.8;">(Prés. / En ligne)</span></th>
+                                <th class="workload-col">TP <br><span style="font-size: 0.7rem; font-weight: normal; opacity: 0.8;">(Prés. / En ligne)</span></th>
                                 <th class="status-col" style="width: 120px;">Actions</th>
                                 <th class="status-col">Statut</th>
                             </tr>
