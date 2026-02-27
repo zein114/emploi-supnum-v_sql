@@ -172,7 +172,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
         SELECT DISTINCT subject_id 
         FROM teacher_assignments ta 
         JOIN `groups` g ON ta.group_id = g.id 
-        WHERE g.type = 'specialite'
+        WHERE g.type IN ('specialite', 'langues && ppp')
     """)
     specialty_subject_ids = {row['subject_id'] for row in cursor.fetchall()}
 

@@ -850,6 +850,11 @@ textarea {
   color: #60a5fa;
 }
 
+/* Mixed/Multiple Types */
+.event-card.type-mixed {
+  border-left-color: #64748b; /* Sleek Slate Gray */
+}
+
 /* Default/Other */
 .event-card.type- {
   border-left-color: var(--text-muted);

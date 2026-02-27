@@ -601,22 +601,24 @@ async function renderTimetable(sheetName, archive = null) {
                `;
           }
 
-          // Determine styling class with priority: TP > TD > CM
+          // Determine styling class: 'mixed' if multiple types, otherwise pick by priority
           let typeClass = "mixed";
           const normalizedTypes = types.map((t) => t.toLowerCase().trim());
           const uniqueTypes = [...new Set(normalizedTypes)];
 
-          if (uniqueTypes.length > 0) {
-            if (normalizedTypes.some((t) => t.includes("tp"))) {
+          if (uniqueTypes.length === 1) {
+            const t = uniqueTypes[0];
+            if (t.includes("tp")) {
               typeClass = "tp";
-            } else if (normalizedTypes.some((t) => t.includes("td"))) {
+            } else if (t.includes("td")) {
               typeClass = "td";
-            } else if (normalizedTypes.some((t) => t.includes("cm"))) {
+            } else if (t.includes("cm")) {
               typeClass = "cm";
             } else {
-              // Fallback to the first type if no standard type matches
-              typeClass = uniqueTypes[0].replace(/[\(\)\s]/g, "-");
+              typeClass = t.replace(/[\(\)\s]/g, "-");
             }
+          } else if (uniqueTypes.length > 1) {
+            typeClass = "mixed";
           }
 
           cellHtml += `

@@ -150,7 +150,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='model/
 
         # Contraintes 5b : Synchronisation GLOBALE des groupes de type 'specialite'
         # Un créneau est soit réservé aux spécialités (max 5), soit aux groupes réguliers.
-        specialty_gp = [gp for gp, t in enumerate(Groupes_types_principale) if t.lower() == 'specialite']
+        specialty_gp = [gp for gp, t in enumerate(Groupes_types_principale) if t.lower() in ('specialite', 'langues && ppp')]
         regular_gp = [gp for gp in range(GP) if gp not in specialty_gp]
         
         # Identifier les sous-groupes de parents spécialités
@@ -161,7 +161,7 @@ def execute_original_optimization(input_file='Données.xlsx', output_dir='model/
                 if p_ref in Group_Id_Map:
                     GT_to_GP_Parent[gt_idx] = Group_Id_Map[p_ref]
         
-        specialty_gt = [gt for gt, p_idx in GT_to_GP_Parent.items() if Groupes_types_principale[p_idx].lower() == 'specialite']
+        specialty_gt = [gt for gt, p_idx in GT_to_GP_Parent.items() if Groupes_types_principale[p_idx].lower() in ('specialite', 'langues && ppp')]
         regular_gt = [gt for gt in range(GT) if gt not in specialty_gt]
 
         for k in range(K):
