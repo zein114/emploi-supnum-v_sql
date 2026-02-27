@@ -505,61 +505,42 @@ async function renderTimetable(sheetName, archive = null) {
               } else {
                 typeStr = typeStr.replace(/^\(|\)$/g, "");
               }
-              typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "").trim();
+              typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "En ligne").trim();
 
-              // Clean group name logic
+              // Clean and Format Group Name Logic
               if (!groupStr || groupStr.trim() === "") {
-                groupStr = typeStr;
-              } else {
-                // Determine base type for renaming logic
-                const isTP = typeStr.toUpperCase().includes("TP");
-                const isTD = typeStr.toUpperCase().includes("TD");
+                // If it's a specific group view, fallback to the sheet name
+                groupStr = sheetName || typeStr;
+              }
 
-                if (isTP || isTD) {
-                  if (
-                    groupStr.includes("-") &&
-                    groupStr.match(/[A-Za-z]+\d*-(TD|TP)\d*/i)
-                  ) {
-                    // E.g. RSS-TD1, RSS-TD2 => RSS(TP1) / RSS(TP2)
-                    let parts = groupStr.split(",").map((p) => p.trim());
-                    parts = parts.map((p) => {
-                      const m = p.match(/^(.+?)-(TD|TP)(\d*)$/i);
-                      if (m) {
-                        const label = isTP ? "TP" : m[2].toUpperCase();
-                        return `${m[1]}(${label}${m[3]})`;
-                      }
-                      return isTP ? p.replace(/TD/g, "TP") : p;
-                    });
-                    groupStr = parts.join(" / ");
-                  } else {
-                    const numbers = groupStr.match(/\d+/g);
-                    const isPrincipalGroupLike =
-                      groupStr.match(/[A-Za-z]{2,}/) &&
-                      !groupStr.match(/^(TD|TP)\d/i);
+              // Determine if we need to format as Parent(Type)
+              const isTP = typeStr.toUpperCase().includes("TP");
+              const isTD = typeStr.toUpperCase().includes("TD");
 
-                    if (numbers && !isPrincipalGroupLike) {
-                      groupStr = numbers.map((n) => typeStr + n).join(", ");
-                    } else if (isPrincipalGroupLike && groupStr !== typeStr) {
-                      // It's a specialite main group like DSI2 or RSS
-                      // Only add parentheses if the group name doesn't already look like a subgroup with the type in it
-                      if (
-                        !groupStr.includes("-TD") &&
-                        !groupStr.includes("-TP")
-                      ) {
-                        groupStr = groupStr + "(" + typeStr + ")";
-                      }
-                    }
+              if (groupStr.includes("-") && (isTP || isTD)) {
+                // E.g. "DSI1-TP1, DSI1-TP2" => "DSI1(TP1) / DSI1(TP2)"
+                let parts = groupStr.split(",").map((p) => p.trim());
+                parts = parts.map((p) => {
+                  const m = p.match(/^(.+?)-(TD|TP)(\d*)$/i);
+                  if (m) {
+                    return `${m[1]}(${m[2].toUpperCase()}${m[3]})`;
                   }
-                } else {
-                  // For CM, if it has a linked group name
-                  if (groupStr.match(/[A-Za-z]{2,}/) && groupStr !== typeStr) {
-                    groupStr = groupStr + "(" + typeStr + ")";
-                  }
+                  return p;
+                });
+                groupStr = parts.join(" / ");
+              } else if (groupStr !== typeStr) {
+                // E.g. "DWM" + "TD" => "DWM(TD)"
+                // But avoid redudancy like "DSI1(TP)" if it's already "DSI1(TP1)"
+                if (
+                  !groupStr.includes(`(${typeStr})`) &&
+                  !groupStr.includes(typeStr)
+                ) {
+                  groupStr = `${groupStr}(${typeStr})`;
                 }
               }
 
+              // Final cleanup
               groupStr = groupStr
-                .replace(/\s+(TD|TP)$/i, "")
                 .replace(/\(\s*\)/g, "")
                 .replace(/\s+\(\s+\)$/g, "")
                 .trim();

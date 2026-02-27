@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const response = await fetch("api/get_semesters.php");
     const semesters = await response.json();
+    window.semestersData = semesters; // Shared globally for recovery logic
 
     const semesterMenu = document.getElementById("semesterOptionsMenu");
     if (semesterMenu) {
@@ -36,8 +37,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   let savedSemester = sessionStorage.getItem("student_saved_semester");
   const savedGroupId = sessionStorage.getItem("student_saved_group_id");
 
-  if (savedSemester) {
-    const isValid = semesters.some((s) => s.name === savedSemester);
+  if (savedSemester && window.semestersData) {
+    const isValid = window.semestersData.some((s) => s.name === savedSemester);
     if (!isValid) {
       sessionStorage.removeItem("student_saved_semester");
       sessionStorage.removeItem("student_saved_group_id");
@@ -311,21 +312,45 @@ async function renderTimetable(sheetName) {
               } else {
                 typeStr = typeStr.replace(/^\(|\)$/g, "");
               }
-              typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "");
+              typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "En ligne").trim();
 
-              // Clean group name logic
+              // Clean and Format Group Name Logic
               if (!groupStr || groupStr.trim() === "") {
-                groupStr = typeStr;
-              } else if (typeStr === "TD" || typeStr === "TP") {
-                const numbers = groupStr.match(/\d+/g);
-                if (numbers) {
-                  groupStr = numbers.map((n) => typeStr + n).join(", ");
-                } else {
-                  groupStr = typeStr;
+                // If it's a specific group view, fallback to the sheet name
+                groupStr = sheetName || typeStr;
+              }
+
+              // Determine if we need to format as Parent(Type)
+              const isTP = typeStr.toUpperCase().includes("TP");
+              const isTD = typeStr.toUpperCase().includes("TD");
+
+              if (groupStr.includes("-") && (isTP || isTD)) {
+                // E.g. "DSI1-TP1, DSI1-TP2" => "DSI1(TP1) / DSI1(TP2)"
+                let parts = groupStr.split(",").map((p) => p.trim());
+                parts = parts.map((p) => {
+                  const m = p.match(/^(.+?)-(TD|TP)(\d*)$/i);
+                  if (m) {
+                    return `${m[1]}(${m[2].toUpperCase()}${m[3]})`;
+                  }
+                  return p;
+                });
+                groupStr = parts.join(" / ");
+              } else if (groupStr !== typeStr) {
+                // E.g. "DWM" + "TD" => "DWM(TD)"
+                // But avoid redudancy like "DSI1(TP)" if it's already "DSI1(TP1)"
+                if (
+                  !groupStr.includes(`(${typeStr})`) &&
+                  !groupStr.includes(typeStr)
+                ) {
+                  groupStr = `${groupStr}(${typeStr})`;
                 }
               }
 
-              groupStr = groupStr.replace(/\s+(TD|TP)$/i, "");
+              // Final cleanup
+              groupStr = groupStr
+                .replace(/\(\s*\)/g, "")
+                .replace(/\s+\(\s+\)$/g, "")
+                .trim();
               types.push(typeStr);
               groups.push(groupStr);
             } else {

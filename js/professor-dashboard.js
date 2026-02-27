@@ -219,50 +219,46 @@ function renderProfessorTimetable() {
               // Fallback: remove parens if present (e.g., "(CM)")
               typeStr = typeStr.replace(/^\(|\)$/g, "");
             }
+            typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "En ligne").trim();
 
-            // Clean group name logic for professors:
+            // Clean and Format Group Name Logic
             if (!groupStr || groupStr.trim() === "") {
               groupStr = typeStr;
-            } else {
-              if (typeStr === "TD" || typeStr === "TP") {
-                if (
-                  groupStr.includes("-") &&
-                  groupStr.match(/[A-Za-z]+\d*-(TD|TP)\d*/i)
-                ) {
-                  // E.g. DSI1-TD1, DSI1-TD2 => DSI1-TP1/DSI1-TP2
-                  let parts = groupStr.split(",").map((p) => p.trim());
-                  parts = parts.map((p) => p.replace(/TD/g, "TP"));
-                  groupStr = parts.join("/");
-                } else {
-                  const numbers = groupStr.match(/\d+/g);
-                  const isPrincipalGroupLike =
-                    groupStr.match(/[A-Z]{2,}/i) &&
-                    !groupStr.match(/^(TD|TP)\d/i);
+            }
 
-                  if (numbers && !isPrincipalGroupLike) {
-                    const majorInfo = groupStr
-                      .replace(/(TD|TP)\s*\d*/gi, "")
-                      .replace(/^[\s\-,]*/, "")
-                      .trim();
-                    const groupNames = numbers
-                      .map((n) => typeStr + n)
-                      .join(", ");
-                    groupStr =
-                      groupNames + (majorInfo ? " - " + majorInfo : "");
-                  } else if (isPrincipalGroupLike && groupStr !== typeStr) {
-                    groupStr = groupStr + "(" + typeStr + ")";
-                  }
+            // Remove specialty subgroup noise (e.g., "- G1", "- DSI2")
+            groupStr = groupStr.replace(/\s*-\s*(G\d+|[A-Z0-9]+)$/i, "").trim();
+
+            // Determine if we need to format as Parent(Type)
+            const isTP = typeStr.toUpperCase().includes("TP");
+            const isTD = typeStr.toUpperCase().includes("TD");
+
+            if (groupStr.includes("-") && (isTP || isTD)) {
+              // E.g. "DSI1-TP1, DSI1-TP2" => "DSI1(TP1) / DSI1(TP2)"
+              let parts = groupStr.split(/[,/]/).map((p) => p.trim());
+              parts = parts.map((p) => {
+                const m = p.match(/^(.+?)-(TD|TP)(\d*)$/i);
+                if (m) {
+                  return `${m[1]}(${m[2].toUpperCase()}${m[3]})`;
                 }
-              } else {
-                if (groupStr.match(/[A-Za-z]{2,}/) && groupStr !== typeStr) {
-                  groupStr = groupStr + "(" + typeStr + ")";
-                }
+                return p;
+              });
+              // Deduplicate after cleaning
+              groupStr = [...new Set(parts)].join(" / ");
+            } else if (groupStr !== typeStr) {
+              // E.g. "DWM" + "TD" => "DWM(TD)"
+              if (
+                !groupStr.includes(`(${typeStr})`) &&
+                !groupStr.includes(typeStr)
+              ) {
+                groupStr = `${groupStr}(${typeStr})`;
               }
             }
 
+            // Final cleanup
             groupStr = groupStr
-              .replace(/\s+(TD|TP)$/i, "")
               .replace(/\(\s*\)/g, "")
+              .replace(/\s+\(\s+\)$/g, "")
               .trim();
 
             types.push(typeStr);
