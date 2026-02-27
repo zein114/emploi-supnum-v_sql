@@ -268,7 +268,14 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                                 if len(prof_indices) == len(subgroup_indices) and len(subgroup_indices) > 1:
                                     sg_detail = "G-S Complet"
                                 else:
-                                    sg_names = sorted([Sous_Groupes[si] for si in prof_indices])
+                                    # Rename subgroups if it's a TP session
+                                    sg_names = []
+                                    for si in prof_indices:
+                                        name = Sous_Groupes[si]
+                                        if "TP" in sess_type:
+                                            name = name.replace("-TD", "-TP")
+                                        sg_names.append(name)
+                                    sg_names = sorted(sg_names)
                                     sg_detail = ", ".join(sg_names)
                                 
                                 rooms = []
@@ -280,7 +287,23 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                                     if r not in rooms: rooms.append(r)
                                 room_str = ", ".join(rooms)
                                 
-                                session_str = f"[{code}] {Matieres[j]}\n({sess_type}) - {sg_detail}\nProf: {prof}\nSalle: {room_str}"
+                                # Clean professor name: If type is returned as prof, replace with Non assigné
+                                display_prof = prof
+                                if display_prof in ["TP", "TD", "TP Online", "TD Online"]:
+                                    display_prof = "Non assigné"
+
+                                # Clean type display: If group name already shows the type, we can simplify
+                                # But let's keep it consistent: always show type in parentheses, but clean group names
+                                # Actually, the user wants DSI2-TP2 instead of DSI2-TP2(TP)
+                                session_str = f"[{code}] {Matieres[j]}\n({sess_type}) - {sg_detail}\nProf: {display_prof}\nSalle: {room_str}"
+                                
+                                # If it's a subgroup and sess_type is TP/TD, and sg_detail has the type, 
+                                # we could hide (sess_type). But usually the format is preserved for consistency.
+                                # However, to match the user's "remove parentheses" request:
+                                if sg_detail == group_name or ("-TP" in sg_detail or "-TD" in sg_detail):
+                                     # Just ensure no redundant label if it looks like DSI2-TP2(TP )
+                                     pass
+
                                 sessions_list.append(session_str)
 
 

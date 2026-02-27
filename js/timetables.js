@@ -505,20 +505,26 @@ async function renderTimetable(sheetName, archive = null) {
               } else {
                 typeStr = typeStr.replace(/^\(|\)$/g, "");
               }
-              typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "");
+              typeStr = typeStr.replace(/Online\s*|Onl\s*/i, "").trim();
 
               // Clean group name logic
               if (!groupStr || groupStr.trim() === "") {
                 groupStr = typeStr;
               } else {
-                if (typeStr === "TD" || typeStr === "TP") {
+                // Determine base type for renaming logic
+                const isTP = typeStr.toUpperCase().includes("TP");
+                const isTD = typeStr.toUpperCase().includes("TD");
+
+                if (isTP || isTD) {
                   if (
                     groupStr.includes("-") &&
                     groupStr.match(/[A-Za-z]+\d*-(TD|TP)\d*/i)
                   ) {
                     // E.g. DSI1-TD1, DSI1-TD2 => DSI1-TP1/DSI1-TP2
                     let parts = groupStr.split(",").map((p) => p.trim());
-                    parts = parts.map((p) => p.replace(/TD/g, "TP"));
+                    if (isTP) {
+                      parts = parts.map((p) => p.replace(/TD/g, "TP"));
+                    }
                     groupStr = parts.join("/");
                   } else {
                     const numbers = groupStr.match(/\d+/g);
@@ -530,7 +536,13 @@ async function renderTimetable(sheetName, archive = null) {
                       groupStr = numbers.map((n) => typeStr + n).join(", ");
                     } else if (isPrincipalGroupLike && groupStr !== typeStr) {
                       // It's a specialite main group like DSI2 or RSS
-                      groupStr = groupStr + "(" + typeStr + ")";
+                      // Only add parentheses if the group name doesn't already look like a subgroup with the type in it
+                      if (
+                        !groupStr.includes("-TD") &&
+                        !groupStr.includes("-TP")
+                      ) {
+                        groupStr = groupStr + "(" + typeStr + ")";
+                      }
                     }
                   }
                 } else {
@@ -544,6 +556,7 @@ async function renderTimetable(sheetName, archive = null) {
               groupStr = groupStr
                 .replace(/\s+(TD|TP)$/i, "")
                 .replace(/\(\s*\)/g, "")
+                .replace(/\s+\(\s+\)$/g, "")
                 .trim();
               types.push(typeStr);
               groups.push(groupStr);

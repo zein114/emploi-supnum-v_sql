@@ -112,6 +112,51 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     Prof_Id_To_Index = {p['id']: idx for idx, p in enumerate(profs)}
     I = len(profs)
 
+    # 5. Affectations (Ccm, Ctp, Ctd) - MOVED UP to filter workloads
+    Ccm = [[] for _ in range(I)]
+    Ctp = [[] for _ in range(I)]
+    Ctd = [[] for _ in range(I)]
+    
+    # ProCM, ProTP, ProTD lists for export
+    ProCM = [{} for _ in range(J)]
+    ProTP = [{} for _ in range(J)]
+    ProTD = [{} for _ in range(J)]
+
+    cursor.execute("SELECT * FROM teacher_assignments")
+    assignments = cursor.fetchall()
+    
+    # Identifiers for quick lookup
+    id_to_group = {g['id']: g for g in all_groups}
+    
+    # Identify which subjects are assigned to which groups (directly or indirectly)
+    subj_assigned_to_group = set() # (subj_id, group_id)
+    for row in assignments:
+        sid_db = row['subject_id']
+        gid_db = row['group_id']
+        subj_assigned_to_group.add((sid_db, gid_db))
+        
+        # If assigned to a principal group, it also implicitly covers its subgroups (TD only)
+        # We skip 'specialite' groups here as they should have their own assignments for their specific subjects
+        if gid_db in Sous_Group_Id_To_Index:
+            sub_id_str = str(gid_db).strip()
+            parent_id_str = Sous_Group_Reference_Group.get(sub_id_str)
+            if parent_id_str:
+                for p_id_s in parent_id_str.split(','):
+                    p_id_s = p_id_s.strip()
+                    try: 
+                        p_id = int(p_id_s)
+                        # Ensure propagation ONLY between parent and real sub-group (TD/TP)
+                        p_group = id_to_group.get(p_id)
+                        if p_group and p_group['type'] in ('principale', 'langues && ppp'):
+                            subj_assigned_to_group.add((sid_db, p_id))
+                    except: pass
+        elif gid_db in Group_Id_To_Index:
+             # Propagate only to REAL children (TD type) defined via parent_group_id
+             # DO NOT propagate through the the bridged Sous_Group_Reference_Group which includes specialty groups
+             for sub_g in groups_td:
+                 if sub_g['parent_group_id'] == gid_db:
+                     subj_assigned_to_group.add((sid_db, sub_g['id']))
+
     # 4. Matrices des Charges (Pcm, Ptp, Ptd)
     Pcm = [[0]*GP for _ in range(J)]
     Ptp = [[0]*GT for _ in range(J)]
@@ -169,6 +214,12 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
             # CM, TD, Online CM/TD for Principal Groups
             for g in range(GP):
                 g_type = Groupes_types_principale[g].lower()
+                g_id = groups_principale[g]['id']
+                
+                # Skip if no teacher assignment for this (subject, group)
+                if (sid, g_id) not in subj_assigned_to_group:
+                    continue
+
                 # Skip default workload for specialty subjects on NON-specialty groups
                 if sid in specialty_subject_ids and g_type == 'principale':
                     continue
@@ -182,6 +233,12 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
             
             # TP, Online TP for Subgroups
             for g in range(GT):
+                g_id = groups_td[g]['id']
+                
+                # Skip if no teacher assignment for this (subject, group)
+                if (sid, g_id) not in subj_assigned_to_group:
+                    continue
+                    
                 # Subgroups matching semester
                 if s_sem is None or Sous_Groupes_semesters[g] == s_sem:
                     Ptp[j][g] = d.get('TP', 0)
@@ -212,10 +269,6 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                              if sem == target_sem and other_g != g_idx:
                                  other_gid = groups_principale[other_g]['id']
                                  other_charges = groups_map.get(other_gid, groups_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
-                                 if other_charges.get('CM', 0) > 0 and 'CM' not in groups_map: # only if not explicitly set
-                                     pass
-                                 # Actually, if they are explicitly in the database, the loop will catch them.
-                                 # We fallback to charges if other_charges has it.
                                  if other_charges.get('CM', 0) > 0: Pcm[j][other_g] = other_charges.get('CM', 0)
                                  if other_charges.get('ONL_CM', 0) > 0: Pon[j][other_g] = other_charges.get('ONL_CM', 0)
             
@@ -279,18 +332,8 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                                          if other_charges.get('TP', 0) > 0: Ptp[j][idx] = other_charges.get('TP', 0)
                                          if other_charges.get('ONL_TP', 0) > 0: Son_tp[j][idx] = other_charges.get('ONL_TP', 0)
 
-    # 5. Affectations (Ccm, Ctp, Ctd)
-    Ccm = [[] for _ in range(I)]
-    Ctp = [[] for _ in range(I)]
-    Ctd = [[] for _ in range(I)]
-    
-    # ProCM, ProTP, ProTD lists for export
-    ProCM = [{} for _ in range(J)]
-    ProTP = [{} for _ in range(J)]
-    ProTD = [{} for _ in range(J)]
+    # 5b. Processing the assignments into the solver's structure
 
-    cursor.execute("SELECT * FROM teacher_assignments")
-    assignments = cursor.fetchall()
     
     for row in assignments:
         pid_db = row['professor_id']
@@ -305,9 +348,21 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
         j = Subj_Id_To_Index[sid_db]
         prof_name = Profs_names[i]
 
-        # Get charges
+        # Get charges: check specific subgroup, then specific parent, then default
         w_map = Workload_Map.get(sid_db, {})
-        charges = w_map.get(gid_db, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL':0}))
+        charges = w_map.get(gid_db)
+        
+        if charges is None:
+            # Check parent specific workload
+            p_id_str = Sous_Group_Reference_Group.get(str(gid_db).strip())
+            if p_id_str:
+                # Support first parent if multiple
+                first_p = p_id_str.split(',')[0].strip()
+                try: charges = w_map.get(int(first_p))
+                except: pass
+        
+        if charges is None:
+            charges = w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL':0})
         
         # --- LOGIC REPLICATION ---
         
@@ -316,23 +371,23 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                 g = Group_Id_To_Index[gid_db]
                 if (j, g) not in Ccm[i]:
                      Ccm[i].append((j, g))
-                     Pcm[j][g] = charges['CM']
+                     Pcm[j][g] = charges.get('CM', 0)
+                     Pon[j][g] = charges.get('ONL_CM', 0)
                      
                 ProCM[j][g] = prof_name
                 
-                # OPTIONAL: Propagation logic for 'L1', 'L2' etc.
+                # Propagation logic for 'L1', 'L2' etc.
                 group_name = Groupes_names_principale[g]
                 if group_name.startswith('L') and len(group_name) >= 2:
                      target_sem = Semester_Of_Group.get(g)
-                     # Apply to other groups in same semester
                      for other_g, sem in Semester_Of_Group.items():
                          if sem == target_sem and other_g != g:
                              if (j, other_g) not in Ccm[i]:
                                  Ccm[i].append((j, other_g))
-                             # load other group charge
                              other_gid = groups_principale[other_g]['id']
                              other_charges = w_map.get(other_gid, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0}))
-                             Pcm[j][other_g] = other_charges['CM']
+                             Pcm[j][other_g] = other_charges.get('CM', 0)
+                             Pon[j][other_g] = other_charges.get('ONL_CM', 0)
                              ProCM[j][other_g] = prof_name
 
         if 'TP' in atype:
@@ -340,7 +395,8 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                  g = Sous_Group_Id_To_Index[gid_db]
                  if (j, g) not in Ctp[i]:
                      Ctp[i].append((j, g))
-                     Ptp[j][g] = charges['TP']
+                     Ptp[j][g] = charges.get('TP', 0)
+                     Son_tp[j][g] = charges.get('ONL_TP', 0)
                  ProTP[j][g] = prof_name
 
              elif gid_db in Group_Id_To_Index:
@@ -355,7 +411,8 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                          Ctp[i].append((j, g))
                      sub_gid = groups_td[g]['id']
                      sg_charges = w_map.get(sub_gid, charges)
-                     Ptp[j][g] = sg_charges['TP']
+                     Ptp[j][g] = sg_charges.get('TP', 0)
+                     Son_tp[j][g] = sg_charges.get('ONL_TP', 0)
                      ProTP[j][g] = prof_name
 
                  group_name = Groupes_names_principale[parent_g_idx]
@@ -369,7 +426,8 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                                      if (j, idx) not in Ctp[i]:
                                          Ctp[i].append((j, idx))
                                      sg_charges = w_map.get(sub_g['id'], charges)
-                                     Ptp[j][idx] = sg_charges['TP']
+                                     Ptp[j][idx] = sg_charges.get('TP', 0)
+                                     Son_tp[j][idx] = sg_charges.get('ONL_TP', 0)
                                      ProTP[j][idx] = prof_name
 
         if 'TD' in atype:
@@ -392,14 +450,8 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                  g = target_group_idx
                  if (j, g) not in Ctd[i]:
                      Ctd[i].append((j, g))
-                     # If arriving from sub, we might need to be careful not to overwrite if multiple subs map to same parent 
-                     # but here we assume Ptd is user input on the subject anyway, or calculated from subs? 
-                     # Ptd is usually from Workload_Map. 
-                     # If from Workload_Map (input), we should take the value from the GROUP assigned. 
-                     # If user assigned TD to L1-TD1, we take that charge and put it on L1.
-                     # CAUTION: If user assigned TD to L1-TD1 AND L1-TD2, we might double count or overwrite?
-                     # Standard behavior: Use the charge from the assigned entity.
-                     Ptd[j][g] = charges['TD'] 
+                     Ptd[j][g] = charges.get('TD', 0)
+                     Son_td[j][g] = charges.get('ONL_TD', 0)
                      
                  ProTD[j][g] = prof_name
 
@@ -411,12 +463,10 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
                           if sem == target_sem and other_g != g:
                               if (j, other_g) not in Ctd[i]:
                                   Ctd[i].append((j, other_g))
-                              # For propagation, we also need charge. 
-                              # We need to find the equivalent group or just take what's there?
-                              # Simplified: take default or specific if exists
                               other_gid = groups_principale[other_g]['id']
-                              other_charges = w_map.get(other_gid, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0}))
-                              Ptd[j][other_g] = other_charges['TD']
+                              other_charges = w_map.get(other_gid, w_map.get('DEFAULT', {'CM':0, 'TP':0, 'TD':0, 'ONL_CM':0, 'ONL_TD':0, 'ONL_TP':0}))
+                              Ptd[j][other_g] = other_charges.get('TD', 0)
+                              Son_td[j][other_g] = other_charges.get('ONL_TD', 0)
                               ProTD[j][other_g] = prof_name
 
 
