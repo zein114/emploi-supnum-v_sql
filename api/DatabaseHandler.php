@@ -193,7 +193,7 @@ class DatabaseHandler {
     
     public function getGroups() {
         $result = $this->db->query("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type = 'principale'
@@ -203,7 +203,7 @@ class DatabaseHandler {
         $groups = [];
         while ($row = $result->fetch_assoc()) {
             $groups[] = [
-                'code' => $row['code'],
+                'id' => $row['id'],
                 'name' => $row['name'],
                 'semester' => $row['semester'] ?? '',
                 'type' => $row['type']

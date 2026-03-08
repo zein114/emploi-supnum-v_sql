@@ -52,9 +52,10 @@ if ($tab === 'classrooms' || $tab === 'groups') {
     } else {
         // Get groups from database
         $result = $conn->query("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id, g.name, s.name as semester, g.type, g.student_count as capacity, g.speciality
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
+            WHERE g.type != 'TD'
             ORDER BY g.id
         ");
         
@@ -62,13 +63,13 @@ if ($tab === 'classrooms' || $tab === 'groups') {
         $types = [];
         while ($row = $result->fetch_assoc()) {
             $groups[] = [
-                'code' => trim($row['code'] ?? ''),
+                'id' => trim($row['id'] ?? ''),
                 'name' => trim($row['name'] ?? ''),
                 'semester' => trim($row['semester'] ?? ''),
                 'type' => trim($row['type'] ?? ''),
-                'speciality' => '', // Not stored in DB currently
+                'speciality' => trim($row['speciality'] ?? ''), // Not stored in DB currently
                 'reference' => '',  // Would need parent_group_id lookup
-                'capacity' => 0     // Not stored in DB currently
+                'capacity' => (int)($row['capacity'] ?? 0)
             ];
             
             if (!empty($row['type']) && !in_array($row['type'], $types)) {

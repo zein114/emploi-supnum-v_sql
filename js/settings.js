@@ -158,16 +158,14 @@ function renderDays(days) {
         <div class="settings-item">
             <div class="flex items-center gap-1">
                 <span class="font-semibold">${day.name}</span>
-                <span class="badge ${
-                  day.is_active == 1 ? "badge-success" : "badge-danger"
-                }" style="font-size: 0.75rem; padding: 2px 8px;">
+                <span class="badge ${day.is_active == 1 ? "badge-success" : "badge-danger"
+        }" style="font-size: 0.75rem; padding: 2px 8px;">
                     ${day.is_active == 1 ? "Actif" : "Inactif"}
                 </span>
             </div>
             <div class="settings-item-actions">
-                <button class="btn btn-sm ${
-                  day.is_active == 1 ? "btn-danger" : "btn-success"
-                }" onclick="toggleDayStatus(this, ${day.id}, ${day.is_active})">
+                <button class="btn btn-sm ${day.is_active == 1 ? "btn-danger" : "btn-success"
+        }" onclick="toggleDayStatus(this, ${day.id}, ${day.is_active})">
                     ${day.is_active == 1 ? "Désactiver" : "Activer"}
                 </button>
             </div>
@@ -197,21 +195,17 @@ function renderTimeSlots(slots) {
         <div class="settings-item">
             <div class="flex items-center gap-1">
                 <span class="font-semibold">${slot.time_range}</span>
-                <span class="badge ${
-                  slot.is_active == 1 ? "badge-success" : "badge-danger"
-                }" style="font-size: 0.75rem; padding: 2px 8px;">
+                <span class="badge ${slot.is_active == 1 ? "badge-success" : "badge-danger"
+        }" style="font-size: 0.75rem; padding: 2px 8px;">
                     ${slot.is_active == 1 ? "Actif" : "Inactif"}
                 </span>
             </div>
             <div class="settings-item-actions">
-                <button class="btn btn-sm btn-secondary" onclick="editTimeSlot(${
-                  slot.id
-                }, '${slot.time_range}')">Modifier</button>
-                <button class="btn btn-sm ${
-                  slot.is_active == 1 ? "btn-danger" : "btn-success"
-                }" onclick="toggleTimeSlotStatus(this, ${slot.id}, ${
-                  slot.is_active
-                })">
+                <button class="btn btn-sm btn-secondary" onclick="editTimeSlot(${slot.id
+        }, '${slot.time_range}')">Modifier</button>
+                <button class="btn btn-sm ${slot.is_active == 1 ? "btn-danger" : "btn-success"
+        }" onclick="toggleTimeSlotStatus(this, ${slot.id}, ${slot.is_active
+        })">
                     ${slot.is_active == 1 ? "Désactiver" : "Activer"}
                 </button>
             </div>
@@ -272,9 +266,8 @@ function renderClassrooms(classrooms) {
             <tr>
                 <td class="font-semibold">${safeNameHtml}</td>
                 <td>${capacity} places</td>
-                <td><span class="badge ${
-                  type === "CM" ? "badge-primary" : "badge-success"
-                }">${safeTypeHtml}</span></td>
+                <td><span class="badge ${type === "CM" ? "badge-primary" : "badge-success"
+        }">${safeTypeHtml}</span></td>
                 <td>
                     <div class="settings-item-actions">
                         <button class="btn btn-sm btn-secondary" onclick="editClassroom('${safeNameJs}', '${safeCapacityJs}', '${safeTypeJs}')">Modifier</button>
@@ -291,20 +284,20 @@ function renderGroups(groups) {
   const body = document.getElementById("groupsTableBody");
   body.innerHTML = groups
     .map((g) => {
-      const code = (g.code || g.A || "").trim();
+      const id = (g.id || g.A || "").trim();
       const name = (g.name || g.B || "").trim();
       const semester = (g.semester || g.C || "").trim();
       const type = (g.type || g.D || "").trim();
       const speciality = (g.speciality || g.E || "").trim();
       const capacity = g.capacity || g.G || 0;
 
-      const safeCodeHtml = escapeHtml(code);
+      const safeIdHtml = escapeHtml(id);
       const safeNameHtml = escapeHtml(name);
       const safeSemesterHtml = escapeHtml(semester);
       const safeTypeHtml = escapeHtml(type);
       const safeSpecialityHtml = escapeHtml(speciality);
 
-      const safeCodeJs = escapeJsArg(code);
+      const safeIdJs = escapeJsArg(id);
       const safeNameJs = escapeJsArg(name);
       const safeSemesterJs = escapeJsArg(semester);
       const safeTypeJs = escapeJsArg(type);
@@ -320,14 +313,85 @@ function renderGroups(groups) {
                 <td>${capacity}</td>
                 <td>
                     <div class="settings-item-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="editGroup('${safeCodeJs}', '${safeCodeJs}', '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${safeSpecialityJs}', '${safeCapacityJs}')">Modifier</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteGroup('${safeCodeJs}')">Supprimer</button>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleSubgroups('${safeIdJs}')" style="background-color: var(--primary-color); color: white;">Sous-groupes</button>
+                        <button class="btn btn-sm btn-secondary" onclick="editGroup('${safeIdJs}', '${safeIdJs}', '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${safeSpecialityJs}', '${safeCapacityJs}')">Modifier</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteGroup('${safeIdJs}')">Supprimer</button>
                     </div>
+                </td>
+            </tr>
+            <tr id="subgroups-container-${safeIdJs}" style="display: none;">
+                <td colspan="6" style="padding: 1.5rem; background-color: var(--bg-hover);">
+                    <div class="flex items-center justify-between mb-1">
+                        <h6 class="font-semibold text-muted" style="margin: 0; font-size: 0.9rem;">Sous-groupes de ${safeNameHtml}</h6>
+                    </div>
+                    <table class="table" style="background: var(--bg-card); margin-top: 10px; border: 1px solid var(--border-color);">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Semestre</th>
+                                <th>Type</th>
+                                <th>Spécialité</th>
+                                <th>Étudiants</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subgroups-body-${safeIdJs}">
+                            <tr><td colspan="6" class="text-center p-3">Chargement...</td></tr>
+                        </tbody>
+                    </table>
                 </td>
             </tr>
         `;
     })
     .join("");
+}
+
+async function toggleSubgroups(parentId) {
+  const container = document.getElementById(`subgroups-container-${parentId}`);
+  const tbody = document.getElementById(`subgroups-body-${parentId}`);
+
+  if (container.style.display === 'none') {
+    container.style.display = 'table-row';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3">Chargement...</td></tr>';
+
+    try {
+      const response = await fetch(`../api/get_subgroups.php?parent_id=${parentId}&t=${Date.now()}`);
+      const result = await response.json();
+
+      if (result.success && result.subgroups && result.subgroups.length > 0) {
+        tbody.innerHTML = result.subgroups.map(g => {
+          const safeIdJs = escapeJsArg(g.id);
+          const safeNameJs = escapeJsArg(g.name);
+          const safeSemesterJs = escapeJsArg(g.semester);
+          const safeTypeJs = escapeJsArg(g.type);
+          const safeCapacityJs = escapeJsArg(g.capacity || 0);
+
+          return `
+                        <tr>
+                            <td class="font-semibold">${escapeHtml(g.name)}</td>
+                            <td><span class="badge badge-warning">${escapeHtml(g.semester)}</span></td>
+                            <td>${escapeHtml(g.type)}</td>
+                            <td>${escapeHtml(g.speciality)}</td>
+                            <td>${g.capacity || 0}</td>
+                            <td>
+                                <div class="settings-item-actions">
+                                    <button class="btn btn-sm btn-secondary" onclick="editGroup('${safeIdJs}', '${safeIdJs}', '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '', '${safeCapacityJs}')">Modifier</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteGroup('${safeIdJs}')">Supprimer</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+        }).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3 text-muted">Aucun sous-groupe trouvé.</td></tr>';
+      }
+    } catch (error) {
+      console.error(error);
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3" style="color: var(--danger-color);">Erreur de chargement.</td></tr>';
+    }
+  } else {
+    container.style.display = 'none';
+  }
 }
 
 async function updateSettings(data, btn = null) {
@@ -472,12 +536,10 @@ function editClassroom(name, capacity, type) {
                         <div class="dropdown-arrow"></div>
                     </button>
                     <div class="dropdown-menu">
-                        <div class="dropdown-item ${
-                          type === "CM" ? "selected" : ""
-                        }" data-value="CM">CM</div>
-                        <div class="dropdown-item ${
-                          type === "TP" ? "selected" : ""
-                        }" data-value="TP">TP</div>
+                        <div class="dropdown-item ${type === "CM" ? "selected" : ""
+    }" data-value="CM">CM</div>
+                        <div class="dropdown-item ${type === "TP" ? "selected" : ""
+    }" data-value="TP">TP</div>
                     </div>
                 </div>
             </div>
@@ -574,11 +636,11 @@ function addGroup() {
   // Generate semester options
   const semesterOptions = availableSemesters.length
     ? availableSemesters
-        .map(
-          (s) =>
-            `<div class="dropdown-item" data-value="${s.name}">${s.name}</div>`,
-        )
-        .join("")
+      .map(
+        (s) =>
+          `<div class="dropdown-item" data-value="${s.name}">${s.name}</div>`,
+      )
+      .join("")
     : "";
 
   // Generate type options
@@ -586,8 +648,7 @@ function addGroup() {
     availableGroupTypes
       .map(
         (t) =>
-          `<div class="dropdown-item" data-value="${t}">${
-            t.charAt(0).toUpperCase() + t.slice(1)
+          `<div class="dropdown-item" data-value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)
           }</div>`,
       )
       .join("") +
@@ -770,13 +831,12 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
   // Generate semester options
   const semesterOptions = availableSemesters.length
     ? availableSemesters
-        .map(
-          (s) =>
-            `<div class="dropdown-item ${
-              s.name === semester ? "selected" : ""
-            }" data-value="${s.name}">${s.name}</div>`,
-        )
-        .join("")
+      .map(
+        (s) =>
+          `<div class="dropdown-item ${s.name === semester ? "selected" : ""
+          }" data-value="${s.name}">${s.name}</div>`,
+      )
+      .join("")
     : "";
 
   // Generate type options
@@ -784,13 +844,11 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
     availableGroupTypes
       .map(
         (t) =>
-          `<div class="dropdown-item ${
-            t === type ? "selected" : ""
+          `<div class="dropdown-item ${t === type ? "selected" : ""
           }" data-value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</div>`,
       )
       .join("") +
-    `<div class="dropdown-item ${
-      isCustomType ? "selected" : ""
+    `<div class="dropdown-item ${isCustomType ? "selected" : ""
     }" data-value="autre">Autre...</div>`;
 
   const html = `
@@ -816,9 +874,8 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
                 <label class="form-label">Type</label>
                 <div class="dropdown-container">
                     <button type="button" class="dropdown-button" data-dropdown-id="editGroupType">
-                        <span class="dropdown-text">${
-                          isCustomType ? "Autre..." : displayType
-                        }</span>
+                        <span class="dropdown-text">${isCustomType ? "Autre..." : displayType
+    }</span>
                         <div class="dropdown-arrow"></div>
                     </button>
                     <div class="dropdown-menu">
@@ -826,9 +883,8 @@ function editGroup(old_code, code, name, semester, type, speciality, capacity) {
                     </div>
                 </div>
             </div>
-            <div class="mb-1" id="editGroupCustomTypeContainer" style="display: ${
-              isCustomType ? "block" : "none"
-            };">
+            <div class="mb-1" id="editGroupCustomTypeContainer" style="display: ${isCustomType ? "block" : "none"
+    };">
                 <label class="form-label">Type personnalisé</label>
                 <input type="text" id="editGroupCustomType" class="form-input" value="${customTypeValue}" placeholder="ex: Languages...">
             </div>
@@ -984,21 +1040,17 @@ function editTimeSlot(id, range) {
         <div class="form-group">
             <label class="form-label">Créneau horaire</label>
             <div class="smart-time-input">
-                <input type="text" maxlength="2" id="startHH" value="${
-                  startParts[0] || "08"
-                }" placeholder="HH">
+                <input type="text" maxlength="2" id="startHH" value="${startParts[0] || "08"
+    }" placeholder="HH">
                 <span>:</span>
-                <input type="text" maxlength="2" id="startMM" value="${
-                  startParts[1] || "00"
-                }" placeholder="MM">
+                <input type="text" maxlength="2" id="startMM" value="${startParts[1] || "00"
+    }" placeholder="MM">
                 <span class="mx-1">-</span>
-                <input type="text" maxlength="2" id="endHH" value="${
-                  endParts[0] || "10"
-                }" placeholder="HH">
+                <input type="text" maxlength="2" id="endHH" value="${endParts[0] || "10"
+    }" placeholder="HH">
                 <span>:</span>
-                <input type="text" maxlength="2" id="endMM" value="${
-                  endParts[1] || "00"
-                }" placeholder="MM">
+                <input type="text" maxlength="2" id="endMM" value="${endParts[1] || "00"
+    }" placeholder="MM">
             </div>
         </div>
     `;
