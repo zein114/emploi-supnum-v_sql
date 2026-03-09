@@ -37,26 +37,26 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     cursor.execute("SELECT * FROM `groups` ORDER BY id")
     all_groups = cursor.fetchall()
     
-    groups_principale = [g for g in all_groups if g['type'] == 'principale']
+    groups_principale = [g for g in all_groups if str(g['type']).lower() in ['principale', 'specialite', 'langues && ppp']]
     Groupes_names_principale = [g['name'] for g in groups_principale]
-    Group_Code_Map = {str(g['code']).strip(): idx for idx, g in enumerate(groups_principale)}
+    Group_Code_Map = {str(g['name']).strip(): idx for idx, g in enumerate(groups_principale)}
     Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_principale)}
     
-    # Sous-Groupes (TD)
-    groups_td = [g for g in all_groups if g['type'] == 'TD']
+    # Sous-Groupes (TD/TP)
+    groups_td = [g for g in all_groups if str(g['type']).upper() in ['TD', 'TP']]
     Sous_Groupes_names = [g['name'] for g in groups_td]
-    Sous_Group_Code_Map = {str(g['code']).strip(): idx for idx, g in enumerate(groups_td)}
+    Sous_Group_Code_Map = {str(g['name']).strip(): idx for idx, g in enumerate(groups_td)}
     Sous_Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_td)}
     
     # Référence Parent
     Sous_Group_Reference_Group = {} # SubCode -> ParentCode
     # Build a lookup for parent codes
-    id_to_code = {g['id']: str(g['code']).strip() for g in all_groups}
+    id_to_code = {g['id']: str(g['name']).strip() for g in all_groups}
     
     for g in groups_td:
         if g['parent_group_id'] and g['parent_group_id'] in id_to_code:
             parent_code = id_to_code[g['parent_group_id']]
-            sub_code = str(g['code']).strip()
+            sub_code = str(g['name']).strip()
             Sous_Group_Reference_Group[sub_code] = parent_code
 
     GP = len(groups_principale)
