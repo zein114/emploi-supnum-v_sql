@@ -33,7 +33,7 @@ try {
     
     // 1. Prepare statements ONCE outside the loop (Crucial for performance)
     $stmtSubject = $conn->prepare("SELECT id FROM subjects WHERE code = ?");
-    $stmtGroup = $conn->prepare("SELECT id FROM `groups` WHERE code = ?");
+    $stmtGroup = $conn->prepare("SELECT id FROM `groups` WHERE id = ?");
     $stmtUpsert = $conn->prepare("
         INSERT INTO course_workloads (subject_id, group_id, cm_hours, td_hours, tp_hours, cm_online, td_online, tp_online)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -100,7 +100,7 @@ try {
     if (!empty($modulesInRequest)) {
         $processedKeysSet = array_flip($processedKeys);
         $stmtDelCheck = $conn->prepare("
-            SELECT cw.id, g.code as group_code
+            SELECT cw.id, g.id as group_code
             FROM course_workloads cw
             JOIN `groups` g ON cw.group_id = g.id
             JOIN subjects s ON cw.subject_id = s.id

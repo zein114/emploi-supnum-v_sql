@@ -11,7 +11,7 @@ try {
     // Build query with optional semester filter
     if (!empty($requestedSemester)) {
         $stmt = $conn->prepare("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type = 'principale' AND s.name = ?
@@ -22,7 +22,7 @@ try {
         $result = $stmt->get_result();
     } else {
         $result = $conn->query("
-            SELECT g.code, g.name, s.name as semester, g.type
+            SELECT g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
             WHERE g.type = 'principale'

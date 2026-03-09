@@ -253,7 +253,7 @@ class DatabaseHandler {
         if ($professorId) {
             $stmt = $this->db->prepare("
                 SELECT ta.*, s.code as subject_code, s.name as subject_name, 
-                       g.code as group_code, g.name as group_name
+                       g.id as group_code, g.name as group_name
                 FROM teacher_assignments ta
                 JOIN subjects s ON ta.subject_id = s.id
                 JOIN `groups` g ON ta.group_id = g.id
@@ -266,7 +266,7 @@ class DatabaseHandler {
         } else {
             $result = $this->db->query("
                 SELECT ta.*, s.code as subject_code, s.name as subject_name, 
-                       g.code as group_code, g.name as group_name,
+                       g.id as group_code, g.name as group_name,
                        p.name as professor_name
                 FROM teacher_assignments ta
                 JOIN subjects s ON ta.subject_id = s.id
@@ -291,7 +291,7 @@ class DatabaseHandler {
         $stmt->execute();
         $subjectId = $stmt->get_result()->fetch_assoc()['id'] ?? null;
         
-        $stmt = $this->db->prepare("SELECT id FROM `groups` WHERE code = ?");
+        $stmt = $this->db->prepare("SELECT id FROM `groups` WHERE id = ?");
         $stmt->bind_param('s', $groupCode);
         $stmt->execute();
         $groupId = $stmt->get_result()->fetch_assoc()['id'] ?? null;
@@ -329,11 +329,11 @@ class DatabaseHandler {
     public function getWorkloads() {
         $result = $this->db->query("
             SELECT cw.*, s.code as subject_code, s.name as subject_name,
-                   g.code as group_code, g.name as group_name
+                   g.id as group_code, g.name as group_name
             FROM course_workloads cw
             JOIN subjects s ON cw.subject_id = s.id
             LEFT JOIN `groups` g ON cw.group_id = g.id
-            ORDER BY s.code, g.code
+            ORDER BY s.code, g.id
         ");
         
         $workloads = [];
@@ -359,7 +359,7 @@ class DatabaseHandler {
         // Get group_id (can be NULL)
         $groupId = null;
         if ($groupCode) {
-            $sqlGroup = "SELECT id FROM `groups` WHERE code = ?";
+            $sqlGroup = "SELECT id FROM `groups` WHERE id = ?";
             $stmt = $this->getStmt($sqlGroup);
             $stmt->bind_param('s', $groupCode);
             $stmt->execute();
