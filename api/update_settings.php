@@ -109,8 +109,8 @@ switch ($action) {
             }
         }
         
-        $stmt = $conn->prepare("INSERT INTO `groups` (code, name, type, semester_id) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param('sssi', $input['code'], $input['name'], $input['type'], $semesterId);
+        $stmt = $conn->prepare("INSERT INTO `groups` (name, type, semester_id) VALUES (?, ?, ?)");
+        $stmt->bind_param('ssi', $input['name'], $input['type'], $semesterId);
         $success = $stmt->execute();
         $message = $success ? 'Groupe ajouté avec succès' : 'Erreur lors de l\'ajout du groupe';
         break;
@@ -130,14 +130,14 @@ switch ($action) {
             }
         }
         
-        $stmt = $conn->prepare("UPDATE `groups` SET code = ?, name = ?, type = ?, semester_id = ? WHERE code = ?");
-        $stmt->bind_param('sssss', $input['code'], $input['name'], $input['type'], $semesterId, $oldCode);
+        $stmt = $conn->prepare("UPDATE `groups` SET name = ?, type = ?, semester_id = ? WHERE id = ?");
+        $stmt->bind_param('sssi', $input['name'], $input['type'], $semesterId, $oldCode);
         $success = $stmt->execute();
         $message = $success ? 'Groupe modifié avec succès' : 'Erreur lors de la modification du groupe';
         break;
 
     case 'delete_group':
-        $stmt = $conn->prepare("DELETE FROM `groups` WHERE code = ?");
+        $stmt = $conn->prepare("DELETE FROM `groups` WHERE id = ?");
         $stmt->bind_param('s', $input['code']);
         $success = $stmt->execute();
         $message = $success ? 'Groupe supprimé avec succès' : 'Erreur lors de la suppression du groupe';

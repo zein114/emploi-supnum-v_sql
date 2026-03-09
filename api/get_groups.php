@@ -11,10 +11,10 @@ try {
     // Build query with optional semester filter
     if (!empty($requestedSemester)) {
         $stmt = $conn->prepare("
-            SELECT g.id as code, g.name, s.name as semester, g.type
+            SELECT g.id, g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
-            WHERE g.type = 'principale' AND s.name = ?
+            WHERE LOWER(g.type) != 'td' AND s.name = ?
             ORDER BY g.id
         ");
         $stmt->bind_param('s', $requestedSemester);
@@ -22,10 +22,10 @@ try {
         $result = $stmt->get_result();
     } else {
         $result = $conn->query("
-            SELECT g.id as code, g.name, s.name as semester, g.type
+            SELECT g.id, g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
-            WHERE g.type = 'principale'
+            WHERE LOWER(g.type) != 'td'
             ORDER BY g.id
         ");
     }
@@ -33,6 +33,7 @@ try {
     $groups = [];
     while ($row = $result->fetch_assoc()) {
         $groups[] = [
+            'id' => $row['id'],
             'code' => $row['code'],
             'name' => $row['name'],
             'semester' => $row['semester'] ?? '',

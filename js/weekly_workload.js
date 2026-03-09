@@ -181,6 +181,8 @@ function attachInputListeners() {
         parseFloat(row.querySelector('[data-field="cm"]').value) || 0;
       const currentTD =
         parseFloat(row.querySelector('[data-field="td"]').value) || 0;
+      const currentTP =
+        parseFloat(row.querySelector('[data-field="tp"]').value) || 0;
       const isModified =
         currentCM !== parseFloat(originalRow.cm) ||
         currentTD !== parseFloat(originalRow.td) ||
