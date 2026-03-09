@@ -14,7 +14,7 @@ try {
             SELECT g.id, g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
-            WHERE LOWER(g.type) != 'td' AND s.name = ?
+            WHERE g.type = 'principale'
             ORDER BY g.id
         ");
         $stmt->bind_param('s', $requestedSemester);
@@ -25,7 +25,7 @@ try {
             SELECT g.id, g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
-            WHERE LOWER(g.type) != 'td'
+            WHERE g.type = 'principale'
             ORDER BY g.id
         ");
     }
