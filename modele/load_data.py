@@ -37,27 +37,42 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     cursor.execute("SELECT * FROM `groups` ORDER BY id")
     all_groups = cursor.fetchall()
     
-    groups_principale = [g for g in all_groups if str(g['type']).lower() in ['principale', 'specialite', 'langues && ppp']]
+    # Only true principal groups get their own timetable sheet
+    groups_principale = [g for g in all_groups if str(g['type']).lower() == 'principale']
     Groupes_names_principale = [g['name'] for g in groups_principale]
     Group_Code_Map = {str(g['name']).strip(): idx for idx, g in enumerate(groups_principale)}
     Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_principale)}
     
-    # Sous-Groupes (TD/TP)
-    groups_td = [g for g in all_groups if str(g['type']).upper() in ['TD', 'TP']]
+    # Sous-Groupes: all non-principale groups that have a parent (TD, TP, specialite, langues, etc.)
+    groups_td = [g for g in all_groups if str(g['type']).lower() not in ['principale'] and g.get('parent_group_id') is not None]
     Sous_Groupes_names = [g['name'] for g in groups_td]
     Sous_Group_Code_Map = {str(g['name']).strip(): idx for idx, g in enumerate(groups_td)}
     Sous_Group_Id_To_Index = {g['id']: idx for idx, g in enumerate(groups_td)}
     
-    # Référence Parent
-    Sous_Group_Reference_Group = {} # SubCode -> ParentCode
-    # Build a lookup for parent codes
+    # Référence Parent: SubCode -> comma-separated parent group names
+    # Supports sub-groups with one or more parent principal groups
+    Sous_Group_Reference_Group = {}
     id_to_code = {g['id']: str(g['name']).strip() for g in all_groups}
     
     for g in groups_td:
-        if g['parent_group_id'] and g['parent_group_id'] in id_to_code:
-            parent_code = id_to_code[g['parent_group_id']]
-            sub_code = str(g['name']).strip()
-            Sous_Group_Reference_Group[sub_code] = parent_code
+        pid = g.get('parent_group_id')
+        if pid is None:
+            continue
+        sub_code = str(g['name']).strip()
+        # Collect all principal parent names (could be multiple via lookup)
+        parent_names = []
+        # Walk up through parent_group_id chain — direct parent only for now
+        if pid in id_to_code:
+            parent_names.append(id_to_code[pid])
+        # Merge with existing entry if this sub_code already has a parent registered
+        if sub_code in Sous_Group_Reference_Group:
+            existing = [p.strip() for p in Sous_Group_Reference_Group[sub_code].split(',')]
+            for pn in parent_names:
+                if pn not in existing:
+                    existing.append(pn)
+            Sous_Group_Reference_Group[sub_code] = ', '.join(existing)
+        else:
+            Sous_Group_Reference_Group[sub_code] = ', '.join(parent_names)
 
     GP = len(groups_principale)
     GT = len(groups_td)

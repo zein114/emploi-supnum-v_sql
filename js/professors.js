@@ -205,9 +205,8 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
         } else {
           let html = "";
           groups.forEach((group) => {
-            html += `<div class="dropdown-item" data-value="${group[0]}">${
-              group[1] + " - " + group[2]
-            }</div>`;
+            html += `<div class="dropdown-item" data-value="${group[0]}">${group[1] + " - " + group[2]
+              }</div>`;
           });
           window.customDropdown.updateMenu("groupSelect", html);
           groupText.textContent = "Sélectionner un groupe";
@@ -234,9 +233,8 @@ async function openProfessorAddAssignmentsModal(professorId, btn) {
         } else {
           let html = "";
           modules.forEach((module) => {
-            html += `<div class="dropdown-item" data-value="${module[0]}">${
-              module[0] + " - " + module[1]
-            }</div>`;
+            html += `<div class="dropdown-item" data-value="${module[0]}">${module[1] + " - " + module[2]
+              }</div>`;
           });
           window.customDropdown.updateMenu("moduleSelect", html);
           moduleText.textContent = "Sélectionner un module";

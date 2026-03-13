@@ -1,1 +1,101 @@
-[]
+[
+  {
+    "group": "DSI1, DSI2, RSS, DWM - G1",
+    "group_code": "DSI1, DSI2, RSS, DWM - G1",
+    "subject": "Réseaux avancés et sécurité",
+    "subject_code": "DSI411",
+    "type": "TP",
+    "professor": "Tourad",
+    "required_sessions": 2,
+    "scheduled_sessions": 1,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DSI1, DSI2, RSS, DWM - G3",
+    "group_code": "DSI1, DSI2, RSS, DWM - G3",
+    "subject": "Réseaux avancés et sécurité",
+    "subject_code": "DSI411",
+    "type": "TP",
+    "professor": "Tourad",
+    "required_sessions": 2,
+    "scheduled_sessions": 1,
+    "missing_sessions": 1
+  },
+  {
+    "group": "DSI1, DSI2, RSS, DWM - G4",
+    "group_code": "DSI1, DSI2, RSS, DWM - G4",
+    "subject": "Réseaux avancés et sécurité",
+    "subject_code": "DSI411",
+    "type": "TP",
+    "professor": "Tourad",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G3 - TD6",
+    "group_code": "G3 - TD6",
+    "subject": "Probabilités et Statistiques",
+    "subject_code": "MAI211",
+    "type": "TD",
+    "professor": "Bekar",
+    "required_sessions": 2,
+    "scheduled_sessions": 1,
+    "missing_sessions": 1
+  },
+  {
+    "group": "G1, G2, G3, G4 - DSI1",
+    "group_code": "G1, G2, G3, G4 - DSI1",
+    "subject": "Probabilités et Statistiques",
+    "subject_code": "MAI211",
+    "type": "TD",
+    "professor": "Bekar",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G1, G2, G3, G4 - RSS",
+    "group_code": "G1, G2, G3, G4 - RSS",
+    "subject": "Probabilités et Statistiques",
+    "subject_code": "MAI211",
+    "type": "TD",
+    "professor": "Bekar",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G1, G2, G3, G4 - IDS",
+    "group_code": "G1, G2, G3, G4 - IDS",
+    "subject": "Probabilités et Statistiques",
+    "subject_code": "MAI211",
+    "type": "TD",
+    "professor": "Bekar",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G1, G2, G3, G4 - DSI2",
+    "group_code": "G1, G2, G3, G4 - DSI2",
+    "subject": "Probabilités et Statistiques",
+    "subject_code": "MAI211",
+    "type": "TD",
+    "professor": "Bekar",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  },
+  {
+    "group": "G1, G2, G3, G4 - AOT",
+    "group_code": "G1, G2, G3, G4 - AOT",
+    "subject": "Probabilités et Statistiques",
+    "subject_code": "MAI211",
+    "type": "TD",
+    "professor": "Bekar",
+    "required_sessions": 2,
+    "scheduled_sessions": 0,
+    "missing_sessions": 2
+  }
+]

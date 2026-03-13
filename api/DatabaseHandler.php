@@ -196,7 +196,7 @@ class DatabaseHandler {
             SELECT g.id, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
-            WHERE g.type = 'principale'
+            WHERE LOWER(g.type) = 'principale'
             ORDER BY g.id
         ");
         
@@ -211,6 +211,26 @@ class DatabaseHandler {
         }
         
         return $groups;
+    }
+
+    public function getSubGroups($parentId, $type = null) {
+        $sql = "SELECT id, name, type FROM `groups` WHERE parent_group_id = ?";
+        if ($type) {
+            $sql .= " AND type = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('is', $parentId, $type);
+        } else {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $parentId);
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $subGroups = [];
+        while ($row = $result->fetch_assoc()) {
+            $subGroups[] = $row;
+        }
+        return $subGroups;
     }
 
     // ========== CLASSROOMS ==========
@@ -284,20 +304,48 @@ class DatabaseHandler {
         return $assignments;
     }
 
-    public function addAssignment($professorId, $subjectCode, $groupCode, $type) {
-        // Get subject_id and group_id from codes
-        $stmt = $this->db->prepare("SELECT id FROM subjects WHERE code = ?");
-        $stmt->bind_param('s', $subjectCode);
+    public function addAssignment($professorId, $subjectId, $groupId, $type) {
+        // Get group type directly
+        $stmt = $this->db->prepare("SELECT type FROM `groups` WHERE id = ?");
+        $stmt->bind_param('i', $groupId);
         $stmt->execute();
-        $subjectId = $stmt->get_result()->fetch_assoc()['id'] ?? null;
+        $group = $stmt->get_result()->fetch_assoc();
+        $groupType = $group['type'] ?? '';
         
-        $stmt = $this->db->prepare("SELECT id FROM `groups` WHERE id = ?");
-        $stmt->bind_param('s', $groupCode);
-        $stmt->execute();
-        $groupId = $stmt->get_result()->fetch_assoc()['id'] ?? null;
-        
-        if (!$subjectId || !$groupId) {
-            return ['success' => false, 'error' => 'Matière ou groupe introuvable'];
+        if (!$groupId) {
+            return ['success' => false, 'error' => 'Groupe introuvable'];
+        }
+
+        // REDIRECTION LOGIC: If principal group and type is TD or TP
+        if (strtolower($groupType) === 'principale' && ($type === 'TD' || $type === 'TP')) {
+            // Find all sub-groups of this principal group that match either TD or TP
+            $stmt = $this->db->prepare("SELECT id FROM `groups` WHERE parent_group_id = ? AND (type = 'TD' OR type = 'TP')");
+            $stmt->bind_param('i', $groupId);
+            $stmt->execute();
+            $subGroups = $stmt->get_result();
+            
+            if ($subGroups->num_rows > 0) {
+                $count = 0;
+                $stmtInsert = $this->db->prepare("
+                    INSERT INTO teacher_assignments (professor_id, subject_id, group_id, type)
+                    VALUES (?, ?, ?, ?)
+                ");
+                while ($subGroup = $subGroups->fetch_assoc()) {
+                    $subGroupId = $subGroup['id'];
+                    $stmtInsert->bind_param('iiis', $professorId, $subjectId, $subGroupId, $type);
+                    if ($stmtInsert->execute()) {
+                        $count++;
+                    }
+                }
+                return ['success' => true, 'message' => "Affectation ajoutée pour $count sous-groupes"];
+            }
+            // If no sub-groups found, we might want to still assign to principal or return error?
+            // User said "saved for the sub-groups... not for the principale". 
+            // So if no sub-groups exist, assigning to principal might be better than nothing, 
+            // but let's stick to the rule and maybe return an error if expected sub-groups are missing.
+            // For now, I'll allow it to fall back to principal if no sub-groups exist, or just return an error.
+            // Let's return error if sub-groups are missing for a principal group assignment.
+            return ['success' => false, 'error' => "Aucun sous-groupe de type $type trouvé pour ce groupe principal."];
         }
         
         $stmt = $this->db->prepare("

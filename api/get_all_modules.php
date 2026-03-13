@@ -13,7 +13,7 @@ $subjects = $dbHandler->getSubjects();
 
 // Convert to array format (code, name)
 $modules = array_map(function($subject) {
-    return [$subject['code'], $subject['name']];
+    return [$subject['id'], $subject['code'], $subject['name']];
 }, $subjects);
 
 echo json_encode($modules, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

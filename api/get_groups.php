@@ -14,7 +14,7 @@ try {
             SELECT g.id, g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
-            WHERE g.type = 'principale'
+            WHERE LOWER(g.type) = 'principale' AND s.name = ?
             ORDER BY g.id
         ");
         $stmt->bind_param('s', $requestedSemester);
@@ -25,18 +25,24 @@ try {
             SELECT g.id, g.id as code, g.name, s.name as semester, g.type
             FROM `groups` g
             LEFT JOIN semesters s ON g.semester_id = s.id
-            WHERE g.type = 'principale'
+            WHERE LOWER(g.type) = 'principale'
             ORDER BY g.id
         ");
     }
     
     $groups = [];
     while ($row = $result->fetch_assoc()) {
+        $semesterName = $row['semester'] ?? '';
+        $displayName = $row['name'];
+        if ($semesterName) {
+            $displayName .= " ($semesterName)";
+        }
+        
         $groups[] = [
             'id' => $row['id'],
             'code' => $row['code'],
-            'name' => $row['name'],
-            'semester' => $row['semester'] ?? '',
+            'name' => $displayName,
+            'semester' => $semesterName,
             'type' => $row['type'],
             'speciality' => '',  // Not stored in DB currently
             'reference' => '',   // Not applicable for principale groups
