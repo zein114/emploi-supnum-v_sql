@@ -62,7 +62,28 @@ try {
                 JOIN `groups` ghier ON ta.group_id = ghier.id
                 LEFT JOIN `groups` pg ON ghier.parent_group_id = pg.id
                 WHERE ta.subject_id = s.id
-               ) as assigned_group_ids
+               ) as assigned_group_ids,
+               (
+                SELECT COUNT(*)
+                FROM teacher_assignments ta
+                LEFT JOIN `groups` gh ON ta.group_id = gh.id
+                WHERE ta.subject_id = s.id AND ta.type = 'CM'
+                AND (cw.group_id IS NULL OR gh.id = cw.group_id OR gh.parent_group_id = cw.group_id)
+               ) as cm_prof_count,
+               (
+                SELECT COUNT(*)
+                FROM teacher_assignments ta
+                LEFT JOIN `groups` gh ON ta.group_id = gh.id
+                WHERE ta.subject_id = s.id AND ta.type = 'TD'
+                AND (cw.group_id IS NULL OR gh.id = cw.group_id OR gh.parent_group_id = cw.group_id)
+               ) as td_prof_count,
+               (
+                SELECT COUNT(*)
+                FROM teacher_assignments ta
+                LEFT JOIN `groups` gh ON ta.group_id = gh.id
+                WHERE ta.subject_id = s.id AND ta.type = 'TP'
+                AND (cw.group_id IS NULL OR gh.id = cw.group_id OR gh.parent_group_id = cw.group_id)
+               ) as tp_prof_count
         FROM subjects s
         LEFT JOIN semesters sem ON s.semester_id = sem.id
         LEFT JOIN course_workloads cw ON cw.subject_id = s.id
@@ -90,7 +111,10 @@ try {
                 'general_entry' => null,
                 'group_entries' => [],
                 'assigned_group_count' => (int)$row['assigned_group_count'],
-                'assigned_group_ids' => $row['assigned_group_ids'] ?? ''
+                'assigned_group_ids' => $row['assigned_group_ids'] ?? '',
+                'has_cm_prof' => (int)$row['cm_prof_count'] > 0,
+                'has_td_prof' => (int)$row['td_prof_count'] > 0,
+                'has_tp_prof' => (int)$row['tp_prof_count'] > 0
             ];
         }
         
@@ -106,7 +130,10 @@ try {
             'online_td' => (int)($row['td_online'] ?? 0),
             'online_tp' => (int)($row['tp_online'] ?? 0),
             'assigned_group_count' => (int)$row['assigned_group_count'],
-            'assigned_group_ids' => $row['assigned_group_ids'] ?? ''
+            'assigned_group_ids' => $row['assigned_group_ids'] ?? '',
+            'has_cm_prof' => (int)$row['cm_prof_count'] > 0,
+            'has_td_prof' => (int)$row['td_prof_count'] > 0,
+            'has_tp_prof' => (int)$row['tp_prof_count'] > 0
         ];
 
         if (empty($row['group_id'])) {
@@ -150,7 +177,10 @@ try {
                 'online_td' => 0,
                 'online_tp' => 0,
                 'assigned_group_count' => $data['assigned_group_count'],
-                'assigned_group_ids' => $data['assigned_group_ids']
+                'assigned_group_ids' => $data['assigned_group_ids'],
+                'has_cm_prof' => $data['has_cm_prof'],
+                'has_td_prof' => $data['has_td_prof'],
+                'has_tp_prof' => $data['has_tp_prof']
             ];
         }
 

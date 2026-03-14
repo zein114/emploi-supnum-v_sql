@@ -183,25 +183,37 @@ function renderTable(data) {
         <td class="workload-col">
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
-                    value="${row.cm}" data-field="cm" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
+                    value="${row.cm}" data-field="cm" data-index="${dataIndex}" 
+                    ${isUnassigned || !row.has_cm_prof ? 'disabled style="cursor: not-allowed;"' : ""}
+                    title="${!row.has_cm_prof && !isUnassigned ? "Aucun professeur assigné pour le CM" : ""}">
                 <input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_cm || 0}" data-field="online_cm" data-index="${dataIndex}" placeholder="En ligne CM" ${isUnassigned ? "disabled" : ""}>
+                    value="${row.online_cm || 0}" data-field="online_cm" data-index="${dataIndex}" placeholder="En ligne CM" 
+                    ${isUnassigned || !row.has_cm_prof ? 'disabled style="cursor: not-allowed;"' : ""}
+                    title="${!row.has_cm_prof && !isUnassigned ? "Aucun professeur assigné pour le CM" : ""}">
             </div>
         </td>
         <td class="workload-col">
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
-                    value="${row.td}" data-field="td" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
+                    value="${row.td}" data-field="td" data-index="${dataIndex}" 
+                    ${isUnassigned || !row.has_td_prof ? 'disabled style="cursor: not-allowed;"' : ""}
+                    title="${!row.has_td_prof && !isUnassigned ? "Aucun professeur assigné pour le TD" : ""}">
                 <input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_td || 0}" data-field="online_td" data-index="${dataIndex}" placeholder="En ligne TD" ${isUnassigned ? "disabled" : ""}>
+                    value="${row.online_td || 0}" data-field="online_td" data-index="${dataIndex}" placeholder="En ligne TD" 
+                    ${isUnassigned || !row.has_td_prof ? 'disabled style="cursor: not-allowed;"' : ""}
+                    title="${!row.has_td_prof && !isUnassigned ? "Aucun professeur assigné pour le TD" : ""}">
             </div>
         </td>
         <td class="workload-col">
             <div class="input-stack">
                 <input type="number" min="0" step="1" class="workload-input"
-                    value="${row.tp}" data-field="tp" data-index="${dataIndex}" ${isUnassigned ? "disabled" : ""}>
+                    value="${row.tp}" data-field="tp" data-index="${dataIndex}" 
+                    ${isUnassigned || !row.has_tp_prof ? 'disabled style="cursor: not-allowed;"' : ""}
+                    title="${!row.has_tp_prof && !isUnassigned ? "Aucun professeur assigné pour le TP" : ""}">
                 <input type="number" min="0" step="1" class="workload-input online-input"
-                    value="${row.online_tp || 0}" data-field="online_tp" data-index="${dataIndex}" placeholder="En ligne TP" ${isUnassigned ? "disabled" : ""}>
+                    value="${row.online_tp || 0}" data-field="online_tp" data-index="${dataIndex}" placeholder="En ligne TP" 
+                    ${isUnassigned || !row.has_tp_prof ? 'disabled style="cursor: not-allowed;"' : ""}
+                    title="${!row.has_tp_prof && !isUnassigned ? "Aucun professeur assigné pour le TP" : ""}">
             </div>
         </td>
         <td class="status-col" style="text-align: center; width: 120px;">
@@ -419,15 +431,15 @@ function addExclusionRow(data = null, assignedGroupIds = "") {
                 <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">CM</label>
-                        <input type="number" step="1" class="form-input ex-cm" value="${data ? data.cm : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-cm" value="${data ? data.cm : 0}" style="width: 100%; ${data && !data.has_cm_prof ? "cursor: not-allowed;" : ""}" ${data && !data.has_cm_prof ? "disabled" : ""} title="${data && !data.has_cm_prof ? "Aucun professeur assigné pour le CM" : ""}">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TD</label>
-                        <input type="number" step="1" class="form-input ex-td" value="${data ? data.td : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-td" value="${data ? data.td : 0}" style="width: 100%; ${data && !data.has_td_prof ? "cursor: not-allowed;" : ""}" ${data && !data.has_td_prof ? "disabled" : ""} title="${data && !data.has_td_prof ? "Aucun professeur assigné pour le TD" : ""}">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TP</label>
-                        <input type="number" step="1" class="form-input ex-tp" value="${data ? data.tp : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-tp" value="${data ? data.tp : 0}" style="width: 100%; ${data && !data.has_tp_prof ? "cursor: not-allowed;" : ""}" ${data && !data.has_tp_prof ? "disabled" : ""} title="${data && !data.has_tp_prof ? "Aucun professeur assigné pour le TP" : ""}">
                     </div>
                 </div>
             </div>
@@ -438,15 +450,15 @@ function addExclusionRow(data = null, assignedGroupIds = "") {
                 <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">CM</label>
-                        <input type="number" step="1" class="form-input ex-online-cm" value="${data ? data.online_cm : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-online-cm" value="${data ? data.online_cm : 0}" style="width: 100%; ${data && !data.has_cm_prof ? "cursor: not-allowed;" : ""}" ${data && !data.has_cm_prof ? "disabled" : ""} title="${data && !data.has_cm_prof ? "Aucun professeur assigné pour le CM" : ""}">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TD</label>
-                        <input type="number" step="1" class="form-input ex-online-td" value="${data ? data.online_td : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-online-td" value="${data ? data.online_td : 0}" style="width: 100%; ${data && !data.has_td_prof ? "cursor: not-allowed;" : ""}" ${data && !data.has_td_prof ? "disabled" : ""} title="${data && !data.has_td_prof ? "Aucun professeur assigné pour le TD" : ""}">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="font-size: 0.75rem; color: var(--text-secondary);">TP</label>
-                        <input type="number" step="1" class="form-input ex-online-tp" value="${data ? data.online_tp : 0}" style="width: 100%;">
+                        <input type="number" step="1" class="form-input ex-online-tp" value="${data ? data.online_tp : 0}" style="width: 100%; ${data && !data.has_tp_prof ? "cursor: not-allowed;" : ""}" ${data && !data.has_tp_prof ? "disabled" : ""} title="${data && !data.has_tp_prof ? "Aucun professeur assigné pour le TP" : ""}">
                     </div>
                 </div>
             </div>
