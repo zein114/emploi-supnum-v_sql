@@ -182,7 +182,7 @@ timetableForm.addEventListener("submit", async function (e) {
 
   // Sheet name is strictly the group name now (or group code?)
   // Based on excel_utils.py it uses group name.
-  const sheetName = groupText;
+  const sheetName = groupText.split(" - ")[0].trim();
 
   try {
     await renderTimetable(sheetName);

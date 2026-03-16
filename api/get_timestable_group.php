@@ -54,43 +54,41 @@ if ($archive) {
     echo json_encode($timesTable, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 } else {
     // -------------------------------------------------------------
-    // CURRENT LOGIC: Fetch directly from database `timetables` table
+    // CURRENT LOGIC: Read directly from the current Excel file
     // -------------------------------------------------------------
-    
-    // 1. Fetch Days to form columns
-    $daysResult = $conn->query("SELECT name FROM days ORDER BY order_index, id");
-    $days = [];
-    while ($row = $daysResult->fetch_assoc()) {
-        $days[] = $row['name'];
+    $file = "../model/Tous_les_Emplois_du_Temps.xlsx";
+
+    if (!file_exists($file)) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([]);
+        exit;
     }
 
-    // 2. Fetch Time Slots to form rows
-    $slotsResult = $conn->query("SELECT time_range FROM time_slots ORDER BY id");
-    $slots = [];
-    while ($row = $slotsResult->fetch_assoc()) {
-        $slots[] = $row['time_range'];
+    $reader = IOFactory::createReaderForFile($file);
+    $reader->setReadDataOnly(true);
+    $reader->setLoadSheetsOnly([$sheetName]);
+    $spreadsheet = null;
+
+    try {
+        $spreadsheet = $reader->load($file);
+    } catch (Exception $e) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([]);
+        exit;
     }
 
-    // 3. Fetch from DB
-    $stmt = $conn->prepare("SELECT `day`, `time_slot`, `session_info` FROM `timetables` WHERE `group_name` = ?");
-    $stmt->bind_param("s", $sheetName);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $sheet = $spreadsheet->getSheetByName($sheetName);
 
-    $dbData = [];
-    while ($row = $result->fetch_assoc()) {
-        $dbData[$row['time_slot']][$row['day']] = $row['session_info'];
+    if (!$sheet) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([]);
+        exit;
     }
 
-    // 4. Construct the 2D array equivalent to Excel's rangeToArray
-    $timesTable = [];
-    foreach ($slots as $slot) {
-        $rowArray = [];
-        foreach ($days as $day) {
-            $rowArray[] = isset($dbData[$slot][$day]) ? $dbData[$slot][$day] : null;
-        }
-        $timesTable[] = $rowArray;
-    }
+    $highestRow    = $sheet->getHighestRow();
+    $highestColumn = $sheet->getHighestColumn();
+
+    $timesTable = $sheet->rangeToArray('B3:' . $highestColumn . $highestRow, null, true, false);
 
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($timesTable, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

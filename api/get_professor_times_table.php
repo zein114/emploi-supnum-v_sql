@@ -49,42 +49,65 @@ if ($row = $result->fetch_assoc()) {
     exit;
 }
 
-// 2. Query from database timetables
+// 2. Query from Excel file
 try {
+    $file = "../model/Tous_les_Emplois_du_Temps.xlsx";
+    if (!file_exists($file)) {
+        echo json_encode(['success' => true, 'classes' => []]);
+        exit;
+    }
+
+    $reader = IOFactory::createReaderForFile($file);
+    $reader->setReadDataOnly(true);
+    $spreadsheet = $reader->load($file);
     $classes = [];
-    $searchName = "%Prof: " . $profName . "%";
-    $searchId = "%Prof: " . $prof_id . "%";
+    
+    $profNameSearch = "Prof: " . $profName;
+    $profIdSearch = "Prof: " . $prof_id;
 
-    $stmt = $conn->prepare("SELECT `group_name`, `day`, `time_slot`, `session_info` FROM `timetables` WHERE `session_info` LIKE ? OR `session_info` LIKE ?");
-    $stmt->bind_param("ss", $searchName, $searchId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    while ($row = $result->fetch_assoc()) {
-        $sheetName = $row['group_name'];
-        $cellContent = $row['session_info'];
-        $dayName = $row['day'];
-        $timeRange = $row['time_slot'];
+    foreach ($spreadsheet->getAllSheets() as $sheet) {
+        $sheetName = $sheet->getTitle();
+        $highestRow = $sheet->getHighestRow();
+        $highestColumn = $sheet->getHighestColumn();
         
-        // Handle multiple sessions in one cell
-        $sessions = explode(" /// ", $cellContent);
+        // Read the data (A2:H8 or whatever the range is)
+        // Days are in row 2, Time slots are in column B starting at row 3?
+        // Let's use the columns/rows dynamically
         
-        foreach ($sessions as $sessionStr) {
-            // Re-check since the LIKE query brings the whole cell content
-            if (stripos($sessionStr, "Prof: " . $profName) !== false || stripos($sessionStr, "Prof: " . $prof_id) !== false) {
-                // Inject SheetName (Group) into the string
-                // Format: [CODE] Subject\n(TYPE) - Details\n...
-                $lines = explode("\n", $sessionStr);
-                if (count($lines) > 1) {
-                    // Append SheetName to the second line (Type/Group info)
-                    // Example: (CM)  -->  (CM) - L1-G1
-                    $lines[1] .= " - " . $sheetName;
-                    $modifiedSessionStr = implode("\n", $lines);
-                } else {
-                    $modifiedSessionStr = $sessionStr . "\n" . $sheetName;
-                }
+        // Map columns to day names
+        $colToDay = [];
+        for ($col = 2; $col <= \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn); $col++) {
+            $dayVal = $sheet->getCellByColumnAndRow($col, 2)->getValue();
+            if ($dayVal) {
+                $colToDay[$col] = $dayVal;
+            }
+        }
+        
+        // Iterate through rows (Time slots)
+        for ($row = 3; $row <= $highestRow; $row++) {
+            $timeRange = $sheet->getCellByColumnAndRow(1, $row)->getValue();
+            if (!$timeRange) continue;
+            
+            foreach ($colToDay as $col => $dayName) {
+                $cellContent = $sheet->getCellByColumnAndRow($col, $row)->getValue();
+                if (!$cellContent || $cellContent === 'x') continue;
                 
-                $classes[] = [$modifiedSessionStr, $dayName, $timeRange];
+                // Handle multiple sessions in one cell
+                $sessions = explode(" /// ", $cellContent);
+                
+                foreach ($sessions as $sessionStr) {
+                    if (stripos($sessionStr, $profNameSearch) !== false || stripos($sessionStr, $profIdSearch) !== false) {
+                        $lines = explode("\n", $sessionStr);
+                        if (count($lines) > 1) {
+                            $lines[1] .= " - " . $sheetName;
+                            $modifiedSessionStr = implode("\n", $lines);
+                        } else {
+                            $modifiedSessionStr = $sessionStr . "\n" . $sheetName;
+                        }
+                        
+                        $classes[] = [$modifiedSessionStr, $dayName, $timeRange];
+                    }
+                }
             }
         }
     }

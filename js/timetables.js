@@ -307,7 +307,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (typeof Spinner !== "undefined") Spinner.show(submitBtn);
 
-      const sheetName = groupText;
+      const sheetName = groupText.split(" - ")[0].trim();
       const container = document.getElementById("timetableContainer");
 
       try {
@@ -680,7 +680,7 @@ async function GenerateTimetables(btn) {
             window.customDropdown.selectItem(sourceBtn, sourceMenu, liveItem);
           }
         }
-        await renderTimetable(groupText);
+        await renderTimetable(groupText.split(" - ")[0].trim());
       }
     } else {
       Toast.error(

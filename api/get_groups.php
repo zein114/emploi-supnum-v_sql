@@ -36,9 +36,13 @@ try {
     
     $groups = [];
     while ($row = $result->fetch_assoc()) {
+        $name = $row['name'];
+        if (!empty($row['semester'])) {
+            $name .= ' - ' . $row['semester'];
+        }
         $groups[] = [
             'id' => $row['id'],
-            'name' => $row['name'],
+            'name' => $name,
             'semester' => $row['semester'] ?? '',
             'type' => $row['type']
         ];

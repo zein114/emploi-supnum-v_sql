@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
   // Tab switching
   const tabBtns = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -306,40 +306,164 @@ function renderClassrooms(classrooms) {
 
 function renderGroups(groups) {
   const body = document.getElementById("groupsTableBody");
-  body.innerHTML = groups
+
+  // 1. Map all subgroups by their parent ID
+  const subgroupsMap = {};
+  groups.forEach((g) => {
+    const parentId = g.parent_group_id || g.reference;
+    if (parentId) {
+      if (!subgroupsMap[parentId]) subgroupsMap[parentId] = [];
+      subgroupsMap[parentId].push(g);
+    }
+  });
+
+  // 2. Identify top-level groups (Principale OR those without a valid parent)
+  const topLevelGroups = groups.filter((g) => {
+    // Principale is always top level
+    if (g.type === "principale") return true;
+
+    // Others are top-level only if they have NO parent assigned
+    const parentId = g.parent_group_id || g.reference;
+    return !parentId;
+  });
+
+  // Separate orphans from principals for cleaner UI
+  const principals = topLevelGroups.filter((g) => g.type === "principale");
+  const orphans = topLevelGroups.filter((g) => g.type !== "principale");
+
+  // Join both lists without a divider
+  let html = principals
     .map((g) => {
-      const name = (g.name || g.B || "").trim();
-      const semester = (g.semester || g.C || "").trim();
-      const type = (g.type || g.D || "").trim();
-
-      const safeNameHtml = escapeHtml(name);
-      const safeSemesterHtml = escapeHtml(semester);
-      const speciality = (g.speciality || "").trim();
-      const safeSpecialityHtml = escapeHtml(speciality);
-
-      const safeNameJs = escapeJsArg(name);
-      const safeSemesterJs = escapeJsArg(semester);
-      const safeTypeJs = escapeJsArg(type);
-      const parentId = g.reference || g.parent_group_id || "";
-
-      return `
-            <tr>
-                <td class="font-semibold">${safeNameHtml}</td>
-                <td><span class="badge badge-warning">${safeSemesterHtml}</span></td>
-                <td><span class="badge badge-primary">${type}</span></td>
-                <td>${safeSpecialityHtml}</td>
-                <td>${g.capacity || 0} étudiants</td>
-                <td>
-                    <div class="settings-item-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="editGroup(${g.id}, '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${parentId}', ${g.capacity || 0})">Modifier</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteGroup(${g.id})">Supprimer</button>
-                    </div>
-                </td>
-            </tr>
-        `;
+      const subs = subgroupsMap[g.id] || [];
+      return renderGroupRow(g, subs);
     })
     .join("");
+
+  html += orphans.map((g) => renderGroupRow(g, [])).join("");
+
+  if (groups.length === 0) {
+    html =
+      '<tr><td colspan="6" class="text-center p-4">Aucun groupe trouvé.</td></tr>';
+  }
+
+  body.innerHTML = html;
 }
+
+function renderGroupRow(g, subs = []) {
+  const name = (g.name || g.B || "").trim();
+  const semester = (g.semester || g.C || "").trim();
+  const type = (g.type || g.D || "").trim();
+
+  const safeNameHtml = escapeHtml(name);
+  const safeSemesterHtml = escapeHtml(semester);
+  const speciality = (g.speciality || "").trim();
+  const safeSpecialityHtml = escapeHtml(speciality);
+
+  const safeNameJs = escapeJsArg(name);
+  const safeSemesterJs = escapeJsArg(semester);
+  const safeTypeJs = escapeJsArg(type);
+  const parentId = g.reference || g.parent_group_id || "";
+
+  const hasSubs = subs.length > 0;
+
+  let rowHtml = `
+        <tr class="group-row ${hasSubs ? "has-subgroups" : ""}" data-group-id="${
+          g.id
+        }">
+            <td class="font-semibold">${safeNameHtml}</td>
+            <td><span class="badge badge-warning">${safeSemesterHtml}</span></td>
+            <td><span class="badge badge-primary">${type}</span></td>
+            <td>${safeSpecialityHtml}</td>
+            <td>${g.capacity || 0} étudiants</td>
+            <td>
+                <div class="settings-item-actions">
+                    ${
+                      hasSubs
+                        ? `
+                        <button class="btn btn-sm btn-sous-groups" onclick="toggleSubgroups(${g.id}, this)">
+                            Sous-groupes <span class="chevron-icon"></span>
+                        </button>`
+                        : ""
+                    }
+                    <button class="btn btn-sm btn-secondary" onclick="editGroup(${
+                      g.id
+                    }, '${safeNameJs}', '${safeSemesterJs}', '${safeTypeJs}', '${parentId}', ${
+                      g.capacity || 0
+                    })">Modifier</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteGroup(${
+                      g.id
+                    })">Supprimer</button>
+                </div>
+            </td>
+        </tr>
+    `;
+
+  if (hasSubs) {
+    // Render subgroups as real <tr> rows so they align with table columns
+    subs.forEach((s) => {
+      const sName = (s.name || "").trim();
+      const sType = (s.type || "").trim();
+      const sSafeNameHtml = escapeHtml(sName);
+      const sSafeNameJs = escapeJsArg(sName);
+      const sSafeSemJs = escapeJsArg(s.semester || "");
+      const sSafeSemHtml = escapeHtml(s.semester || "");
+      const sSafeTypeJs = escapeJsArg(sType);
+      const sParentId = s.reference || s.parent_group_id || "";
+
+      rowHtml += `
+        <tr class="subgroup-tr" data-parent="${g.id}" style="display: none;">
+            <td><div class="subgroup-inner" style="padding-left: 1.25rem;"><span class="font-semibold">${sSafeNameHtml}</span></div></td>
+            <td><div class="subgroup-inner"><span class="badge badge-warning">${sSafeSemHtml}</span></div></td>
+            <td><div class="subgroup-inner"><span class="badge badge-primary">${sType}</span></div></td>
+            <td><div class="subgroup-inner">${escapeHtml(s.speciality || "")}</div></td>
+            <td><div class="subgroup-inner">${s.capacity || 0} étudiants</div></td>
+            <td>
+                <div class="subgroup-inner">
+                    <div class="settings-item-actions">
+                        <button class="btn btn-sm btn-secondary"
+                            onclick="editGroup(${s.id}, '${sSafeNameJs}', '${sSafeSemJs}', '${sSafeTypeJs}', '${sParentId}', ${s.capacity || 0})">Modifier</button>
+                        <button class="btn btn-sm btn-danger"
+                            onclick="deleteGroup(${s.id})">Supprimer</button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+      `;
+    });
+  }
+
+  return rowHtml;
+}
+
+window.toggleSubgroups = function (groupId, btn) {
+  const rows = document.querySelectorAll(`.subgroup-tr[data-parent="${groupId}"]`);
+  const isOpen = btn.classList.contains("active");
+
+  if (!isOpen) {
+    rows.forEach((row) => {
+      row.style.display = "table-row";
+      const inners = row.querySelectorAll(".subgroup-inner");
+      // Force reflow
+      void row.offsetHeight;
+      inners.forEach(inner => inner.classList.add("active"));
+    });
+    btn.classList.add("active");
+  } else {
+    rows.forEach((row) => {
+      const inners = row.querySelectorAll(".subgroup-inner");
+      inners.forEach(inner => inner.classList.remove("active"));
+      
+      // Wait for height transition before hiding the row
+      setTimeout(() => {
+        const firstInner = row.querySelector(".subgroup-inner");
+        if (firstInner && !firstInner.classList.contains("active")) {
+          row.style.display = "none";
+        }
+      }, 400);
+    });
+    btn.classList.remove("active");
+  }
+};
 
 async function updateSettings(data, btn = null) {
   if (btn && typeof Spinner !== "undefined") Spinner.show(btn);

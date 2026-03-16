@@ -37,7 +37,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     cursor.execute("SELECT * FROM `groups` ORDER BY id")
     all_groups = cursor.fetchall()
     
-    groups_principale = [g for g in all_groups if g['type'] in ('principale', 'langues && ppp', 'specialite')]
+    groups_principale = [g for g in all_groups if g['type'].lower() in ('principale', 'langues && ppp', 'specialite')]
     Groupes_names_principale = [g['name'] for g in groups_principale]
     Groupes_types_principale = [g['type'] for g in groups_principale]
     Group_Id_Map = {str(g['id']).strip(): idx for idx, g in enumerate(groups_principale)}
@@ -45,7 +45,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
     
     # Sous-Groupes (TD, Languages)
     # Note: Languages are in both to support CM (as main) and TD/TP (as sub)
-    groups_td = [g for g in all_groups if g['type'] in ('TD', 'langues && ppp')]
+    groups_td = [g for g in all_groups if g['type'].lower() in ('td', 'langues && ppp')]
     Sous_Groupes_names = [g['name'] for g in groups_td]
     Sous_Groupes_types = [g['type'] for g in groups_td]
     Sous_Groupes_semesters = [g['semester_id'] for g in groups_td]
@@ -62,10 +62,10 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
         sem_id = g['semester_id']
         g_type = g['type']
         
-        if g_type in ('langues && ppp',):
+        if g_type.lower() == 'langues && ppp':
             # These groups spread across all students of the semester
             # We ONLY link them to groups of type 'principale', not other 'langues && ppp'
-            parent_ids = [str(pg['id']).strip() for pg in groups_principale if pg['type'] == 'principale' and pg['semester_id'] == sem_id]
+            parent_ids = [str(pg['id']).strip() for pg in groups_principale if pg['type'].lower() == 'principale' and pg['semester_id'] == sem_id]
             if parent_ids:
                 Sous_Group_Reference_Group[sub_id_str] = ",".join(parent_ids)
         
@@ -80,7 +80,7 @@ def load_data(input_file=None, K=35, days_info=None, time_slots_info=None):
             sp_id_str = str(g['id']).strip()
             sem_id = g['semester_id']
             # Link to all principale groups in same semester
-            parent_ids = [str(pg['id']).strip() for pg in groups_principale if pg['type'] == 'principale' and pg['semester_id'] == sem_id]
+            parent_ids = [str(pg['id']).strip() for pg in groups_principale if pg['type'].lower() == 'principale' and pg['semester_id'] == sem_id]
             if parent_ids:
                 Sous_Group_Reference_Group[sp_id_str] = ",".join(parent_ids)
 

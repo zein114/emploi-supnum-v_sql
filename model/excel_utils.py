@@ -194,10 +194,13 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
                     
                     subgroups_of_g = []
                     for sid, pref in Sous_Group_Reference_Group.items():
-                        # Case 1: Subgroup of the principal group itself
+                        # Case 1: Subgroup of the principal group itself (single ID match)
                         if pref == group_id_val:
                             subgroups_of_g.append(sid)
-                        # Case 2: Subgroup of a group that merges into this principal group
+                        # Case 2: Subgroup references multiple parents (comma-separated, e.g. langues && ppp)
+                        elif group_id_val and group_id_val in [r.strip() for r in str(pref).split(',')]:
+                            subgroups_of_g.append(sid)
+                        # Case 3: Subgroup of a group that merges into this principal group (specialite)
                         elif pref in merge_from_ids:
                             subgroups_of_g.append(sid)
 
@@ -391,6 +394,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
     print(f"Tous les emplois du temps ont été exportés vers {output_dir + output_file}")
     
     # Enregistrer dans la base de données
+    print(f"db_records à insérer: {len(db_records)}")
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor()
@@ -402,5 +406,7 @@ def export_timetables_to_single_excel(solver_results, Groupes_Principale, Sous_G
         conn.close()
         print("Les emplois du temps ont été sauvegardés dans la base de données avec succès.")
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Erreur lors de la sauvegarde dans la base de données: {e}")
 

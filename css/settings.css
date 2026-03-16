@@ -1,10 +1,112 @@
 /* Spacing Utilities */
+.p-0 {
+  padding: 0 !important;
+}
+
 .p-lg {
   padding: var(--spacing-lg);
 }
 
 .p-xl {
   padding: var(--spacing-xl);
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .admin-sidebar.active {
+    transform: translateX(0);
+  }
+
+  .admin-content {
+    margin-left: 0;
+  }
+
+  .admin-sidebar.collapsed ~ .admin-content {
+    margin-left: 0;
+  }
+}
+
+/* Subgroup real <tr> rows with pushing animation */
+.subgroup-tr {
+  background: var(--color-bg-section) !important;
+}
+
+.subgroup-tr td {
+  padding: 0 !important; /* Critical: Move padding to the .subgroup-inner wrapper */
+  border-bottom: 1px solid var(--border-color-muted) !important;
+}
+
+.subgroup-inner {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0 1.5rem; /* Matches standard horizontal padding */
+  transition: 
+    max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.4s ease;
+}
+
+.subgroup-inner.active {
+  max-height: 100px; /* Large enough for a standard row */
+  opacity: 1;
+  padding: 1rem 1.5rem; /* Standard vertical padding restored */
+}
+
+.btn-sous-groups {
+  background: var(--color-bg-section);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.6rem !important;
+  transition: all 0.2s ease;
+}
+
+.btn-sous-groups:hover {
+  background: var(--color-bg-card);
+  border-color: var(--color-primary-blue-light);
+}
+
+.btn-sous-groups.active {
+  background: var(--color-primary-blue);
+  color: white;
+  border-color: var(--color-primary-blue);
+  box-shadow: 0 4px 12px rgba(59, 92, 204, 0.3);
+}
+
+.chevron-icon {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-sous-groups.active .chevron-icon {
+  transform: rotate(-135deg);
+  margin-bottom: -2px;
+}
+
+.group-row {
+  transition: background-color 0.3s ease;
+}
+
+.group-row.has-subgroups:has(+ .subgroups-row .subgroups-container.active) {
+  background: var(--color-bg-section);
+}
+
+.table-divider td {
+  border-top: 2px solid var(--border-color) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
 }
 
 .mb-1 {
